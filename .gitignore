@@ -1,0 +1,7 @@
+node_modules/
+cache/
+logs/
+.env
+.env.*
+voice_samples/*.mp3
+screenshots/*.mp3
