@@ -529,7 +529,10 @@ function createApp() {
           const ttsText = `${delivery.prefix} ${speech}`;
           audioUrl = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
         } catch (err) {
-          console.error('TTS request failed');
+          const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
+          const vk = keys.voiceKey || '';
+          const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
+          console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${vk.length})`);
           audioError = 'TTS failed';
         }
       }
