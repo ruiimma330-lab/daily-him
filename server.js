@@ -492,7 +492,7 @@ function createApp() {
         ? data.choices[0].message.content
         : '';
       if (typeof content !== 'string') {
-        console.error('LLM request failed');
+        console.error('LLM request failed (no content in response)');
         return res.status(502).json({ error: GENERIC_LLM_ERROR });
       }
       replyText = content;
@@ -501,7 +501,9 @@ function createApp() {
         console.error('LLM request timed out');
         return res.status(504).json({ error: 'timeout' });
       }
-      console.error('LLM request failed');
+      const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
+      const keyOk = /^[\x21-\x7e]+$/.test(keys.chatKey) ? 'ascii' : 'has-invalid-chars';
+      console.error(`LLM request failed (fetch error ${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${keys.chatKey.length})`);
       return res.status(502).json({ error: GENERIC_LLM_ERROR });
     }
 
@@ -509,7 +511,7 @@ function createApp() {
     const delivery = moodDelivery(config, parsed.mood);
     const speechLines = splitBubbles(parsed.text);
     if (!speechLines.length) {
-      console.error('LLM request failed');
+      console.error('LLM request failed (empty reply after parsing)');
       return res.status(502).json({ error: GENERIC_LLM_ERROR });
     }
 
