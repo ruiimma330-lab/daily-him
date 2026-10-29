@@ -818,7 +818,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const response = await fetch(withChar('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: historyPayload(), voice: settings.voice }),
+        body: JSON.stringify({ messages: historyPayload(), voice: settings.voice, sceneId: pendingSceneId || undefined }),
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -918,6 +918,52 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
   }
 
+  let pendingSceneId = null;
+
+  async function sendScene(scene) {
+    if (!scene || !scene.messageKo) return;
+    if (busy) {
+      showToast('답장을 기다리는 중이에요');
+      return;
+    }
+    pendingSceneId = scene.id || null;
+    messages.push({ role: 'user', text: scene.messageKo, time: Date.now(), audioUrl: null });
+    saveHistory();
+    showRetry = false;
+    voiceNote = '';
+    animateLast = true;
+    document.querySelectorAll('.scene-chip').forEach((b) => { b.disabled = true; });
+    try {
+      await requestReply();
+    } finally {
+      pendingSceneId = null;
+      document.querySelectorAll('.scene-chip').forEach((b) => { b.disabled = false; });
+    }
+  }
+
+  async function loadScenes() {
+    const bar = document.getElementById('scene-bar');
+    if (!bar) return;
+    try {
+      const r = await fetch(withChar('/api/scenes'));
+      if (!r.ok) return;
+      const d = await r.json();
+      const scenes = d.scenes || [];
+      bar.innerHTML = '';
+      if (!scenes.length) { bar.hidden = true; return; }
+      for (const sc of scenes) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'scene-chip';
+        btn.textContent = sc.label;
+        if (sc.hintZh) btn.title = sc.hintZh;
+        btn.addEventListener('click', () => sendScene(sc));
+        bar.appendChild(btn);
+      }
+      bar.hidden = false;
+    } catch (_) { bar.hidden = true; }
+  }
+
   async function send() {
     const text = input.value.trim();
     if (!text) return;
@@ -942,6 +988,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     requestReply();
   }
 
+  loadScenes();
   document.getElementById('open-chat').addEventListener('click', openRoom);
   document.getElementById('back-btn').addEventListener('click', closeRoom);
   document.getElementById('profile-btn').addEventListener('click', openProfile);

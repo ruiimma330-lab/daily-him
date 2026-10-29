@@ -854,3 +854,30 @@ button, input { -webkit-tap-highlight-color: transparent; }
 .mom-compose input { flex: 1; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; font-size: 14px; outline: none; background: #fff; }
 .mom-compose button { border: 0; background: #fee500; border-radius: 8px; padding: 0 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .mom-compose button:disabled { opacity: .5; }
+
+/* ---- scene chips ---- */
+.scene-bar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 12px 8px;
+  scrollbar-width: none;
+  flex: none;
+}
+.scene-bar[hidden] { display: none; }
+.scene-bar::-webkit-scrollbar { display: none; }
+.scene-chip {
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 13px;
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.scene-chip:active { background: #fff8d6; }
+.scene-chip:disabled { opacity: .45; }
