@@ -267,6 +267,7 @@ const PUBLIC_PATHS = new Set([
   '/api/register',
   '/api/auth-config',
   '/api/site-login',
+  '/api/health',
   '/manifest.webmanifest',
 ]);
 
@@ -762,6 +763,7 @@ function createApp() {
   });
 
   app.get('/api/health', (req, res) => {
+    if (!getSession(req)) return res.json({ ok: true, storage: store.storageName() });
     const config = resolveRuntimeConfig(characters.resolveId(req.query.characterId) || undefined);
     res.json({
       ok: true,
