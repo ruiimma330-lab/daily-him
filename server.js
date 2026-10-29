@@ -130,6 +130,28 @@ function moodDelivery(config, parsedMood) {
   };
 }
 
+// Reply format: {"messages":[{"mood","ko","zh"}]} (1-3). Falls back to the legacy
+// "[[mood:x]]\nline\nline" text format if the model doesn't return JSON.
+function parseReply(text, config) {
+  const tags = (config && config.moodTags) || {};
+  const pickMood = (m) => {
+    const v = String(m || '').toLowerCase().trim();
+    return tags[v] ? v : (config && config.defaultMood) || v || '';
+  };
+  let data = null;
+  const m = String(text || '').match(/\{[\s\S]*\}/);
+  if (m) { try { data = JSON.parse(m[0]); } catch (_) { data = null; } }
+  const list = data && Array.isArray(data.messages) ? data.messages : null;
+  if (list) {
+    return list.slice(0, 3).map((x) => {
+      const raw = String((x && x.ko) || '').replace(/\[\[[\s\S]*?\]\]/g, '').trim();
+      return { raw, ko: stripAudioTags(raw), zh: String((x && x.zh) || '').trim().slice(0, 600), mood: pickMood(x && x.mood) };
+    }).filter((x) => x.ko);
+  }
+  const legacy = parseMood(text);
+  return splitBubbles(legacy.text).slice(0, 3).map((raw) => ({ raw, ko: stripAudioTags(raw), zh: '', mood: pickMood(legacy.mood) })).filter((x) => x.ko);
+}
+
 function splitBubbles(text) {
   let raw = String(text || '').replace(/\r\n/g, '\n');
   if (!raw.includes('\n') && raw.includes('\\n')) {
@@ -745,6 +767,7 @@ function createApp() {
           presence_penalty: 0.4,
           frequency_penalty: 0.3,
           reasoning_effort: process.env.LLM_EFFORT || 'low',
+          response_format: { type: 'json_object' },
           messages: [{ role: 'system', content: systemPrompt }, ...recent],
         }),
         signal: AbortSignal.timeout(llmTimeoutMs()),
@@ -783,36 +806,39 @@ function createApp() {
       return res.status(502).json({ error: GENERIC_LLM_ERROR });
     }
 
-    const parsed = parseMood(replyText);
-    const delivery = moodDelivery(config, parsed.mood);
-    const speechLines = splitBubbles(parsed.text);
-    if (!speechLines.length) {
+    const items = parseReply(replyText, config);
+    if (!items.length) {
       console.error('LLM request failed (empty reply after parsing)');
       return res.status(502).json({ error: GENERIC_LLM_ERROR });
     }
 
-    const displayBubbles = speechLines.map((line) => stripAudioTags(line)).filter(Boolean);
     const voiceOff = Boolean(req.body && req.body.voice === false);
-    const speech = toSpeechText(speechLines);
-    let audioUrl = null;
     let audioError;
-
-    if (!voiceOff && isSpeakable(speech)) {
-      if (!voiceReady(config.voiceId)) {
-        audioError = 'Voice is not configured';
-      } else {
-        try {
-          const ttsText = `${delivery.prefix} ${speech}`;
-          audioUrl = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
-        } catch (err) {
-          const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
-          const vk = keys.voiceKey || '';
-          const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
-          console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${vk.length})`);
-          audioError = 'TTS failed';
-        }
+    let ttsChars = 0;
+    const voiceOk = voiceReady(config.voiceId);
+    if (!voiceOff && !voiceOk) audioError = 'Voice is not configured';
+    // One TTS clip per message, in parallel; each with its own mood tag.
+    await Promise.all(items.map(async (item) => {
+      item.audioUrl = null;
+      const speech = toSpeechText([item.raw]);
+      if (voiceOff || !voiceOk || !isSpeakable(speech)) return;
+      const ttsText = `${moodDelivery(config, item.mood).prefix} ${speech}`.trim();
+      ttsChars += ttsText.length;
+      try {
+        item.audioUrl = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
+      } catch (err) {
+        const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
+        const vk = keys.voiceKey || '';
+        const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
+        console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${vk.length})`);
+        item.ttsFailed = true;
+        audioError = 'TTS failed';
       }
-    }
+    }));
+    if (ttsChars) console.log(`TTS chars this turn: ${ttsChars}`);
+    const displayBubbles = items.map((it) => it.ko);
+    const outMessages = items.map((it) => ({ ko: it.ko, zh: it.zh, mood: it.mood, audioUrl: it.audioUrl, ttsFailed: Boolean(it.ttsFailed) }));
+    const audioUrl = outMessages.length && outMessages[0].audioUrl ? outMessages[0].audioUrl : null;
 
     let rel = null;
     try {
@@ -830,7 +856,7 @@ function createApp() {
       getHistory: () => store.getHistory(req.userId, req.characterId),
     });
     if (process.env.MEMORY_SYNC === '1') await memTask; // tests only
-    const payload = { bubbles: displayBubbles, audioUrl, mood: delivery.mood, relationship: rel };
+    const payload = { messages: outMessages, bubbles: displayBubbles, audioUrl, mood: items[0].mood, ttsChars, relationship: rel };
     if (audioError) payload.audioError = audioError;
     return res.json(payload);
   });
@@ -890,6 +916,7 @@ module.exports = {
   stripAudioTags,
   toSpeechText,
   isSpeakable,
+  parseReply,
   resolveRuntimeConfig,
   audioFileHash,
   voiceReady,

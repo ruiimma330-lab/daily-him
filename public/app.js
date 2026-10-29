@@ -41,6 +41,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let roomOpen = false;
   let menuOpen = false;
   let typing = false;
+  let recording = false;
   let busy = false;
   let animateLast = false;
   let generation = 0;
@@ -69,6 +70,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         text: item.text,
         time: typeof item.time === 'number' ? item.time : Date.now(),
         audioUrl: safeAudioUrl(item.audioUrl),
+        voice: item.voice === true,
+        zh: typeof item.zh === 'string' ? item.zh : '',
+        mood: typeof item.mood === 'string' ? item.mood : '',
+        ttsFailed: item.ttsFailed === true,
       }));
   }
 
@@ -102,6 +107,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       text: item.text,
       time: item.time,
       audioUrl: item.audioUrl,
+      voice: item.voice || undefined,
+      zh: item.zh || undefined,
+      mood: item.mood || undefined,
+      ttsFailed: item.ttsFailed || undefined,
     }));
   }
 
@@ -415,6 +424,45 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return bubble;
   }
 
+  // New-format reply: one voice clip (or text fallback) with a collapsible 原文+翻译.
+  function buildVoiceItem(message) {
+    const wrap = el('div', 'vitem');
+    const failed = !message.audioUrl;
+    const bubble = failed ? buildTextBubble(message) : buildVoiceBubble(message);
+    wrap.append(bubble);
+    if (failed && message.ttsFailed) {
+      const note = el('p', 'vnote');
+      note.textContent = '语音没发出来，先看文字吧';
+      wrap.append(note);
+    }
+    const hasText = !failed || message.zh;
+    if (hasText) {
+      const toggle = el('button', 'vtoggle');
+      toggle.type = 'button';
+      toggle.textContent = failed ? '中文翻译 ▾' : '原文 · 翻译 ▾';
+      toggle.setAttribute('aria-expanded', 'false');
+      const box = el('div', 'vtext');
+      box.hidden = true;
+      if (!failed) {
+        const ko = el('p', 'vko');
+        ko.textContent = message.text;
+        box.append(ko);
+      }
+      if (message.zh) {
+        const zh = el('p', 'vzh');
+        zh.textContent = message.zh;
+        box.append(zh);
+      }
+      toggle.addEventListener('click', () => {
+        box.hidden = !box.hidden;
+        toggle.setAttribute('aria-expanded', box.hidden ? 'false' : 'true');
+        toggle.textContent = (failed ? '中文翻译 ' : '原文 · 翻译 ') + (box.hidden ? '▾' : '▴');
+      });
+      wrap.append(toggle, box);
+    }
+    return wrap;
+  }
+
   function buildTextBubble(message) {
     const bubble = el('div', 'bubble');
     bubble.textContent = message.text;
@@ -497,8 +545,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     group.forEach((message, messageIndex) => {
       const line = el('div', 'line');
       const last = messageIndex === group.length - 1;
-      const bubble = message.audioUrl && !message.text ? buildVoiceBubble(message) : buildTextBubble(message);
-      if (messageIndex === 0) bubble.classList.add('sharp');
+      const bubble = message.voice
+        ? buildVoiceItem(message)
+        : (message.audioUrl && !message.text ? buildVoiceBubble(message) : buildTextBubble(message));
+      if (messageIndex === 0) (bubble.classList.contains('vitem') ? bubble.firstChild : bubble).classList.add('sharp');
       const meta = el('div', 'meta');
       if (!incoming && unread) {
         const read = el('span', 'read');
@@ -530,10 +580,11 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const stack = el('div', 'stack');
     const line = el('div', 'line');
     const bubble = el('div', 'bubble typing sharp');
-    bubble.setAttribute('aria-label', '입력 중...');
+    const typingText = recording ? '녹음 중...' : '입력 중...';
+    bubble.setAttribute('aria-label', typingText);
     for (let i = 0; i < 3; i += 1) bubble.append(el('span', 'dot'));
     const label = el('span', 'typing-label');
-    label.textContent = '입력 중...';
+    label.textContent = typingText;
     bubble.append(label);
     line.append(bubble);
     stack.append(line);
@@ -576,7 +627,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function previewText(message) {
     if (!message) return '대화를 시작해 보세요';
-    if (message.audioUrl && !message.text) return '음성메시지';
+    if ((message.audioUrl && !message.text) || (message.voice && message.audioUrl)) return '음성메시지';
     return message.text;
   }
 
@@ -772,6 +823,30 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const bubbles = Array.isArray(data.bubbles)
         ? data.bubbles.map((bubble) => String(bubble).trim()).filter(Boolean).slice(0, 4)
         : [];
+      const voiceItems = Array.isArray(data.messages) ? data.messages.filter((m) => m && typeof m.ko === 'string' && m.ko.trim()).slice(0, 3) : [];
+      if (voiceItems.length) {
+        let failedAny = false;
+        for (let i = 0; i < voiceItems.length; i += 1) {
+          const item = voiceItems[i];
+          if (myGen !== generation) return;
+          const audio = settings.voice ? safeAudioUrl(item.audioUrl) : null;
+          recording = Boolean(audio);
+          typing = true;
+          render();
+          // "Recording" gap scales with clip length; first one a bit shorter since we already waited.
+          await sleep(Math.min(3200, (i === 0 ? 300 : 700) + item.ko.length * 45));
+          if (myGen !== generation) return;
+          typing = false;
+          recording = false;
+          if (item.ttsFailed) failedAny = true;
+          messages.push({ role: 'assistant', text: item.ko.trim(), zh: String(item.zh || ''), mood: String(item.mood || ''), time: Date.now(), audioUrl: audio, voice: true, ttsFailed: Boolean(item.ttsFailed) });
+          saveHistory();
+          animateLast = true;
+          render();
+        }
+        if (failedAny) showToast('有条语音没发出来，已改成文字');
+        return;
+      }
       if (!bubbles.length) throw new Error('chat failed');
 
       for (let i = 0; i < bubbles.length; i += 1) {
@@ -799,7 +874,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         saveHistory();
         animateLast = true;
         render();
-        if (settings.autoplay && roomOpen) {
+        if (false && settings.autoplay && roomOpen) {
           const audios = messagesEl.querySelectorAll('audio');
           const newest = audios[audios.length - 1];
           if (newest) {
