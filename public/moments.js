@@ -54,6 +54,63 @@
     box.insertBefore(frag, compose || null);
   }
 
+  function safeSrc(src) {
+    if (typeof src !== 'string') return '';
+    const s = src.trim();
+    if (s.length < 2 || s.length > 200) return '';
+    if (!s.startsWith('/') || s.startsWith('//')) return '';
+    if (s.includes('..') || s.includes('\\') || s.includes('://') || /[\s?#]/.test(s)) return '';
+    return s;
+  }
+
+  function hideLightbox() {
+    const lb = document.getElementById('mom-lightbox');
+    if (lb) lb.hidden = true;
+  }
+
+  function openLightbox(src) {
+    let lb = document.getElementById('mom-lightbox');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'mom-lightbox';
+      lb.className = 'mom-lightbox';
+      lb.hidden = true;
+      lb.setAttribute('role', 'dialog');
+      lb.setAttribute('aria-modal', 'true');
+      lb.setAttribute('aria-label', '查看图片');
+      const img = document.createElement('img');
+      img.alt = '';
+      lb.append(img);
+      lb.addEventListener('click', () => { lb.hidden = true; });
+      (document.querySelector('.phone') || panel).append(lb);
+    }
+    lb.querySelector('img').src = src;
+    lb.hidden = false;
+  }
+
+  function photosBlock(images) {
+    const srcs = (Array.isArray(images) ? images : []).map(safeSrc).filter(Boolean).slice(0, 9);
+    if (!srcs.length) return null;
+    const n = srcs.length;
+    const block = document.createElement('div');
+    block.className = 'mom-photos ' + (n === 1 ? 'single' : (n === 2 || n === 4 ? 'cols-2' : 'cols-3'));
+    for (const src of srcs) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'mom-photo';
+      btn.setAttribute('aria-label', '查看图片');
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = '';
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      btn.append(img);
+      btn.addEventListener('click', () => openLightbox(src));
+      block.append(btn);
+    }
+    return block;
+  }
+
   function card(post) {
     const el = document.createElement('article');
     el.className = 'mom-card';
@@ -77,6 +134,8 @@
       zh.textContent = post.zh;
       body.append(zh);
     }
+    const photos = photosBlock(post.images);
+    if (photos) body.append(photos);
     const time = document.createElement('p');
     time.className = 'mom-time';
     time.textContent = fmt(post.publishedAt);
@@ -181,6 +240,7 @@
     } catch (_) { toast('加载失败'); }
   }
   function close() {
+    hideLightbox();
     panel.hidden = true;
     panel.classList.remove('tab-mode');
   }
@@ -198,6 +258,11 @@
   });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape' || panel.hidden) return;
+    const lb = document.getElementById('mom-lightbox');
+    if (lb && !lb.hidden) {
+      lb.hidden = true;
+      return;
+    }
     if (panel.classList.contains('tab-mode')) document.dispatchEvent(new CustomEvent('idol-tab', { detail: { tab: 'chat' } }));
     else close();
   });
