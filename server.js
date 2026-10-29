@@ -121,6 +121,15 @@ function suggestCount(text) {
   return r < 0.2 ? 1 : (r < 0.6 ? 2 : 3);
 }
 
+function dayPeriod(date = new Date()) {
+  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Shanghai', hour: 'numeric', hourCycle: 'h23' }).format(date));
+  if (h >= 5 && h < 11) return '아침';
+  if (h >= 11 && h < 14) return '점심';
+  if (h >= 14 && h < 18) return '오후';
+  if (h >= 18 && h < 23) return '저녁/밤';
+  return '늦은 밤(새벽)';
+}
+
 function recentOpenings(recent) {
   return recent.filter((m) => m.role === 'assistant').slice(-4)
     .map((m) => String(m.content).replace(/\[\[[\s\S]*?\]\]/g, '').trim().split('\n')[0].slice(0, 14))
@@ -780,7 +789,7 @@ function createApp() {
     const memoryPrompt = (memBlock ? `\n\n${memBlock}` : '')
       + (openings.length ? `\n\n## 반복 피하기\n네 최근 답장 첫머리: ${openings.map((o) => `「${o}」`).join(' ')}\n이번 답장은 이것들과 다른 말로 시작하고, 다른 문장 구조로 말해.` : '')
       + `\n\n## 이번 답장\n이번엔 음성 ${want}개로 보내(상황상 정말 어색하면 ±1).`;
-    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow) + memoryPrompt + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow) + memoryPrompt + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     let replyText = '';
 
     for (let attempt = 0; attempt < 2 && !replyText.trim(); attempt += 1) {
@@ -948,6 +957,7 @@ module.exports = {
   stripAudioTags,
   toSpeechText,
   toLlmMessages,
+  dayPeriod,
   isSpeakable,
   parseReply,
   resolveRuntimeConfig,
