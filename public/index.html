@@ -168,6 +168,46 @@
       </div>
     </section>
 
+
+    <section class="screen screen-me" id="screen-me" hidden aria-labelledby="me-title">
+      <header class="list-header">
+        <h1 id="me-title">我的</h1>
+      </header>
+      <div class="me-body">
+        <div class="me-card">
+          <span class="avatar lg" data-avatar aria-hidden="true"></span>
+          <div class="me-info">
+            <p class="me-name" id="me-display">—</p>
+            <p class="me-sub" id="me-username"></p>
+          </div>
+        </div>
+        <div class="me-rows">
+          <div class="me-row"><span>他怎么叫你</span><b id="me-call">—</b></div>
+          <div class="me-row"><span>你怎么叫他</span><b id="me-charnick">—</b></div>
+          <div class="me-row"><span>余额（演示）</span><b id="me-balance">0</b></div>
+        </div>
+        <button type="button" class="me-btn" id="me-recharge">充值（演示）</button>
+        <button type="button" class="me-btn" id="me-memory">他记得的事</button>
+        <button type="button" class="me-btn ghost" id="me-reset">重新走一遍引导</button>
+        <button type="button" class="me-btn danger" id="me-logout">退出登录</button>
+      </div>
+    </section>
+
+    <nav class="tab-bar" id="tab-bar" aria-label="主导航">
+      <button type="button" class="tab-item active" data-tab="chat" id="tab-chat">
+        <span class="tab-ico" aria-hidden="true">💬</span>
+        <span>聊天</span>
+      </button>
+      <button type="button" class="tab-item" data-tab="moments" id="tab-moments">
+        <span class="tab-ico" aria-hidden="true">✨</span>
+        <span>朋友圈</span>
+      </button>
+      <button type="button" class="tab-item" data-tab="me" id="tab-me">
+        <span class="tab-ico" aria-hidden="true">🙂</span>
+        <span>我的</span>
+      </button>
+    </nav>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
   <template id="puppy-svg">

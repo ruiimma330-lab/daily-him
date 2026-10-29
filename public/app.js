@@ -678,8 +678,89 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
   }
 
+
+  // ---- main tabs: chat | moments | me ----
+  let mainTab = 'chat';
+  const tabBar = document.getElementById('tab-bar');
+  const screenMe = document.getElementById('screen-me');
+  const screenList = document.getElementById('screen-list');
+
+  function setTabBarVisible(show) {
+    if (!tabBar) return;
+    tabBar.hidden = !show;
+  }
+
+  async function refreshMe() {
+    if (!screenMe) return;
+    try {
+      const me = await fetch('/api/me').then((r) => r.json());
+      const prof = await fetch(withChar('/api/profile')).then((r) => r.json());
+      const wal = await fetch('/api/wallet').then((r) => r.json());
+      const p = (prof && prof.profile) || {};
+      const display = p.displayName || (me.user && me.user.username) || '—';
+      const el = (id) => document.getElementById(id);
+      if (el('me-display')) el('me-display').textContent = display;
+      if (el('me-username')) el('me-username').textContent = me.user ? ('@' + me.user.username) : '';
+      if (el('me-call')) el('me-call').textContent = p.callName || '—';
+      if (el('me-charnick')) el('me-charnick').textContent = p.characterNickname || '백현';
+      if (el('me-balance')) el('me-balance').textContent = String(wal.balance ?? 0);
+    } catch (_) { /* ignore */ }
+  }
+
+  function switchMainTab(tab) {
+    if (roomOpen) closeRoom();
+    mainTab = tab;
+    if (screenList) screenList.hidden = tab !== 'chat';
+    if (screenMe) screenMe.hidden = tab !== 'me';
+    if (window.Moments) {
+      if (tab === 'moments') window.Moments.open({ asTab: true });
+      else if (window.Moments.isOpen && window.Moments.isOpen()) window.Moments.close();
+    }
+    document.querySelectorAll('.tab-item').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    setTabBarVisible(true);
+    if (tab === 'me') refreshMe();
+  }
+
+  if (tabBar) {
+    tabBar.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-item');
+      if (!btn) return;
+      switchMainTab(btn.dataset.tab);
+    });
+  }
+  document.addEventListener('idol-tab', (e) => {
+    if (e.detail && e.detail.tab) switchMainTab(e.detail.tab);
+  });
+  const meRecharge = document.getElementById('me-recharge');
+  if (meRecharge) meRecharge.addEventListener('click', () => {
+    location.href = '/shell/recharge.html?c=' + encodeURIComponent(CHARACTER_ID) + '&from=chat';
+  });
+  const meMemory = document.getElementById('me-memory');
+  if (meMemory) meMemory.addEventListener('click', () => {
+    const b = document.getElementById('memory-open-menu');
+    if (b) b.click();
+  });
+  const meLogout = document.getElementById('me-logout');
+  if (meLogout) meLogout.addEventListener('click', () => logout());
+  const meReset = document.getElementById('me-reset');
+  if (meReset) meReset.addEventListener('click', async () => {
+    if (!confirm('重新走封面→选人→认识引导？当前聊天记录不会删。')) return;
+    try {
+      await fetch(withChar('/api/profile'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboarded: false }),
+      });
+      location.href = '/shell/cover.html';
+    } catch (_) { showToast('操作失败'); }
+  });
+
   function openRoom() {
     roomOpen = true;
+    setTabBarVisible(false);
+    if (window.Moments && window.Moments.isOpen && window.Moments.isOpen()) window.Moments.close();
     room.classList.add('open');
     room.setAttribute('aria-hidden', 'false');
     room.inert = false;
@@ -701,6 +782,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     room.inert = true;
     themeMeta.setAttribute('content', '#ffffff');
     updateList();
+    switchMainTab(mainTab === 'moments' || mainTab === 'me' ? 'chat' : mainTab);
     document.getElementById('open-chat').focus();
   }
 

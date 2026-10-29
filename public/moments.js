@@ -164,7 +164,9 @@
     for (const p of posts) feed.appendChild(card(p));
   }
 
-  async function open() {
+  async function open(opts) {
+    const asTab = Boolean(opts && opts.asTab);
+    panel.classList.toggle('tab-mode', asTab);
     const menu = document.getElementById('menu');
     if (menu) menu.hidden = true;
     const ps = document.getElementById('profile-sheet');
@@ -178,12 +180,25 @@
       render(d.posts || []);
     } catch (_) { toast('加载失败'); }
   }
-  function close() { panel.hidden = true; }
+  function close() {
+    panel.hidden = true;
+    panel.classList.remove('tab-mode');
+  }
+  window.Moments = { open, close, isOpen: () => !panel.hidden };
+
 
   ['moments-open-menu', 'moments-open-profile'].forEach((id) => {
     const b = document.getElementById(id);
     if (b) b.addEventListener('click', open);
   });
-  document.getElementById('mom-back').addEventListener('click', close);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panel.hidden) close(); });
+  document.getElementById('mom-back').addEventListener('click', () => {
+    if (panel.classList.contains('tab-mode')) {
+      document.dispatchEvent(new CustomEvent('idol-tab', { detail: { tab: 'chat' } }));
+    } else close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || panel.hidden) return;
+    if (panel.classList.contains('tab-mode')) document.dispatchEvent(new CustomEvent('idol-tab', { detail: { tab: 'chat' } }));
+    else close();
+  });
 })();
