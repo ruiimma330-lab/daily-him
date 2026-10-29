@@ -20,5 +20,42 @@
   "_junho_backup": {
     "voiceId": "HrAPO433QYkPmU4F4CHw",
     "ttsModel": "eleven_multilingual_v2"
+  },
+  "relationship": {
+    "_note": "score = 每个有聊天的自然日 +6 分，每轮 +1 分（每天最多 8 分）；档位需同时满足分数和相识天数",
+    "pointsPerActiveDay": 6,
+    "pointsPerTurn": 1,
+    "maxTurnPointsPerDay": 8,
+    "streakGraceDays": 1,
+    "tiers": [
+      {
+        "id": "stranger",
+        "name": "陌生",
+        "nameKo": "처음",
+        "minScore": 0,
+        "minDaysKnown": 1
+      },
+      {
+        "id": "friend",
+        "name": "朋友",
+        "nameKo": "친구",
+        "minScore": 15,
+        "minDaysKnown": 2
+      },
+      {
+        "id": "close",
+        "name": "好友",
+        "nameKo": "절친",
+        "minScore": 45,
+        "minDaysKnown": 4
+      },
+      {
+        "id": "flirty",
+        "name": "暧昧",
+        "nameKo": "썸",
+        "minScore": 90,
+        "minDaysKnown": 6
+      }
+    ]
   }
 }

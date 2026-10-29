@@ -143,6 +143,66 @@
     }
   }
 
+
+  let relState = null;
+  const TIER_LABEL = { stranger: '陌生 · 처음', friend: '朋友 · 친구', close: '好友 · 절친', flirty: '暧昧 · 썸' };
+  function renderSpark() {
+    const node = document.getElementById('spark');
+    if (!node || !relState) return;
+    node.hidden = false;
+    node.className = `spark ${relState.streakState}`;
+    node.textContent = `🔥${relState.streak || 0}`;
+    node.title = '连续聊天天数';
+  }
+  function renderRelPop() {
+    const pop = document.getElementById('rel-pop');
+    if (!pop || !relState) return;
+    const tip = {
+      lit: '今天的火花已点亮 ✨',
+      waiting: '今天还没聊，聊一句就能续上火花~',
+      dim: '火花变灰了，今天聊一句就能恢复 🙂',
+      out: '火花熄灭了，再聊就重新开始点亮',
+      none: '聊第一句就会点亮火花',
+    }[relState.streakState] || '';
+    pop.innerHTML = '';
+    const lines = [
+      `相识第 <b>${relState.daysKnown || 0}</b> 天 · 一共聊了 ${relState.totalTurns} 次`,
+      `现在的关系：<b>${TIER_LABEL[relState.tier.id] || relState.tier.name}</b>`,
+      `连续聊天 🔥 ${relState.streak || 0} 天`,
+      `<small>${tip}</small>`,
+    ];
+    pop.innerHTML = lines.join('<br>');
+  }
+  function applyRelationship(rel, fromChat) {
+    if (!rel || !rel.tier) return;
+    const wasUp = fromChat && rel.tierUp;
+    relState = rel;
+    renderSpark();
+    renderRelPop();
+    if (wasUp) showToast(`和백현的关系变近了一点：${TIER_LABEL[rel.tier.id] || rel.tier.name} 💛`);
+  }
+  async function loadRelationship() {
+    try {
+      const r = await fetch('/api/relationship');
+      if (!r.ok) return;
+      const d = await r.json();
+      applyRelationship(d.relationship, false);
+    } catch (_) { /* ignore */ }
+  }
+  document.addEventListener('click', (e) => {
+    const spark = e.target.closest && e.target.closest('#spark');
+    const pop = document.getElementById('rel-pop');
+    if (!pop) return;
+    if (spark) {
+      e.preventDefault();
+      e.stopPropagation();
+      pop.hidden = !pop.hidden;
+    } else if (!e.target.closest('#rel-pop')) {
+      pop.hidden = true;
+    }
+  }, true);
+  loadRelationship();
+
   async function pullHistoryFromServer() {
     const response = await fetch('/api/history');
     if (response.status === 401) {
@@ -706,6 +766,7 @@
       }
       if (!response.ok) throw new Error('chat failed');
       const data = await response.json();
+      if (data.relationship) applyRelationship(data.relationship, true);
       const bubbles = Array.isArray(data.bubbles)
         ? data.bubbles.map((bubble) => String(bubble).trim()).filter(Boolean).slice(0, 4)
         : [];

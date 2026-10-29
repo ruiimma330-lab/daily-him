@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const store = require('./lib/store');
+const relationship = require('./lib/relationship');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -80,6 +81,17 @@ function readMoodTags(source) {
     tags[String(key).toLowerCase()] = value;
   }
   return tags;
+}
+
+function buildRelationshipPrompt(base, tierId, rel) {
+  const m = base.match(/<!-- RELATIONSHIP_TIERS_START -->([\s\S]*?)<!-- RELATIONSHIP_TIERS_END -->/);
+  if (!m) return base;
+  const block = m[1];
+  const intro = block.split(/\n### /)[0].trim();
+  const sec = block.split(/\n### /).slice(1).find((part) => part.startsWith(`${tierId}\n`));
+  const body = sec ? sec.slice(tierId.length + 1).trim() : '';
+  const facts = rel ? `\n(참고: 에리랑 알게 된 지 ${rel.daysKnown}일째, 지금까지 ${rel.totalTurns}번 대화했어. 숫자를 굳이 말하지는 마.)` : '';
+  return `${base.replace(m[0], '').trim()}\n\n${intro}\n\n## 현재 관계 단계\n${body}${facts}`;
 }
 
 function loadSystemPrompt() {
@@ -637,6 +649,16 @@ function createApp() {
     res.json({ messages: [] });
   });
 
+  app.get('/api/relationship', requireUser, (req, res) => {
+    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId)) });
+  });
+
+  app.delete('/api/relationship', requireUser, (req, res) => {
+    if (!req.body || req.body.confirm !== 'RESET') return res.status(400).json({ error: 'confirm required' });
+    relationship.reset(req.userId);
+    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId)) });
+  });
+
   app.get('/api/health', (req, res) => {
     const config = resolveRuntimeConfig();
     res.json({
@@ -663,7 +685,8 @@ function createApp() {
 
     const config = resolveRuntimeConfig();
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
-    const systemPrompt = loadSystemPrompt() + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+    const relNow = relationship.view(relationship.load(req.userId));
+    const systemPrompt = buildRelationshipPrompt(loadSystemPrompt(), relNow.tier.id, relNow) + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     let replyText = '';
 
     try {
@@ -746,7 +769,13 @@ function createApp() {
       }
     }
 
-    const payload = { bubbles: displayBubbles, audioUrl, mood: delivery.mood };
+    let rel = null;
+    try {
+      rel = relationship.recordTurn(req.userId);
+    } catch (err) {
+      console.error('Relationship update failed');
+    }
+    const payload = { bubbles: displayBubbles, audioUrl, mood: delivery.mood, relationship: rel };
     if (audioError) payload.audioError = audioError;
     return res.json(payload);
   });
@@ -810,6 +839,7 @@ module.exports = {
   audioFileHash,
   voiceReady,
   loadSystemPrompt,
+  buildRelationshipPrompt,
   llmTimeoutMs,
   isLlmTimeout,
 };

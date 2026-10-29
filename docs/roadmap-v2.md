@@ -348,3 +348,24 @@
 ---
 
 *本文档路径：`docs/roadmap-v2.md`。业务代码与 git push 不在本次文档任务范围内。同步到用户电脑 `D:\Claude project\han` 由父代理 CopyFromBox 完成。*
+
+---
+
+## 阶段 1 实现说明（2026-10-29）
+
+**亲密度公式**（`config.json` → `relationship` 可调）：每个有聊天的自然日（Asia/Shanghai）+6 分；每轮对话 +1 分，每天最多计 8 分。即每天最多 14 分。
+
+| 档位 | 分数 | 相识天数（含当天）|
+|---|---|---|
+| 陌生 처음 | 0 | 1 |
+| 朋友 친구 | ≥15 | ≥2 |
+| 好友 절친 | ≥45 | ≥4 |
+| 暧昧 썸 | ≥90 | ≥6 |
+
+每天聊 8 轮以上：第 2 天朋友、第 4 天好友、第 7 天暧昧。相识天数门槛防止一天刷到顶。
+
+**火花规则**：当天聊过 → 🔥 亮；今天还没聊 → 正常显示等待；断 1 天 → 火花变灰，再聊一句恢复并继续累计；断 2 天及以上 → 熄灭，下次聊天从 1 重新计数。亲密度不会因断聊下降。
+
+**接口**：`GET /api/relationship`；`/api/chat` 返回 `relationship`（含 `tierUp`）；`DELETE /api/relationship`（body `{"confirm":"RESET"}`，前端暂未放按钮）。清空对话不重置关系。
+
+**人设**：`persona/system_prompt.md` 末尾分档章节，服务端只注入当前档；旧版备份 `system_prompt_v5_before_relationship.md`。
