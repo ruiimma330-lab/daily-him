@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FEE500" />
+  <title>认识一下</title>
+  <link rel="stylesheet" href="/shell/shell.css" />
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <button type="button" id="back" aria-label="返回">‹</button>
+      <h1 id="title">认识一下</h1>
+    </div>
+    <form id="form">
+      <div class="field">
+        <label id="l1" for="charNick"></label>
+        <input id="charNick" maxlength="20" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label id="l2" for="callName"></label>
+        <input id="callName" maxlength="20" required autocomplete="off" />
+      </div>
+      <div class="field">
+        <label id="l3" for="displayName"></label>
+        <input id="displayName" maxlength="20" autocomplete="off" />
+      </div>
+      <button type="submit" class="btn" id="next">进入聊天</button>
+    </form>
+    <a class="link" id="recharge" href="#"></a>
+    <p class="disclaimer" id="disclaimer"></p>
+  </div>
+  <script src="/shell/shell.js"></script>
+  <script>
+    (async () => {
+      const copy = await Shell.loadCopy();
+      const c = Shell.qs('c') || Shell.selectedCharacter();
+      document.getElementById('title').textContent = copy.onboard.title;
+      document.getElementById('l1').textContent = copy.onboard.charNickLabel;
+      document.getElementById('l2').textContent = copy.onboard.callNameLabel;
+      document.getElementById('l3').textContent = copy.onboard.displayNameLabel;
+      document.getElementById('charNick').placeholder = copy.onboard.charNickPlaceholder;
+      document.getElementById('callName').placeholder = copy.onboard.callNamePlaceholder;
+      document.getElementById('displayName').placeholder = copy.onboard.displayNamePlaceholder;
+      document.getElementById('next').textContent = copy.onboard.next;
+      document.getElementById('recharge').textContent = copy.onboard.rechargeLink;
+      document.getElementById('disclaimer').textContent = copy.disclaimer;
+      document.getElementById('back').onclick = () => Shell.go('/shell/pick.html', { c });
+      document.getElementById('recharge').onclick = (e) => {
+        e.preventDefault();
+        Shell.go('/shell/recharge.html', { c, from: 'onboard' });
+      };
+
+      try {
+        const chars = await Shell.api('/api/characters');
+        const ch = (chars.characters || []).find((x) => x.id === c);
+        if (ch) document.getElementById('charNick').placeholder = ch.displayName || ch.name;
+        const p = await Shell.api('/api/profile?characterId=' + encodeURIComponent(c));
+        if (p.profile) {
+          if (p.profile.characterNickname) document.getElementById('charNick').value = p.profile.characterNickname;
+          if (p.profile.callName) document.getElementById('callName').value = p.profile.callName;
+          if (p.profile.displayName) document.getElementById('displayName').value = p.profile.displayName;
+        }
+      } catch (_) {}
+
+      document.getElementById('form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const callName = document.getElementById('callName').value.trim();
+        if (!callName) { Shell.toast('请填写他怎么叫你'); return; }
+        const btn = document.getElementById('next');
+        btn.disabled = true;
+        try {
+          await Shell.api('/api/profile?characterId=' + encodeURIComponent(c), {
+            method: 'PUT',
+            body: JSON.stringify({
+              characterNickname: document.getElementById('charNick').value.trim(),
+              callName,
+              displayName: document.getElementById('displayName').value.trim(),
+              onboarded: true,
+            }),
+          });
+          Shell.setSelectedCharacter(c);
+          Shell.go('/shell/loading.html', { next: 'chat', c });
+        } catch (_) {
+          Shell.toast('保存失败，请重试');
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

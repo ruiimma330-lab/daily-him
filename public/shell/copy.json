@@ -1,0 +1,41 @@
+{
+  "appName": "Idol Chat",
+  "disclaimer": "角色均为 AI 模拟，非本人 · 仅供个人使用",
+  "cover": {
+    "title": "Idol Chat",
+    "subtitle": "和喜欢的爱豆，慢慢聊下去",
+    "cta": "开始",
+    "ctaContinue": "继续聊天"
+  },
+  "loading": {
+    "tips": ["正在进入…", "准备角色中…", "马上好…"]
+  },
+  "pick": {
+    "title": "选择爱豆",
+    "hint": "以后还可以再加更多角色",
+    "next": "下一步"
+  },
+  "onboard": {
+    "title": "认识一下",
+    "charNickLabel": "你怎么叫他",
+    "charNickPlaceholder": "例如：백현이、伯贤",
+    "callNameLabel": "他怎么叫你",
+    "callNamePlaceholder": "例如：에리",
+    "displayNameLabel": "你的昵称（可选）",
+    "displayNamePlaceholder": "只在自己这边显示",
+    "next": "进入聊天",
+    "rechargeLink": "先看看充值页（演示）"
+  },
+  "recharge": {
+    "title": "充值",
+    "balanceLabel": "当前余额",
+    "unit": "钻石",
+    "demoNotice": "演示，未开通支付",
+    "backChat": "返回聊天",
+    "packages": [
+      { "id": "p1", "name": "小试一下", "coins": 60, "priceLabel": "¥6" },
+      { "id": "p2", "name": "常用套餐", "coins": 300, "priceLabel": "¥30", "tag": "推荐" },
+      { "id": "p3", "name": "囤一点", "coins": 680, "priceLabel": "¥68" }
+    ]
+  }
+}

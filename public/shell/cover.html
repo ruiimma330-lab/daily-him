@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FEE500" />
+  <title>Idol Chat</title>
+  <link rel="stylesheet" href="/shell/shell.css" />
+</head>
+<body>
+  <div class="shell">
+    <div class="shell-main" id="main">
+      <div class="mark" id="mark"></div>
+      <h1 id="title">Idol Chat</h1>
+      <p class="lead" id="subtitle"></p>
+      <button type="button" class="btn" id="cta">开始</button>
+    </div>
+    <p class="disclaimer" id="disclaimer"></p>
+  </div>
+  <script src="/shell/shell.js"></script>
+  <script>
+    (async () => {
+      const copy = await Shell.loadCopy();
+      document.getElementById('title').textContent = copy.cover.title;
+      document.getElementById('subtitle').textContent = copy.cover.subtitle;
+      document.getElementById('disclaimer').textContent = copy.disclaimer;
+      const mark = document.getElementById('mark');
+      mark.innerHTML = '<img src="/icons/icon-192.png" alt="" />';
+
+      let onboarded = false;
+      try {
+        await Shell.api('/api/me');
+        const c = Shell.selectedCharacter();
+        const p = await Shell.api('/api/profile?characterId=' + encodeURIComponent(c));
+        onboarded = Boolean(p.profile && p.profile.onboardedAt);
+      } catch (_) { /* redirect handled */ }
+
+      const cta = document.getElementById('cta');
+      cta.textContent = onboarded ? copy.cover.ctaContinue : copy.cover.cta;
+      cta.addEventListener('click', () => {
+        Shell.go('/shell/loading.html', { next: onboarded ? 'chat' : 'pick', c: Shell.selectedCharacter() });
+      });
+    })();
+  </script>
+</body>
+</html>

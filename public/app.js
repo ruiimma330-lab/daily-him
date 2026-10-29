@@ -1,5 +1,15 @@
-const CHARACTER_ID = (new URLSearchParams(location.search).get('c') || 'baekhyun').toLowerCase();
+const CHARACTER_ID = (new URLSearchParams(location.search).get('c') || localStorage.getItem('idol_selected_character') || 'baekhyun').toLowerCase();
+try { localStorage.setItem('idol_selected_character', CHARACTER_ID); } catch (_) {}
 const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
+(function () {
+  // profile onboarded gate: first-time users go through shell (cover→pick→onboard)
+  if (new URLSearchParams(location.search).get('forced') === '1') return;
+  fetch(withChar('/api/profile')).then((r) => r.json()).then((d) => {
+    if (!d || !d.profile || !d.profile.onboardedAt) {
+      location.replace('/shell/cover.html');
+    }
+  }).catch(() => {});
+})();
 (function () {
   const pageFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {

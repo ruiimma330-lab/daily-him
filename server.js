@@ -8,6 +8,8 @@ const relationship = require('./lib/relationship');
 const characters = require('./lib/characters');
 const memory = require('./lib/memory');
 const moments = require('./lib/moments');
+const profile = require('./lib/profile');
+const wallet = require('./lib/wallet');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -791,7 +793,7 @@ function createApp() {
           postId: req.params.id,
           comment,
           llm: makeLlm(keys.chatKey, config.llmModel),
-          userName: meta.defaultUserName || '',
+          userName: profile.callNameFor(req.userId, req.characterId) || meta.defaultUserName || '',
         });
         if (process.env.MOMENTS_SYNC === '1') reply = await task;
         else task.catch(() => {});
@@ -808,6 +810,30 @@ function createApp() {
         reply: reply || comment.reply || null,
       },
     });
+  });
+
+  app.get('/api/profile', requireUser, requireCharacter, (req, res) => {
+    res.json({ ok: true, profile: profile.load(req.userId, req.characterId) });
+  });
+
+  app.put('/api/profile', requireUser, requireCharacter, (req, res) => {
+    const body = req.body || {};
+    const saved = profile.save(req.userId, req.characterId, body);
+    res.json({ ok: true, profile: saved });
+  });
+
+  app.get('/api/wallet', requireUser, (req, res) => {
+    res.json({ ok: true, ...wallet.load(req.userId) });
+  });
+
+  app.post('/api/wallet/purchase', requireUser, (req, res) => {
+    try {
+      const result = wallet.purchase(req.userId, req.body && req.body.packageId);
+      return res.json({ ok: true, ...result });
+    } catch (err) {
+      if (err.code === 'UNKNOWN_PACKAGE') return res.status(400).json({ error: 'unknown package' });
+      throw err;
+    }
   });
 
   app.get('/api/characters', requireUser, (req, res) => {
@@ -854,14 +880,14 @@ function createApp() {
     const relNow = relationship.view(relationship.load(req.userId, req.characterId));
     const lastUser = [...recent].reverse().find((m) => m.role === 'user');
     const lastUserText = lastUser ? lastUser.content : '';
-    const userName = (characters.loadMeta(req.characterId).defaultUserName) || '';
+    const userName = profile.callNameFor(req.userId, req.characterId);
     const memBlock = memory.promptBlock(req.userId, req.characterId, lastUserText, userName);
     const openings = [...new Set([...memory.recentOpenings(req.userId, req.characterId), ...recentOpenings(recent)])].slice(-6);
     const want = suggestCount(lastUserText);
     const memoryPrompt = (memBlock ? `\n\n${memBlock}` : '')
       + (openings.length ? `\n\n## 반복 피하기\n네 최근 답장 첫머리: ${openings.map((o) => `「${o}」`).join(' ')}\n이번 답장은 이것들과 다른 말로 시작하고, 다른 문장 구조로 말해.` : '')
       + `\n\n## 이번 답장\n이번엔 음성 ${want}개로 보내(상황상 정말 어색하면 ±1).`;
-    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow) + memoryPrompt + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow, userName) + memoryPrompt + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     let replyText = '';
 
     for (let attempt = 0; attempt < 2 && !replyText.trim(); attempt += 1) {

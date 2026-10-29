@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FEE500" />
+  <title>选择爱豆</title>
+  <link rel="stylesheet" href="/shell/shell.css" />
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <button type="button" id="back" aria-label="返回">‹</button>
+      <h1 id="title">选择爱豆</h1>
+    </div>
+    <p class="lead" id="hint" style="margin-bottom:8px"></p>
+    <div class="char-list" id="list"></div>
+    <button type="button" class="btn" id="next" disabled>下一步</button>
+    <p class="disclaimer" id="disclaimer"></p>
+  </div>
+  <script src="/shell/shell.js"></script>
+  <script>
+    (async () => {
+      const copy = await Shell.loadCopy();
+      document.getElementById('title').textContent = copy.pick.title;
+      document.getElementById('hint').textContent = copy.pick.hint;
+      document.getElementById('next').textContent = copy.pick.next;
+      document.getElementById('disclaimer').textContent = copy.disclaimer;
+      document.getElementById('back').onclick = () => Shell.go('/shell/cover.html');
+
+      const data = await Shell.api('/api/characters');
+      const list = document.getElementById('list');
+      let selected = Shell.qs('c') || data.defaultId || (data.characters[0] && data.characters[0].id);
+      const next = document.getElementById('next');
+
+      function paint() {
+        list.querySelectorAll('.char-card').forEach((el) => {
+          el.classList.toggle('selected', el.dataset.id === selected);
+        });
+        next.disabled = !selected;
+      }
+
+      for (const ch of data.characters || []) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'char-card';
+        btn.dataset.id = ch.id;
+        btn.innerHTML = `<span class="av"><img src="${ch.avatar}" alt="" /></span>
+          <span class="meta"><b>${ch.displayName || ch.name}${ch.displayEmoji ? ' ' + ch.displayEmoji : ''}</b>
+          <span>${ch.id}</span></span>`;
+        btn.addEventListener('click', () => { selected = ch.id; paint(); });
+        list.appendChild(btn);
+      }
+      paint();
+      next.addEventListener('click', () => {
+        Shell.setSelectedCharacter(selected);
+        Shell.go('/shell/loading.html', { next: 'onboard', c: selected });
+      });
+    })().catch(() => {});
+  </script>
+</body>
+</html>

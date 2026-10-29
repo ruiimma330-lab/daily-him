@@ -294,7 +294,7 @@
             accountError.textContent = '잠시 후 다시 해 주세요.';
             return;
           }
-          location.href = '/';
+          location.href = '/shell/cover.html';
         } catch (err) {
           accountError.textContent = '연결을 확인해 주세요.';
         } finally {
@@ -306,7 +306,7 @@
         .then((r) => r.json())
         .then((cfg) => {
           if (cfg && cfg.loggedIn) {
-            location.href = '/';
+            location.href = '/shell/cover.html';
             return;
           }
           if (cfg && cfg.siteGate && !cfg.siteUnlocked) {

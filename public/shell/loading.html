@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#FEE500" />
+  <title>加载中</title>
+  <link rel="stylesheet" href="/shell/shell.css" />
+</head>
+<body>
+  <div class="shell">
+    <div class="shell-main">
+      <div class="mark"><img src="/icons/icon-192.png" alt="" /></div>
+      <p class="lead" id="tip">正在进入…</p>
+      <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+    </div>
+  </div>
+  <script src="/shell/shell.js"></script>
+  <script>
+    (async () => {
+      const copy = await Shell.loadCopy();
+      const tips = copy.loading.tips || ['…'];
+      const tip = document.getElementById('tip');
+      let i = 0;
+      tip.textContent = tips[0];
+      const timer = setInterval(() => { i = (i + 1) % tips.length; tip.textContent = tips[i]; }, 700);
+      const next = Shell.qs('next') || 'pick';
+      const c = Shell.qs('c') || Shell.selectedCharacter();
+      await new Promise((r) => setTimeout(r, 1200));
+      clearInterval(timer);
+      if (next === 'chat') Shell.go('/', { c });
+      else if (next === 'onboard') Shell.go('/shell/onboard.html', { c });
+      else if (next === 'recharge') Shell.go('/shell/recharge.html', { c });
+      else Shell.go('/shell/pick.html', { c });
+    })();
+  </script>
+</body>
+</html>
