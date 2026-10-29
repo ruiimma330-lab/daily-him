@@ -5,26 +5,18 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const store = require('./lib/store');
 const relationship = require('./lib/relationship');
+const characters = require('./lib/characters');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const AUDIO_DIR = path.join(ROOT, 'cache', 'audio');
 const CONFIG_PATH = path.join(ROOT, 'config.json');
-const PERSONA_PATH = path.join(ROOT, 'persona', 'system_prompt.md');
 
 const BCRYPT_ROUNDS = 10;
 const USERNAME_RE = /^[a-zA-Z0-9_]{3,32}$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
 const HISTORY_BODY_LIMIT = '1mb';
-
-const FALLBACK_PROMPT = [
-  '너는 카카오톡으로 이야기하는 친근한 AI 모의 캐릭터 백현이야.',
-  '실제 인물이 아니며, 사생활은 알지 못해.',
-  '반말로 짧고 다정하게 한국어로만 답해.',
-  '한 턴에 1~3개의 짧은 메시지를 보내고, 각 메시지는 줄바꿈으로 구분해.',
-  '지문이나 서술은 쓰지 마.',
-].join('\n');
 
 const GENERIC_LLM_ERROR = 'Chat service is unavailable. Please try again.';
 
@@ -58,8 +50,10 @@ function readConfigFile() {
   return {};
 }
 
-function resolveRuntimeConfig() {
-  const file = readConfigFile();
+function resolveRuntimeConfig(characterId = characters.DEFAULT_CHARACTER) {
+  let meta = {};
+  try { meta = characters.loadMeta(characterId); } catch (_) { meta = {}; }
+  const file = { ...readConfigFile(), ...meta };
   return {
     llmModel: readEnv('LLM_MODEL') || file.llmModel || 'deepseek-v4-pro',
     ttsModel: readEnv('TTS_MODEL') || file.ttsModel || 'eleven_flash_v2_5',
@@ -81,27 +75,6 @@ function readMoodTags(source) {
     tags[String(key).toLowerCase()] = value;
   }
   return tags;
-}
-
-function buildRelationshipPrompt(base, tierId, rel) {
-  const m = base.match(/<!-- RELATIONSHIP_TIERS_START -->([\s\S]*?)<!-- RELATIONSHIP_TIERS_END -->/);
-  if (!m) return base;
-  const block = m[1];
-  const intro = block.split(/\n### /)[0].trim();
-  const sec = block.split(/\n### /).slice(1).find((part) => part.startsWith(`${tierId}\n`));
-  const body = sec ? sec.slice(tierId.length + 1).trim() : '';
-  const facts = rel ? `\n(참고: 에리랑 알게 된 지 ${rel.daysKnown}일째, 지금까지 ${rel.totalTurns}번 대화했어. 숫자를 굳이 말하지는 마.)` : '';
-  return `${base.replace(m[0], '').trim()}\n\n${intro}\n\n## 현재 관계 단계\n${body}${facts}`;
-}
-
-function loadSystemPrompt() {
-  try {
-    const text = fs.readFileSync(PERSONA_PATH, 'utf8').trim();
-    if (text) return text;
-  } catch (err) {
-    if (err.code !== 'ENOENT') console.error('Could not read persona prompt');
-  }
-  return FALLBACK_PROMPT;
 }
 
 function parseMood(text) {
@@ -453,6 +426,14 @@ function requireUser(req, res, next) {
   return next();
 }
 
+function requireCharacter(req, res, next) {
+  const raw = (req.query && req.query.characterId) || (req.body && req.body.characterId) || '';
+  const id = characters.resolveId(raw);
+  if (!id) return res.status(404).json({ error: 'unknown character' });
+  req.characterId = id;
+  return next();
+}
+
 function validateUsername(username) {
   return typeof username === 'string' && USERNAME_RE.test(username.trim());
 }
@@ -634,33 +615,46 @@ function createApp() {
     res.json({ ok: true, user: req.user });
   });
 
-  app.get('/api/history', requireUser, (req, res) => {
-    const messages = store.getHistory(req.userId);
+  app.get('/api/history', requireUser, requireCharacter, (req, res) => {
+    const messages = store.getHistory(req.userId, req.characterId);
     res.json({ messages });
   });
 
-  app.put('/api/history', requireUser, (req, res) => {
-    const messages = store.putHistory(req.userId, req.body && req.body.messages);
+  app.put('/api/history', requireUser, requireCharacter, (req, res) => {
+    const messages = store.putHistory(req.userId, req.characterId, req.body && req.body.messages);
     res.json({ messages });
   });
 
-  app.delete('/api/history', requireUser, (req, res) => {
-    store.deleteHistory(req.userId);
+  app.delete('/api/history', requireUser, requireCharacter, (req, res) => {
+    store.deleteHistory(req.userId, req.characterId);
     res.json({ messages: [] });
   });
 
-  app.get('/api/relationship', requireUser, (req, res) => {
-    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId)) });
+  app.get('/api/relationship', requireUser, requireCharacter, (req, res) => {
+    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId, req.characterId)) });
   });
 
-  app.delete('/api/relationship', requireUser, (req, res) => {
+  app.delete('/api/relationship', requireUser, requireCharacter, (req, res) => {
     if (!req.body || req.body.confirm !== 'RESET') return res.status(400).json({ error: 'confirm required' });
-    relationship.reset(req.userId);
-    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId)) });
+    relationship.reset(req.userId, req.characterId);
+    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId, req.characterId)) });
+  });
+
+  app.get('/api/characters', requireUser, (req, res) => {
+    res.json({ ok: true, defaultId: characters.DEFAULT_CHARACTER, characters: characters.list() });
+  });
+
+  app.get('/characters/:id/avatar', requireUser, (req, res) => {
+    const id = characters.resolveId(req.params.id);
+    if (!id) return res.status(404).end();
+    const meta = characters.loadMeta(id);
+    const file = path.join(characters.CHAR_DIR, id, path.basename(meta.avatar || 'avatar.svg'));
+    if (!fs.existsSync(file)) return res.status(404).end();
+    return res.sendFile(file);
   });
 
   app.get('/api/health', (req, res) => {
-    const config = resolveRuntimeConfig();
+    const config = resolveRuntimeConfig(characters.resolveId(req.query.characterId) || undefined);
     res.json({
       ok: true,
       model: config.llmModel,
@@ -669,7 +663,7 @@ function createApp() {
     });
   });
 
-  app.post('/api/chat', requireUser, async (req, res) => {
+  app.post('/api/chat', requireUser, requireCharacter, async (req, res) => {
     let keys;
     try {
       keys = requireKeys();
@@ -683,10 +677,10 @@ function createApp() {
       return res.status(400).json({ error: 'messages required' });
     }
 
-    const config = resolveRuntimeConfig();
+    const config = resolveRuntimeConfig(req.characterId);
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
-    const relNow = relationship.view(relationship.load(req.userId));
-    const systemPrompt = buildRelationshipPrompt(loadSystemPrompt(), relNow.tier.id, relNow) + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+    const relNow = relationship.view(relationship.load(req.userId, req.characterId));
+    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow) + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     let replyText = '';
 
     try {
@@ -771,7 +765,7 @@ function createApp() {
 
     let rel = null;
     try {
-      rel = relationship.recordTurn(req.userId);
+      rel = relationship.recordTurn(req.userId, req.characterId);
     } catch (err) {
       console.error('Relationship update failed');
     }
@@ -838,8 +832,7 @@ module.exports = {
   resolveRuntimeConfig,
   audioFileHash,
   voiceReady,
-  loadSystemPrompt,
-  buildRelationshipPrompt,
+  buildPrompt: characters.buildPrompt,
   llmTimeoutMs,
   isLlmTimeout,
 };

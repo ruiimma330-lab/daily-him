@@ -1,3 +1,5 @@
+const CHARACTER_ID = (new URLSearchParams(location.search).get('c') || 'baekhyun').toLowerCase();
+const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
 (function () {
   const pageFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
@@ -10,7 +12,7 @@
     });
   };
 
-  const HISTORY_KEY = 'idolchat_history_v1';
+  const HISTORY_KEY = CHARACTER_ID === 'baekhyun' ? 'idolchat_history_v1' : `${'idolchat_history_v1'}:${CHARACTER_ID}`;
   const SETTINGS_KEY = 'idolchat_settings_v1';
   const CLIENT_TIMEOUT_MS = 100000;
   const RETRY_TEXT = '앗 미안 ㅠㅠ 잠깐 신호가 안 좋았나 봐… 다시 보내줄래? 🐶';
@@ -126,7 +128,7 @@
     historySyncing = true;
     const snapshot = historySnapshot();
     try {
-      const response = await fetch('/api/history', {
+      const response = await fetch(withChar('/api/history'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: snapshot }),
@@ -183,7 +185,7 @@
   }
   async function loadRelationship() {
     try {
-      const r = await fetch('/api/relationship');
+      const r = await fetch(withChar('/api/relationship'));
       if (!r.ok) return;
       const d = await r.json();
       applyRelationship(d.relationship, false);
@@ -204,7 +206,7 @@
   loadRelationship();
 
   async function pullHistoryFromServer() {
-    const response = await fetch('/api/history');
+    const response = await fetch(withChar('/api/history'));
     if (response.status === 401) {
       location.href = '/login';
       return null;
@@ -688,7 +690,7 @@
     setMenu(false);
     render();
     try {
-      const response = await fetch('/api/history', { method: 'DELETE' });
+      const response = await fetch(withChar('/api/history'), { method: 'DELETE' });
       if (response.status === 401) {
         location.href = '/login';
         return;
@@ -752,7 +754,7 @@
     render();
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch(withChar('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: historyPayload(), voice: settings.voice }),

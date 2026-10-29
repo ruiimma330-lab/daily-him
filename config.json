@@ -1,26 +1,5 @@
 {
-  "voiceId": "zG6oPYFpVjyTj1zUmVTY",
-  "ttsModel": "eleven_v3",
-  "voiceSettings": {
-    "stability": 0.0,
-    "similarity_boost": 0.85
-  },
-  "speechPrefix": "[playful] ",
-  "moodTags": {
-    "playful": "[playful]",
-    "excited": "[happy] [chuckles]",
-    "shy": "[shy] [whispers]",
-    "soft": "[whispers]",
-    "sweet": "[whispers]",
-    "sulky": "[sulky]",
-    "laughing": "[chuckles]"
-  },
-  "defaultMood": "playful",
   "llmModel": "deepseek-flash",
-  "_junho_backup": {
-    "voiceId": "HrAPO433QYkPmU4F4CHw",
-    "ttsModel": "eleven_multilingual_v2"
-  },
   "relationship": {
     "_note": "score = 每个有聊天的自然日 +6 分，每轮 +1 分（每天最多 8 分）；档位需同时满足分数和相识天数",
     "pointsPerActiveDay": 6,
@@ -57,5 +36,6 @@
         "minDaysKnown": 6
       }
     ]
-  }
+  },
+  "_note": "角色相关（voiceId/ttsModel/voiceSettings/moodTags 等）已移到 characters/<id>/character.json；这里只放全局配置"
 }
