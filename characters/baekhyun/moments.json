@@ -1,0 +1,46 @@
+{
+  "_note": "手工策展。只放有公开来源的真实活动，改写成第一人称发朋友圈语气。几天更新一次，不自动爬。source 仅内部参考，前端默认不展示。",
+  "updatedAt": "2026-10-29",
+  "posts": [
+    {
+      "id": "m20261006",
+      "publishedAt": "2026-10-06T22:30:00+08:00",
+      "ko": "大连도 이렇게 끝~ 세 도시 돌면서 에리들 얼굴 보니까 진짜 힘이 나더라.\n피곤하긴 한데… 행복했어. 조심히 들어가 🐶",
+      "zh": "大连也这样结束啦~ 转完三个城市，看到你们的脸真的好有劲。\n累是累… 但很幸福。小心回去呀 🐶",
+      "source": "StarDream「2026 BAEKHYUN LAND」大连站 2026-10-06；Korea Herald 2026-09 报道三城行程",
+      "sourceUrl": "https://www.koreaherald.com/article/10876958"
+    },
+    {
+      "id": "m20261004",
+      "publishedAt": "2026-10-04T21:40:00+08:00",
+      "ko": "青岛 바다 바람 맞으면서 오늘도 잘 만났어.\n이런 날 있으면 스케줄이 아무리 빡세도 괜찮은 것 같아 ㅎㅎ",
+      "zh": "青岛吹着海风，今天也好好见了一面。\n有这种日子，再累的行程好像也没关系 ㅎㅎ",
+      "source": "StarDream「2026 BAEKHYUN LAND：QINGDAO」2026-10-04；Korea Herald",
+      "sourceUrl": "https://www.koreaherald.com/article/10876958"
+    },
+    {
+      "id": "m20261002",
+      "publishedAt": "2026-10-02T23:10:00+08:00",
+      "ko": "上海 밤이 예쁘더라… 외滩 쪽 불빛 보면서 왔다가, 오늘 에리들 덕분에 하루가 길었는데도 기분 좋다.\nBAEKHYUN LAND 첫 도시 끝! 다음 도시도 조심히 갈게~",
+      "zh": "上海的夜色好漂亮… 看着外滩那边的灯过来的。今天因为你们，一天很长，但心情很好。\nBAEKHYUN LAND 第一城结束！下一城也会小心去~",
+      "source": "StarDream「2026 BAEKHYUN LAND：SHANGHAI」2026-10-02；Korea Herald；新浪/微博通稿",
+      "sourceUrl": "https://www.koreaherald.com/article/10876958"
+    },
+    {
+      "id": "m20260928",
+      "publishedAt": "2026-09-28T01:20:00+08:00",
+      "ko": "타이베이 Krazy Festival 끝~ 강가에서 노래하니까 바람도 좋고 목소리도 잘 나더라.\nCandy 부를 때 떼창 진짜 미쳤어… 고마워. 이제 좀 쉴게 ㅎㅎ",
+      "zh": "台北 Krazy Festival 结束~ 在河边唱歌风也好，状态也不错。\n唱 Candy 的时候大合唱真的疯了… 谢谢。现在去歇一会儿 ㅎㅎ",
+      "source": "Live Nation / setlist.fm：Krazy Music Festival Taipei 2026-09-27，大佳河滨公园；曲目含 Candy、UN Village 等",
+      "sourceUrl": "https://www.livenation.com/artist/K8vZ917rG80/baekhyun-events"
+    },
+    {
+      "id": "m20261029",
+      "publishedAt": "2026-10-29T18:00:00+08:00",
+      "ko": "요즘 중국 스케줄 돌고 와서 좀 쉬고 있어.\n그러고 보니 CBX 데뷔한 지… 벌써 거의 10년? 10월 31일 생각하면 만감이 교차하네.\n그때 Hey Mama! 부르던 우리가 아직도 이렇게 있구나.",
+      "zh": "最近中国行程转完，在稍微休息。\n这么一想，CBX 出道… 都快十年了？一想到 10 月 31 日就百感交集。\n那时唱着 Hey Mama! 的我们，居然还在这样。",
+      "source": "公开事实：EXO-CBX 2016-10-31「Hey Mama!」出道（本仓库 facts.md #15）；发帖日为十周年前两天，不编造未公开活动",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Exo-CBX"
+    }
+  ]
+}

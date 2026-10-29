@@ -75,6 +75,7 @@
           <span>음성 자동 재생</span>
           <span class="switch" aria-hidden="true"></span>
         </button>
+        <button type="button" class="menu-row" id="moments-open-menu"><span>朋友圈 ✨</span></button>
         <button type="button" class="menu-row" id="memory-open-menu"><span>他记得的事 💭</span></button>
         <button type="button" class="danger" id="clear-btn">대화 기록 삭제</button>
         <button type="button" class="danger" id="logout-btn">로그아웃</button>
@@ -105,6 +106,7 @@
           <p class="sheet-title" id="profile-title">백현 🐶</p>
           <p class="profile-status">심심하면 말 걸어줘 🐶</p>
         </div>
+        <button type="button" class="sheet-close mem-entry" id="moments-open-profile">朋友圈 ✨</button>
         <button type="button" class="sheet-close mem-entry" id="memory-open-profile">他记得的事 💭</button>
         
         <button type="button" class="sheet-close" id="profile-close">닫기</button>
@@ -130,6 +132,21 @@
         </div>
       </div>
     </div>
+
+    <section class="mom-panel" id="mom-panel" hidden aria-labelledby="mom-title">
+      <header class="mom-head">
+        <button type="button" class="mom-back" id="mom-back" aria-label="返回">‹</button>
+        <h2 id="mom-title">朋友圈</h2>
+        <span class="mom-head-pad"></span>
+      </header>
+      <div class="mom-hero">
+        <span class="avatar lg" data-avatar aria-hidden="true"></span>
+        <p class="mom-hero-name">백현 🐶</p>
+        <p class="mom-hero-sub">几天更新一次 · 文字动态</p>
+      </div>
+      <div class="mom-feed" id="mom-feed"></div>
+      <p class="mom-empty" id="mom-empty" hidden>还没有动态</p>
+    </section>
 
     <section class="mem-panel" id="mem-panel" hidden aria-labelledby="mem-title">
       <header class="mem-head">
@@ -169,5 +186,6 @@
   </template>
   <script src="/app.js"></script>
   <script src="/memory.js"></script>
+  <script src="/moments.js"></script>
 </body>
 </html>

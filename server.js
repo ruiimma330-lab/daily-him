@@ -7,6 +7,7 @@ const store = require('./lib/store');
 const relationship = require('./lib/relationship');
 const characters = require('./lib/characters');
 const memory = require('./lib/memory');
+const moments = require('./lib/moments');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -747,6 +748,66 @@ function createApp() {
     if (!req.body || req.body.confirm !== 'CLEAR') return res.status(400).json({ error: 'confirm required' });
     await memory.clearAll(req.userId, req.characterId);
     return res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
+  });
+
+  app.get('/api/moments', requireUser, requireCharacter, (req, res) => {
+    res.json({ ok: true, posts: moments.list(req.userId, req.characterId) });
+  });
+
+  app.post('/api/moments/:id/like', requireUser, requireCharacter, (req, res) => {
+    const result = moments.toggleLike(req.userId, req.characterId, req.params.id);
+    if (!result) return res.status(404).json({ error: 'not found' });
+    return res.json({ ok: true, ...result });
+  });
+
+  app.get('/api/moments/:id/comments', requireUser, requireCharacter, (req, res) => {
+    if (!moments.loadPosts(req.characterId).some((p) => p.id === req.params.id)) {
+      return res.status(404).json({ error: 'not found' });
+    }
+    res.json({ ok: true, comments: moments.commentsFor(req.userId, req.characterId, req.params.id) });
+  });
+
+  app.post('/api/moments/:id/comments', requireUser, requireCharacter, async (req, res) => {
+    let comment;
+    try {
+      comment = moments.addComment(req.userId, req.characterId, req.params.id, req.body && req.body.text);
+    } catch (err) {
+      if (err.code === 'EMPTY') return res.status(400).json({ error: 'text required' });
+      if (err.code === 'LIMIT') return res.status(400).json({ error: 'too many comments' });
+      throw err;
+    }
+    if (!comment) return res.status(404).json({ error: 'not found' });
+
+    const wantReply = req.body && req.body.reply !== false;
+    let reply = null;
+    if (wantReply) {
+      try {
+        const keys = requireKeys();
+        const config = resolveRuntimeConfig(req.characterId);
+        const meta = characters.loadMeta(req.characterId);
+        const task = moments.maybeReply({
+          userId: req.userId,
+          characterId: req.characterId,
+          postId: req.params.id,
+          comment,
+          llm: makeLlm(keys.chatKey, config.llmModel),
+          userName: meta.defaultUserName || '',
+        });
+        if (process.env.MOMENTS_SYNC === '1') reply = await task;
+        else task.catch(() => {});
+      } catch (err) {
+        console.error('Moments reply skipped');
+      }
+    }
+    return res.json({
+      ok: true,
+      comment: {
+        id: comment.id,
+        text: comment.text,
+        createdAt: comment.createdAt,
+        reply: reply || comment.reply || null,
+      },
+    });
   });
 
   app.get('/api/characters', requireUser, (req, res) => {
