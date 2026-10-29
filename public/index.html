@@ -75,6 +75,7 @@
           <span>음성 자동 재생</span>
           <span class="switch" aria-hidden="true"></span>
         </button>
+        <button type="button" class="menu-row" id="memory-open-menu"><span>他记得的事 💭</span></button>
         <button type="button" class="danger" id="clear-btn">대화 기록 삭제</button>
         <button type="button" class="danger" id="logout-btn">로그아웃</button>
       </div>
@@ -104,6 +105,7 @@
           <p class="sheet-title" id="profile-title">백현 🐶</p>
           <p class="profile-status">심심하면 말 걸어줘 🐶</p>
         </div>
+        <button type="button" class="sheet-close mem-entry" id="memory-open-profile">他记得的事 💭</button>
         
         <button type="button" class="sheet-close" id="profile-close">닫기</button>
       </div>
@@ -129,6 +131,24 @@
       </div>
     </div>
 
+    <section class="mem-panel" id="mem-panel" hidden aria-labelledby="mem-title">
+      <header class="mem-head">
+        <button type="button" class="mem-back" id="mem-back" aria-label="返回">‹</button>
+        <h2 id="mem-title">他记得的事</h2>
+        <span class="mem-head-pad"></span>
+      </header>
+      <div class="mem-body">
+        <p class="mem-tip">这些是他从聊天里记住的、关于你的事。删掉的不会再被记回来。</p>
+        <div class="mem-summary" id="mem-summary" hidden>
+          <p class="mem-label">之前聊过的（摘要）</p>
+          <p class="mem-summary-text" id="mem-summary-text"></p>
+        </div>
+        <ul class="mem-list" id="mem-list"></ul>
+        <p class="mem-empty" id="mem-empty" hidden>还没有记住什么，多聊聊吧 🐶</p>
+        <button type="button" class="mem-clear" id="mem-clear" hidden>清空全部记忆</button>
+      </div>
+    </section>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </div>
   <template id="puppy-svg">
@@ -148,5 +168,6 @@
     </svg>
   </template>
   <script src="/app.js"></script>
+  <script src="/memory.js"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const store = require('./lib/store');
 const relationship = require('./lib/relationship');
 const characters = require('./lib/characters');
+const memory = require('./lib/memory');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -75,6 +76,30 @@ function readMoodTags(source) {
     tags[String(key).toLowerCase()] = value;
   }
   return tags;
+}
+
+// Small DeepSeek helper for background memory work (never logs the key).
+function makeLlm(chatKey, model) {
+  return async (messages, opts = {}) => {
+    const body = { model, temperature: opts.temperature ?? 0.3, messages };
+    if (opts.json) body.response_format = { type: 'json_object' };
+    const r = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${chatKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(llmTimeoutMs()),
+    });
+    console.log(`Memory LLM call (${opts.json ? 'extract' : 'summary'}) status ${r.status}`);
+    if (!r.ok) throw new Error(`llm ${r.status}`);
+    const d = await r.json();
+    return d && d.choices && d.choices[0] && d.choices[0].message ? d.choices[0].message.content : '';
+  };
+}
+
+function recentOpenings(recent) {
+  return recent.filter((m) => m.role === 'assistant').slice(-4)
+    .map((m) => String(m.content).replace(/\[\[[\s\S]*?\]\]/g, '').trim().split('\n')[0].slice(0, 14))
+    .filter(Boolean);
 }
 
 function parseMood(text) {
@@ -640,6 +665,23 @@ function createApp() {
     res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId, req.characterId)) });
   });
 
+  app.get('/api/memory', requireUser, requireCharacter, (req, res) => {
+    res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
+  });
+
+  app.delete('/api/memory/:id', requireUser, requireCharacter, async (req, res) => {
+    if (!/^[a-f0-9]{12}$/.test(req.params.id)) return res.status(400).json({ error: 'bad id' });
+    const ok = await memory.deleteCard(req.userId, req.characterId, req.params.id);
+    if (!ok) return res.status(404).json({ error: 'not found' });
+    return res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
+  });
+
+  app.delete('/api/memory', requireUser, requireCharacter, async (req, res) => {
+    if (!req.body || req.body.confirm !== 'CLEAR') return res.status(400).json({ error: 'confirm required' });
+    await memory.clearAll(req.userId, req.characterId);
+    return res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
+  });
+
   app.get('/api/characters', requireUser, (req, res) => {
     res.json({ ok: true, defaultId: characters.DEFAULT_CHARACTER, characters: characters.list() });
   });
@@ -680,7 +722,14 @@ function createApp() {
     const config = resolveRuntimeConfig(req.characterId);
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
     const relNow = relationship.view(relationship.load(req.userId, req.characterId));
-    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow) + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+    const lastUser = [...recent].reverse().find((m) => m.role === 'user');
+    const lastUserText = lastUser ? lastUser.content : '';
+    const userName = (characters.loadMeta(req.characterId).defaultUserName) || '';
+    const memBlock = memory.promptBlock(req.userId, req.characterId, lastUserText, userName);
+    const openings = recentOpenings(recent);
+    const memoryPrompt = (memBlock ? `\n\n${memBlock}` : '')
+      + (openings.length ? `\n\n## 반복 피하기\n네 최근 답장 첫머리: ${openings.map((o) => `「${o}」`).join(' ')}\n이번 답장은 이것들과 다른 말로 시작하고, 다른 문장 구조로 말해.` : '');
+    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow) + memoryPrompt + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     let replyText = '';
 
     try {
@@ -692,7 +741,9 @@ function createApp() {
         },
         body: JSON.stringify({
           model: config.llmModel,
-          temperature: 0.9,
+          temperature: 1.0,
+          presence_penalty: 0.4,
+          frequency_penalty: 0.3,
           reasoning_effort: process.env.LLM_EFFORT || 'low',
           messages: [{ role: 'system', content: systemPrompt }, ...recent],
         }),
@@ -769,6 +820,16 @@ function createApp() {
     } catch (err) {
       console.error('Relationship update failed');
     }
+    const memTask = memory.afterTurn({
+      userId: req.userId,
+      characterId: req.characterId,
+      userText: lastUserText,
+      replyText: displayBubbles.join('\n'),
+      llm: makeLlm(keys.chatKey, config.llmModel),
+      userName,
+      getHistory: () => store.getHistory(req.userId, req.characterId),
+    });
+    if (process.env.MEMORY_SYNC === '1') await memTask; // tests only
     const payload = { bubbles: displayBubbles, audioUrl, mood: delivery.mood, relationship: rel };
     if (audioError) payload.audioError = audioError;
     return res.json(payload);
