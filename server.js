@@ -2,12 +2,20 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const bcrypt = require('bcryptjs');
+const store = require('./lib/store');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const AUDIO_DIR = path.join(ROOT, 'cache', 'audio');
 const CONFIG_PATH = path.join(ROOT, 'config.json');
 const PERSONA_PATH = path.join(ROOT, 'persona', 'system_prompt.md');
+
+const BCRYPT_ROUNDS = 10;
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,32}$/;
+const PASSWORD_MIN = 8;
+const PASSWORD_MAX = 128;
+const HISTORY_BODY_LIMIT = '1mb';
 
 const FALLBACK_PROMPT = [
   '너는 카카오톡으로 이야기하는 친근한 AI 모의 캐릭터 백현이야.',
@@ -169,19 +177,22 @@ const APP_PASSWORD = readEnv('APP_PASSWORD');
 const GATE_ENABLED = APP_PASSWORD.length > 0;
 const SESSION_SECRET = readEnv('SESSION_SECRET') || crypto.randomBytes(32).toString('hex');
 const SESSION_MAX_AGE_SEC = 30 * 24 * 60 * 60;
-const LOGIN_WINDOW_MS = 15 * 60 * 1000;
-const LOGIN_MAX_ATTEMPTS = 10;
-const LOGIN_GLOBAL_MAX_FAILURES = 100;
-const LOGIN_MAP_MAX_ENTRIES = 5000;
-const LOGIN_CLEANUP_INTERVAL_MS = 60 * 1000;
-const loginAttempts = new Map();
-const loginFailureTimes = [];
-let lastLoginCleanup = 0;
+const AUTH_WINDOW_MS = 15 * 60 * 1000;
+const AUTH_MAX_ATTEMPTS = 10;
+const AUTH_GLOBAL_MAX_FAILURES = 100;
+const AUTH_MAP_MAX_ENTRIES = 5000;
+const AUTH_CLEANUP_INTERVAL_MS = 60 * 1000;
+const authAttempts = new Map();
+const authFailureTimes = [];
+let lastAuthCleanup = 0;
 
 const PUBLIC_PATHS = new Set([
   '/login',
   '/login.html',
   '/api/login',
+  '/api/register',
+  '/api/auth-config',
+  '/api/site-login',
   '/manifest.webmanifest',
 ]);
 
@@ -189,26 +200,38 @@ function sha256Digest(value) {
   return crypto.createHash('sha256').update(String(value), 'utf8').digest();
 }
 
-function passwordMatches(supplied) {
-  return crypto.timingSafeEqual(sha256Digest(supplied), sha256Digest(APP_PASSWORD));
+function sitePasswordMatches(supplied) {
+  if (!GATE_ENABLED) return false;
+  const a = sha256Digest(supplied);
+  const b = sha256Digest(APP_PASSWORD);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
-function signSession(exp) {
-  const payload = String(exp);
+function signSession(userId, exp) {
+  const payload = `${userId}.${exp}`;
   const sig = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
   return `${payload}.${sig}`;
 }
 
 function verifySessionToken(token) {
-  if (typeof token !== 'string' || token.length > 512) return false;
+  if (typeof token !== 'string' || token.length > 512) return null;
   const parts = token.split('.');
-  if (parts.length !== 2 || !parts[0] || !parts[1]) return false;
-  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(parts[0]).digest();
-  const given = Buffer.from(parts[1], 'base64url');
-  if (given.length !== expected.length) return false;
-  if (!crypto.timingSafeEqual(given, expected)) return false;
-  const exp = Number(parts[0]);
-  return Number.isFinite(exp) && exp > Date.now();
+  if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return null;
+  const payload = `${parts[0]}.${parts[1]}`;
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest();
+  let given;
+  try {
+    given = Buffer.from(parts[2], 'base64url');
+  } catch (err) {
+    return null;
+  }
+  if (given.length !== expected.length) return null;
+  if (!crypto.timingSafeEqual(given, expected)) return null;
+  const exp = Number(parts[1]);
+  if (!Number.isFinite(exp) || exp <= Date.now()) return null;
+  if (!/^[a-f0-9]{32}$/.test(parts[0])) return null;
+  return { userId: parts[0], exp };
 }
 
 function readCookie(req, name) {
@@ -229,7 +252,7 @@ function readCookie(req, name) {
   return '';
 }
 
-function hasSession(req) {
+function getSession(req) {
   return verifySessionToken(readCookie(req, 'sid'));
 }
 
@@ -239,71 +262,115 @@ function clientIp(req) {
   return 'unknown';
 }
 
-function cleanupLoginState(now) {
-  if (now - lastLoginCleanup < LOGIN_CLEANUP_INTERVAL_MS) return;
-  lastLoginCleanup = now;
-  for (const [key, stamps] of loginAttempts) {
-    const kept = stamps.filter((ts) => now - ts < LOGIN_WINDOW_MS);
-    if (kept.length) loginAttempts.set(key, kept);
-    else loginAttempts.delete(key);
+function cleanupAuthState(now) {
+  if (now - lastAuthCleanup < AUTH_CLEANUP_INTERVAL_MS) return;
+  lastAuthCleanup = now;
+  for (const [key, stamps] of authAttempts) {
+    const kept = stamps.filter((ts) => now - ts < AUTH_WINDOW_MS);
+    if (kept.length) authAttempts.set(key, kept);
+    else authAttempts.delete(key);
   }
   let expired = 0;
-  while (expired < loginFailureTimes.length && now - loginFailureTimes[expired] >= LOGIN_WINDOW_MS) {
+  while (expired < authFailureTimes.length && now - authFailureTimes[expired] >= AUTH_WINDOW_MS) {
     expired += 1;
   }
-  if (expired) loginFailureTimes.splice(0, expired);
+  if (expired) authFailureTimes.splice(0, expired);
 }
 
 function recentGlobalFailures(now) {
   let count = 0;
-  for (let i = loginFailureTimes.length - 1; i >= 0; i -= 1) {
-    if (now - loginFailureTimes[i] >= LOGIN_WINDOW_MS) break;
+  for (let i = authFailureTimes.length - 1; i >= 0; i -= 1) {
+    if (now - authFailureTimes[i] >= AUTH_WINDOW_MS) break;
     count += 1;
   }
   return count;
 }
 
-function storeLoginAttempts(ip, stamps) {
-  if (!loginAttempts.has(ip)) {
-    while (loginAttempts.size >= LOGIN_MAP_MAX_ENTRIES) {
-      const oldest = loginAttempts.keys().next().value;
+function storeAuthAttempts(ip, stamps) {
+  if (!authAttempts.has(ip)) {
+    while (authAttempts.size >= AUTH_MAP_MAX_ENTRIES) {
+      const oldest = authAttempts.keys().next().value;
       if (oldest === undefined) break;
-      loginAttempts.delete(oldest);
+      authAttempts.delete(oldest);
     }
   }
-  loginAttempts.set(ip, stamps);
+  authAttempts.set(ip, stamps);
 }
 
-function loginAllowed(ip) {
+function authAllowed(ip) {
   const now = Date.now();
-  cleanupLoginState(now);
-  if (recentGlobalFailures(now) >= LOGIN_GLOBAL_MAX_FAILURES) return false;
-  const recent = (loginAttempts.get(ip) || []).filter((ts) => now - ts < LOGIN_WINDOW_MS);
-  if (recent.length >= LOGIN_MAX_ATTEMPTS) {
-    storeLoginAttempts(ip, recent);
+  cleanupAuthState(now);
+  if (recentGlobalFailures(now) >= AUTH_GLOBAL_MAX_FAILURES) return false;
+  const recent = (authAttempts.get(ip) || []).filter((ts) => now - ts < AUTH_WINDOW_MS);
+  if (recent.length >= AUTH_MAX_ATTEMPTS) {
+    storeAuthAttempts(ip, recent);
     return false;
   }
   recent.push(now);
-  storeLoginAttempts(ip, recent);
+  storeAuthAttempts(ip, recent);
   return true;
 }
 
-function recordLoginFailure() {
-  loginFailureTimes.push(Date.now());
+function recordAuthFailure() {
+  authFailureTimes.push(Date.now());
 }
 
-function setSessionCookie(req, res) {
+function cookieFlags(req) {
+  const parts = ['HttpOnly', 'SameSite=Lax', 'Path=/'];
+  if (process.env.NODE_ENV === 'production' || req.secure) parts.push('Secure');
+  return parts;
+}
+
+function setSessionCookie(req, res, userId) {
   const exp = Date.now() + SESSION_MAX_AGE_SEC * 1000;
-  const token = signSession(exp);
+  const token = signSession(userId, exp);
   const parts = [
-    `sid=${token}`,
-    'HttpOnly',
-    'SameSite=Lax',
-    'Path=/',
+    `sid=${encodeURIComponent(token)}`,
+    ...cookieFlags(req),
     `Max-Age=${SESSION_MAX_AGE_SEC}`,
   ];
-  if (process.env.NODE_ENV === 'production' || req.secure) parts.push('Secure');
-  res.setHeader('Set-Cookie', parts.join('; '));
+  res.append('Set-Cookie', parts.join('; '));
+}
+
+function clearSessionCookie(req, res) {
+  const parts = ['sid=', ...cookieFlags(req), 'Max-Age=0'];
+  res.append('Set-Cookie', parts.join('; '));
+}
+
+function setGateCookie(req, res) {
+  const exp = Date.now() + SESSION_MAX_AGE_SEC * 1000;
+  const payload = `gate.${exp}`;
+  const sig = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url');
+  const token = `${payload}.${sig}`;
+  const parts = [
+    `gate=${encodeURIComponent(token)}`,
+    ...cookieFlags(req),
+    `Max-Age=${SESSION_MAX_AGE_SEC}`,
+  ];
+  res.append('Set-Cookie', parts.join('; '));
+}
+
+function verifyGateToken(token) {
+  if (typeof token !== 'string' || token.length > 512) return false;
+  const parts = token.split('.');
+  if (parts.length !== 3 || parts[0] !== 'gate' || !parts[1] || !parts[2]) return false;
+  const payload = `${parts[0]}.${parts[1]}`;
+  const expected = crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest();
+  let given;
+  try {
+    given = Buffer.from(parts[2], 'base64url');
+  } catch (err) {
+    return false;
+  }
+  if (given.length !== expected.length) return false;
+  if (!crypto.timingSafeEqual(given, expected)) return false;
+  const exp = Number(parts[1]);
+  return Number.isFinite(exp) && exp > Date.now();
+}
+
+function hasGate(req) {
+  if (!GATE_ENABLED) return true;
+  return verifyGateToken(readCookie(req, 'gate'));
 }
 
 function normalizeRequestPath(req) {
@@ -324,14 +391,62 @@ function isPublicPath(p) {
   return PUBLIC_PATHS.has(p) || p.startsWith('/icons/');
 }
 
+function isGatePublicPath(p) {
+  return (
+    p === '/login'
+    || p === '/login.html'
+    || p === '/api/site-login'
+    || p === '/api/auth-config'
+    || p === '/manifest.webmanifest'
+    || p.startsWith('/icons/')
+  );
+}
+
 function gateMiddleware(req, res, next) {
   const p = normalizeRequestPath(req);
   if (p == null) return res.status(400).json({ error: 'Bad request' });
-  if (isPublicPath(p) || hasSession(req)) return next();
+
+  // Optional site-wide lock (APP_PASSWORD). Does not replace user accounts.
+  if (GATE_ENABLED && !hasGate(req) && !isGatePublicPath(p)) {
+    if (p.startsWith('/api/') || p.startsWith('/audio/')) {
+      return res.status(401).json({ error: 'Unauthorized', need: 'site' });
+    }
+    return res.redirect('/login');
+  }
+
+  if (isPublicPath(p)) return next();
+
+  const session = getSession(req);
+  if (session) {
+    req.userId = session.userId;
+    return next();
+  }
+
   if (p.startsWith('/api/') || p.startsWith('/audio/')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Unauthorized', need: 'login' });
   }
   return res.redirect('/login');
+}
+
+function requireUser(req, res, next) {
+  const session = getSession(req);
+  if (!session) return res.status(401).json({ error: 'Unauthorized' });
+  const user = store.findUserById(session.userId);
+  if (!user) {
+    clearSessionCookie(req, res);
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  req.user = { id: user.id, username: user.username };
+  req.userId = user.id;
+  return next();
+}
+
+function validateUsername(username) {
+  return typeof username === 'string' && USERNAME_RE.test(username.trim());
+}
+
+function validatePassword(password) {
+  return typeof password === 'string' && password.length >= PASSWORD_MIN && password.length <= PASSWORD_MAX;
 }
 
 function audioFileHash(voiceId, model, text) {
@@ -400,8 +515,8 @@ function createApp() {
   app.set('case sensitive routing', true);
   app.set('strict routing', false);
   app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
-  if (GATE_ENABLED) app.use(gateMiddleware);
-  app.use(express.json({ limit: '200kb' }));
+  app.use(gateMiddleware);
+  app.use(express.json({ limit: HISTORY_BODY_LIMIT }));
 
   app.get('/login', (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
@@ -412,21 +527,114 @@ function createApp() {
     res.sendFile(path.join(PUBLIC_DIR, 'manifest.webmanifest'));
   });
 
-  app.post('/api/login', (req, res) => {
-    if (!GATE_ENABLED) return res.status(404).json({ error: 'Not found' });
+  // Optional site-wide password (APP_PASSWORD). Unlock register/login UI.
+  app.post('/api/site-login', (req, res) => {
+    if (!GATE_ENABLED) return res.json({ ok: true, gate: false });
     if (process.env.NODE_ENV === 'production' && !req.secure) {
       return res.status(400).json({ error: 'https required' });
     }
-    if (!loginAllowed(clientIp(req))) {
+    if (!authAllowed(clientIp(req))) {
       return res.status(429).json({ error: 'Too many attempts' });
     }
     const supplied = req.body && typeof req.body.password === 'string' ? req.body.password : '';
-    if (!passwordMatches(supplied)) {
-      recordLoginFailure();
+    if (!sitePasswordMatches(supplied)) {
+      recordAuthFailure();
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    setSessionCookie(req, res);
+    setGateCookie(req, res);
+    return res.json({ ok: true, gate: true });
+  });
+
+  app.get('/api/auth-config', (req, res) => {
+    res.json({
+      siteGate: GATE_ENABLED,
+      siteUnlocked: hasGate(req),
+      loggedIn: Boolean(getSession(req)),
+    });
+  });
+
+  app.post('/api/register', async (req, res) => {
+    if (GATE_ENABLED && !hasGate(req)) {
+      return res.status(401).json({ error: 'Unauthorized', need: 'site' });
+    }
+    if (process.env.NODE_ENV === 'production' && !req.secure) {
+      return res.status(400).json({ error: 'https required' });
+    }
+    if (!authAllowed(clientIp(req))) {
+      return res.status(429).json({ error: 'Too many attempts' });
+    }
+    const username = req.body && req.body.username;
+    const password = req.body && req.body.password;
+    if (!validateUsername(username) || !validatePassword(password)) {
+      return res.status(400).json({ error: 'Invalid username or password' });
+    }
+    try {
+      const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+      const user = store.createUser({ username, passwordHash });
+      setSessionCookie(req, res, user.id);
+      return res.status(201).json({ ok: true, user: { id: user.id, username: user.username } });
+    } catch (err) {
+      if (err && err.code === 'USERNAME_TAKEN') {
+        recordAuthFailure();
+        return res.status(409).json({ error: 'Username taken' });
+      }
+      console.error('Register failed');
+      return res.status(500).json({ error: 'Something went wrong' });
+    }
+  });
+
+  app.post('/api/login', async (req, res) => {
+    if (GATE_ENABLED && !hasGate(req)) {
+      return res.status(401).json({ error: 'Unauthorized', need: 'site' });
+    }
+    if (process.env.NODE_ENV === 'production' && !req.secure) {
+      return res.status(400).json({ error: 'https required' });
+    }
+    if (!authAllowed(clientIp(req))) {
+      return res.status(429).json({ error: 'Too many attempts' });
+    }
+    const username = req.body && req.body.username;
+    const password = req.body && req.body.password;
+    if (!validateUsername(username) || typeof password !== 'string' || !password) {
+      recordAuthFailure();
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const user = store.findUserByUsername(username);
+    if (!user) {
+      recordAuthFailure();
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) {
+      recordAuthFailure();
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    setSessionCookie(req, res, user.id);
+    return res.json({ ok: true, user: { id: user.id, username: user.username } });
+  });
+
+  app.post('/api/logout', (req, res) => {
+    clearSessionCookie(req, res);
     return res.json({ ok: true });
+  });
+
+  app.get('/api/me', requireUser, (req, res) => {
+    res.json({ ok: true, user: req.user });
+  });
+
+  app.get('/api/history', requireUser, (req, res) => {
+    const messages = store.getHistory(req.userId);
+    res.json({ messages });
+  });
+
+  app.put('/api/history', requireUser, (req, res) => {
+    const messages = store.putHistory(req.userId, req.body && req.body.messages);
+    res.json({ messages });
+  });
+
+  app.delete('/api/history', requireUser, (req, res) => {
+    store.deleteHistory(req.userId);
+    res.json({ messages: [] });
   });
 
   app.get('/api/health', (req, res) => {
@@ -439,7 +647,7 @@ function createApp() {
     });
   });
 
-  app.post('/api/chat', async (req, res) => {
+  app.post('/api/chat', requireUser, async (req, res) => {
     let keys;
     try {
       keys = requireKeys();
@@ -563,8 +771,8 @@ function createApp() {
 }
 
 function main() {
-  if (process.env.NODE_ENV === 'production' && !GATE_ENABLED) {
-    console.error('APP_PASSWORD is required when NODE_ENV=production. Refusing to start without it.');
+  if (process.env.NODE_ENV === 'production' && !readEnv('SESSION_SECRET')) {
+    console.error('SESSION_SECRET is required when NODE_ENV=production. Refusing to start without it.');
     process.exit(1);
   }
 
@@ -575,12 +783,15 @@ function main() {
     process.exit(1);
   }
 
+  store.ensureDirs();
   fs.mkdirSync(AUDIO_DIR, { recursive: true });
   const portValue = Number.parseInt(process.env.PORT, 10);
   const port = Number.isFinite(portValue) && portValue > 0 ? portValue : 3000;
   const app = createApp();
   app.listen(port, '0.0.0.0', () => {
     console.log(`Listening on http://localhost:${port}`);
+    if (GATE_ENABLED) console.log('Site gate (APP_PASSWORD) enabled; user accounts still required for chat.');
+    else console.log('Site gate off; user register/login required for chat.');
   });
 }
 

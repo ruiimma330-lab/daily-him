@@ -96,12 +96,44 @@
     button:disabled { opacity: 0.6; }
     button:active { background: #f0d800; }
 
+    button.secondary {
+      background: #f7f7f8;
+      font-weight: 600;
+    }
+
     .error {
       min-height: 20px;
       margin: 0;
       font-size: 13px;
       color: #e54d2e;
     }
+
+    .hint {
+      margin: 8px 0 0;
+      font-size: 12px;
+      color: #8d8d8d;
+      line-height: 1.4;
+    }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .tabs button {
+      height: 40px;
+      background: #f7f7f8;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .tabs button.active {
+      background: #FEE500;
+    }
+
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
@@ -123,45 +155,168 @@
       </svg>
     </div>
     <h1>백현</h1>
-    <p class="lead">비밀번호를 입력해 주세요</p>
-    <form id="login-form">
-      <input id="password" type="password" name="password" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호" required />
-      <button type="submit" id="submit">로그인</button>
-      <p class="error" id="error" role="alert"></p>
+    <p class="lead" id="lead">계정으로 들어가 주세요</p>
+
+    <form id="site-form" hidden>
+      <input id="site-password" type="password" name="site-password" autocomplete="current-password" placeholder="사이트 비밀번호" aria-label="사이트 비밀번호" required />
+      <button type="submit" id="site-submit">잠금 해제</button>
+      <p class="error" id="site-error" role="alert"></p>
+      <p class="hint">사이트 잠금이 켜져 있어요. 해제한 뒤 계정을 만들거나 로그인할 수 있어요.</p>
     </form>
+
+    <div id="account-panel" hidden>
+      <div class="tabs" role="tablist">
+        <button type="button" class="active" id="tab-login" role="tab" aria-selected="true">로그인</button>
+        <button type="button" id="tab-register" role="tab" aria-selected="false">회원가입</button>
+      </div>
+      <form id="account-form">
+        <input id="username" type="text" name="username" autocomplete="username" placeholder="사용자 이름" aria-label="사용자 이름" required minlength="3" maxlength="32" pattern="[A-Za-z0-9_]{3,32}" />
+        <input id="password" type="password" name="password" autocomplete="current-password" placeholder="비밀번호 (8자 이상)" aria-label="비밀번호" required minlength="8" maxlength="128" />
+        <button type="submit" id="account-submit">로그인</button>
+        <p class="error" id="account-error" role="alert"></p>
+        <p class="hint" id="account-hint">사용자 이름은 영문·숫자·밑줄 3~32자. 비밀번호는 8자 이상.</p>
+      </form>
+    </div>
   </main>
   <script>
     (function () {
-      const form = document.getElementById('login-form');
-      const input = document.getElementById('password');
-      const button = document.getElementById('submit');
-      const error = document.getElementById('error');
+      const siteForm = document.getElementById('site-form');
+      const accountPanel = document.getElementById('account-panel');
+      const accountForm = document.getElementById('account-form');
+      const lead = document.getElementById('lead');
+      const tabLogin = document.getElementById('tab-login');
+      const tabRegister = document.getElementById('tab-register');
+      const username = document.getElementById('username');
+      const password = document.getElementById('password');
+      const accountSubmit = document.getElementById('account-submit');
+      const accountError = document.getElementById('account-error');
+      const sitePassword = document.getElementById('site-password');
+      const siteSubmit = document.getElementById('site-submit');
+      const siteError = document.getElementById('site-error');
 
-      form.addEventListener('submit', async function (event) {
+      let mode = 'login';
+
+      function setMode(next) {
+        mode = next;
+        const register = next === 'register';
+        tabLogin.classList.toggle('active', !register);
+        tabRegister.classList.toggle('active', register);
+        tabLogin.setAttribute('aria-selected', register ? 'false' : 'true');
+        tabRegister.setAttribute('aria-selected', register ? 'true' : 'false');
+        accountSubmit.textContent = register ? '회원가입' : '로그인';
+        password.autocomplete = register ? 'new-password' : 'current-password';
+        lead.textContent = register ? '새 계정을 만들어 주세요' : '계정으로 들어가 주세요';
+        accountError.textContent = '';
+      }
+
+      function showAccount() {
+        siteForm.hidden = true;
+        accountPanel.hidden = false;
+        username.focus();
+      }
+
+      function showSiteGate() {
+        siteForm.hidden = false;
+        accountPanel.hidden = true;
+        lead.textContent = '사이트 비밀번호를 입력해 주세요';
+        sitePassword.focus();
+      }
+
+      tabLogin.addEventListener('click', () => setMode('login'));
+      tabRegister.addEventListener('click', () => setMode('register'));
+
+      siteForm.addEventListener('submit', async function (event) {
         event.preventDefault();
-        error.textContent = '';
-        button.disabled = true;
+        siteError.textContent = '';
+        siteSubmit.disabled = true;
         try {
-          const response = await fetch('/api/login', {
+          const response = await fetch('/api/site-login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: input.value }),
+            body: JSON.stringify({ password: sitePassword.value }),
           });
           if (response.status === 429) {
-            error.textContent = '시도가 너무 많아요. 잠시 후 다시 해 주세요.';
+            siteError.textContent = '시도가 너무 많아요. 잠시 후 다시 해 주세요.';
             return;
           }
           if (!response.ok) {
-            error.textContent = '비밀번호가 맞지 않아요.';
+            siteError.textContent = '비밀번호가 맞지 않아요.';
+            return;
+          }
+          showAccount();
+        } catch (err) {
+          siteError.textContent = '연결을 확인해 주세요.';
+        } finally {
+          siteSubmit.disabled = false;
+        }
+      });
+
+      accountForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        accountError.textContent = '';
+        accountSubmit.disabled = true;
+        const endpoint = mode === 'register' ? '/api/register' : '/api/login';
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: username.value.trim(),
+              password: password.value,
+            }),
+          });
+          if (response.status === 429) {
+            accountError.textContent = '시도가 너무 많아요. 잠시 후 다시 해 주세요.';
+            return;
+          }
+          if (response.status === 409) {
+            accountError.textContent = '이미 쓰이는 사용자 이름이에요.';
+            return;
+          }
+          if (response.status === 400) {
+            accountError.textContent = '사용자 이름 또는 비밀번호 형식을 확인해 주세요.';
+            return;
+          }
+          if (response.status === 401) {
+            const data = await response.json().catch(() => ({}));
+            if (data && data.need === 'site') {
+              showSiteGate();
+              siteError.textContent = '사이트 잠금을 먼저 해제해 주세요.';
+              return;
+            }
+            accountError.textContent = mode === 'register'
+              ? '가입에 실패했어요.'
+              : '사용자 이름 또는 비밀번호가 맞지 않아요.';
+            return;
+          }
+          if (!response.ok) {
+            accountError.textContent = '잠시 후 다시 해 주세요.';
             return;
           }
           location.href = '/';
         } catch (err) {
-          error.textContent = '연결을 확인해 주세요.';
+          accountError.textContent = '연결을 확인해 주세요.';
         } finally {
-          button.disabled = false;
+          accountSubmit.disabled = false;
         }
       });
+
+      fetch('/api/auth-config')
+        .then((r) => r.json())
+        .then((cfg) => {
+          if (cfg && cfg.loggedIn) {
+            location.href = '/';
+            return;
+          }
+          if (cfg && cfg.siteGate && !cfg.siteUnlocked) {
+            showSiteGate();
+          } else {
+            showAccount();
+          }
+        })
+        .catch(() => {
+          showAccount();
+        });
     })();
   </script>
 </body>

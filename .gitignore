@@ -5,3 +5,5 @@ logs/
 .env.*
 voice_samples/*.mp3
 screenshots/*.mp3
+
+data/

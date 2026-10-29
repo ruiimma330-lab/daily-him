@@ -12,14 +12,33 @@ export DEEPSEEK_CHAT_API_KEY=your_key_here
 export ELEVENLABS_API_KEY=your_key_here
 # optional: an ElevenLabs voice id you already have
 export VOICE_ID=your_voice_id
+# recommended locally so sessions survive restart
+export SESSION_SECRET=dev-secret-change-me
 npm start
 ```
 
-Open http://localhost:3000. The server reads keys only from the environment. It exits on startup if either key is missing, and it never prints the key values.
+Open http://localhost:3000. The server reads keys only from the environment. It exits on startup if either API key is missing, and it never prints the key values.
 
 `PORT` defaults to 3000.
 
-If `APP_PASSWORD` is set, opening the app asks for that password. A correct password sets an HttpOnly `sid` cookie for 30 days. Leave `APP_PASSWORD` unset locally and the gate stays off. When `NODE_ENV` is `production` and `APP_PASSWORD` is missing, the process prints an error and exits. Set `SESSION_SECRET` in production so sessions survive a restart; otherwise the server uses a random secret for that boot.
+### Accounts (phase 0)
+
+Chat requires a **username + password** account:
+
+- Register / login on `/login`
+- Username: 3–32 chars, letters / digits / underscore
+- Password: at least 8 characters (stored with bcrypt; never plaintext)
+- Session cookie `sid` binds to `userId` for 30 days
+
+Optional **site gate**: if `APP_PASSWORD` is set, visitors must unlock the site first (`/api/site-login`), then register or log in. Leave `APP_PASSWORD` unset locally to skip that step. Site gate does **not** replace per-user accounts.
+
+When `NODE_ENV` is `production`, `SESSION_SECRET` is required (process exits if missing). `APP_PASSWORD` is optional.
+
+### Chat history
+
+History is stored **on the server per user** under `data/history/<userId>.json` (also mirrored in browser `localStorage` as a cache). Opening the app loads from the server. 「대화 기록 삭제」 clears both server and device.
+
+**Important:** Render’s free disk is ephemeral. Redeploy / sleep can wipe `data/`. This phase uses local JSON so the feature works; next step is a free cloud DB such as **Turso**. Do not commit `data/`.
 
 ## Config
 
@@ -31,6 +50,8 @@ If `APP_PASSWORD` is set, opening the app asks for that password. A correct pass
 | `TTS_MODEL` | `ttsModel` in `config.json` |
 | `VOICE_ID` | `voiceId` in `config.json` |
 | `LLM_TIMEOUT_MS` | `90000` |
+| `SESSION_SECRET` | required in production |
+| `APP_PASSWORD` | optional site gate |
 
 ### Which chat model to run
 
@@ -58,22 +79,31 @@ Generated mp3 files are cached in `cache/audio/` and served at `/audio/<sha256>.
 
 ## API
 
-- `GET /api/health` → `{ ok, model, voiceId, ttsModel }`
+- `GET /api/health` → `{ ok, model, voiceId, ttsModel }` (requires login unless you hit it after unlocking)
+- `GET /api/auth-config` → `{ siteGate, siteUnlocked, loggedIn }`
+- `POST /api/site-login` `{ password }` → optional site gate unlock
+- `POST /api/register` `{ username, password }` → set session
+- `POST /api/login` `{ username, password }` → set session
+- `POST /api/logout` → clear session
+- `GET /api/me` → current user
+- `GET /api/history` → `{ messages }`
+- `PUT /api/history` `{ messages }` → replace saved history
+- `DELETE /api/history` → clear server history
 - `POST /api/chat` with `{ messages: [{ role, content }], voice?: boolean }` → `{ bubbles, audioUrl, audioError? }`
 - Model timeout → `504` `{ "error": "timeout" }`. Other model failures → `502`.
 
-Chat history stays in the browser under `localStorage` key `idolchat_history_v1`. The ⋯ menu can delete it after a confirm (`대화 기록 삭제`), turn voice messages on or off (on by default), and turn autoplay on (off by default). Those toggles persist in `idolchat_settings_v1`. If the model fails or times out, the room shows an in-character retry bubble; that bubble is not stored and is not sent back as chat history. A failed voice clip does not block the text reply.
+Register / login are rate-limited (per IP + global failure window).
 
 ## Render 部署步骤
 
 1. 把这个仓库推送到 GitHub。
 2. 打开 [Render](https://render.com)，选 **New > Blueprint**（按仓库里的 `render.yaml` 创建），或者 **New > Web Service** 手动建一个 Node 网站服务。
-3. 配好这 4 个环境变量，只填在 Render 的后台里，不要写进代码或提交到 Git：
-   - `DEEPSEEK_CHAT_API_KEY`
-   - `ELEVENLABS_API_KEY`
-   - `APP_PASSWORD`（登录密码）
-   - `SESSION_SECRET`（自己生成的一长串随机字符，用来给登录会话签名）
-4. `render.yaml` 里已经把 `NODE_ENV` 设成 `production`。生产环境没设 `APP_PASSWORD` 时，服务会报错退出。
-5. 免费套餐闲置一段时间后会休眠，下次打开网址要等它醒来。语音文件缓存在 `cache/audio/`，免费实例的磁盘是临时的，休眠、重启或重新部署后缓存会清空，下次说话会重新生成。
-6. 部署完成后打开 Render 给的网址，输入 `APP_PASSWORD` 进入聊天。
+3. 配好环境变量，只填在 Render 的后台里，不要写进代码或提交到 Git：
+   - `DEEPSEEK_CHAT_API_KEY`（必填）
+   - `ELEVENLABS_API_KEY`（必填）
+   - `SESSION_SECRET`（必填；自己生成的一长串随机字符）
+   - `APP_PASSWORD`（可选；站点总闸，开启后要先输入它再注册/登录账号）
+4. `render.yaml` 里已经把 `NODE_ENV` 设成 `production`。生产环境没设 `SESSION_SECRET` 时，服务会报错退出。
+5. 免费套餐闲置一段时间后会休眠，下次打开网址要等它醒来。`data/` 与 `cache/audio/` 都在实例本地盘上，**休眠 / 重启 / 重新部署后可能被清空**；账号与聊天记录下一步应迁到 Turso 等云库。
+6. 部署完成后打开 Render 给的网址：如开启了 `APP_PASSWORD` 先解锁站点，再 **注册** 用户名密码进入聊天。
 7. 用手机浏览器打开同一个网址，选「添加到主屏幕」，之后可以像独立 App 一样从主屏幕进入。

@@ -34,7 +34,7 @@
   const roomSub = document.getElementById('room-sub');
   const themeMeta = document.querySelector('meta[name="theme-color"]');
 
-  let messages = loadHistory();
+  let messages = loadLocalHistory();
   let settings = loadSettings();
   let roomOpen = false;
   let menuOpen = false;
@@ -58,18 +58,21 @@
     return node;
   }
 
-  function loadHistory() {
+  function normalizeHistoryList(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .filter((item) => item && (item.role === 'user' || item.role === 'assistant') && typeof item.text === 'string' && !item.ephemeral)
+      .map((item) => ({
+        role: item.role,
+        text: item.text,
+        time: typeof item.time === 'number' ? item.time : Date.now(),
+        audioUrl: safeAudioUrl(item.audioUrl),
+      }));
+  }
+
+  function loadLocalHistory() {
     try {
-      const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-      if (!Array.isArray(raw)) return [];
-      return raw
-        .filter((item) => item && (item.role === 'user' || item.role === 'assistant') && typeof item.text === 'string' && !item.ephemeral)
-        .map((item) => ({
-          role: item.role,
-          text: item.text,
-          time: typeof item.time === 'number' ? item.time : Date.now(),
-          audioUrl: safeAudioUrl(item.audioUrl),
-        }));
+      return normalizeHistoryList(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'));
     } catch (err) {
       return [];
     }
@@ -88,17 +91,67 @@
     }
   }
 
-  function saveHistory() {
+  let historySyncTimer = 0;
+  let historySyncing = false;
+
+  function historySnapshot() {
+    return messages.map((item) => ({
+      role: item.role,
+      text: item.text,
+      time: item.time,
+      audioUrl: item.audioUrl,
+    }));
+  }
+
+  function saveLocalHistory() {
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.map((item) => ({
-        role: item.role,
-        text: item.text,
-        time: item.time,
-        audioUrl: item.audioUrl,
-      }))));
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(historySnapshot()));
     } catch (err) {
       showToast('이 브라우저에 대화를 저장하지 못했어요');
     }
+  }
+
+  function saveHistory() {
+    saveLocalHistory();
+    clearTimeout(historySyncTimer);
+    historySyncTimer = setTimeout(syncHistoryToServer, 250);
+  }
+
+  async function syncHistoryToServer() {
+    if (historySyncing) {
+      clearTimeout(historySyncTimer);
+      historySyncTimer = setTimeout(syncHistoryToServer, 250);
+      return;
+    }
+    historySyncing = true;
+    const snapshot = historySnapshot();
+    try {
+      const response = await fetch('/api/history', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: snapshot }),
+      });
+      if (response.status === 401) {
+        location.href = '/login';
+        return;
+      }
+      if (!response.ok) throw new Error('sync failed');
+    } catch (err) {
+      showToast('대화를 서버에 저장하지 못했어요');
+    } finally {
+      historySyncing = false;
+    }
+  }
+
+  async function pullHistoryFromServer() {
+    const response = await fetch('/api/history');
+    if (response.status === 401) {
+      location.href = '/login';
+      return null;
+    }
+    if (!response.ok) throw new Error('history failed');
+    const data = await response.json();
+    return normalizeHistoryList(data && data.messages);
   }
 
   function saveSettings() {
@@ -558,7 +611,7 @@
     modal.hidden = true;
   }
 
-  function clearHistory() {
+  async function clearHistory() {
     generation += 1;
     if (chatAbort) chatAbort.abort('cancel');
     messages = [];
@@ -569,11 +622,36 @@
     retryAt = 0;
     voiceNote = '';
     settings.seen = 0;
-    saveHistory();
+    saveLocalHistory();
     saveSettings();
     closeModal();
     setMenu(false);
     render();
+    try {
+      const response = await fetch('/api/history', { method: 'DELETE' });
+      if (response.status === 401) {
+        location.href = '/login';
+        return;
+      }
+      if (!response.ok) throw new Error('clear failed');
+    } catch (err) {
+      showToast('서버 대화 기록을 지우지 못했어요');
+    }
+  }
+
+  async function logout() {
+    setMenu(false);
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } catch (err) {
+      /* still leave */
+    }
+    try {
+      localStorage.removeItem(HISTORY_KEY);
+    } catch (err) {
+      /* ignore */
+    }
+    location.href = '/login';
   }
 
   function historyPayload() {
@@ -731,7 +809,9 @@
   });
   document.getElementById('clear-btn').addEventListener('click', openModal);
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
-  document.getElementById('modal-confirm').addEventListener('click', clearHistory);
+  document.getElementById('modal-confirm').addEventListener('click', () => { clearHistory(); });
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) logoutBtn.addEventListener('click', logout);
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
   });
@@ -780,4 +860,15 @@
   syncToggles();
   updateSendButton();
   render();
+
+  pullHistoryFromServer().then((remote) => {
+    if (!remote) return;
+    messages = remote;
+    saveLocalHistory();
+    if (roomOpen) settings.seen = messages.length;
+    saveSettings();
+    render();
+  }).catch(() => {
+    showToast('서버에서 대화 기록을 불러오지 못했어요');
+  });
 })();
