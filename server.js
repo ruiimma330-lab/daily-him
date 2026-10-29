@@ -96,6 +96,31 @@ function makeLlm(chatKey, model) {
   };
 }
 
+// JSON mode needs prior assistant turns in the same JSON shape, or DeepSeek returns blanks.
+function toLlmMessages(recent) {
+  const out = [];
+  for (const m of recent) {
+    if (m.role === 'assistant') {
+      const prev = out[out.length - 1];
+      const item = { ko: m.content, zh: m.zh || '' };
+      if (prev && prev.role === 'assistant' && prev._items) prev._items.push(item);
+      else out.push({ role: 'assistant', _items: [item] });
+    } else {
+      out.push({ role: m.role, content: m.content });
+    }
+  }
+  return out.map((m) => (m._items ? { role: 'assistant', content: JSON.stringify({ messages: m._items }) } : m));
+}
+
+// Vary how many clips a reply has: short inputs lean to 1, longer ones to 2-3.
+function suggestCount(text) {
+  const len = String(text || '').trim().length;
+  const r = Math.random();
+  if (len <= 6) return r < 0.6 ? 1 : (r < 0.9 ? 2 : 3);
+  if (len <= 20) return r < 0.3 ? 1 : (r < 0.75 ? 2 : 3);
+  return r < 0.2 ? 1 : (r < 0.6 ? 2 : 3);
+}
+
 function recentOpenings(recent) {
   return recent.filter((m) => m.role === 'assistant').slice(-4)
     .map((m) => String(m.content).replace(/\[\[[\s\S]*?\]\]/g, '').trim().split('\n')[0].slice(0, 14))
@@ -501,7 +526,9 @@ function normalizeMessages(input) {
     if (typeof message.content !== 'string') continue;
     const content = message.content.trim().slice(0, 4000);
     if (!content) continue;
-    cleaned.push({ role: message.role, content });
+    const entry = { role: message.role, content };
+    if (message.role === 'assistant' && typeof message.zh === 'string') entry.zh = message.zh.slice(0, 2000);
+    cleaned.push(entry);
   }
   return cleaned.slice(-20);
 }
@@ -748,12 +775,15 @@ function createApp() {
     const lastUserText = lastUser ? lastUser.content : '';
     const userName = (characters.loadMeta(req.characterId).defaultUserName) || '';
     const memBlock = memory.promptBlock(req.userId, req.characterId, lastUserText, userName);
-    const openings = recentOpenings(recent);
+    const openings = [...new Set([...memory.recentOpenings(req.userId, req.characterId), ...recentOpenings(recent)])].slice(-6);
+    const want = suggestCount(lastUserText);
     const memoryPrompt = (memBlock ? `\n\n${memBlock}` : '')
-      + (openings.length ? `\n\n## 반복 피하기\n네 최근 답장 첫머리: ${openings.map((o) => `「${o}」`).join(' ')}\n이번 답장은 이것들과 다른 말로 시작하고, 다른 문장 구조로 말해.` : '');
+      + (openings.length ? `\n\n## 반복 피하기\n네 최근 답장 첫머리: ${openings.map((o) => `「${o}」`).join(' ')}\n이번 답장은 이것들과 다른 말로 시작하고, 다른 문장 구조로 말해.` : '')
+      + `\n\n## 이번 답장\n이번엔 음성 ${want}개로 보내(상황상 정말 어색하면 ±1).`;
     const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow) + memoryPrompt + `\n\n## 현재 시각\n지금은 ${now} (사용자 기준 시간대)야. 날짜/시간 이야기를 할 때 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     let replyText = '';
 
+    for (let attempt = 0; attempt < 2 && !replyText.trim(); attempt += 1) {
     try {
       const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
@@ -764,11 +794,9 @@ function createApp() {
         body: JSON.stringify({
           model: config.llmModel,
           temperature: 1.0,
-          presence_penalty: 0.4,
-          frequency_penalty: 0.3,
           reasoning_effort: process.env.LLM_EFFORT || 'low',
           response_format: { type: 'json_object' },
-          messages: [{ role: 'system', content: systemPrompt }, ...recent],
+          messages: [{ role: 'system', content: systemPrompt }, ...toLlmMessages(recent)],
         }),
         signal: AbortSignal.timeout(llmTimeoutMs()),
       });
@@ -805,10 +833,13 @@ function createApp() {
       console.error(`LLM request failed (fetch error ${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${keys.chatKey.length})`);
       return res.status(502).json({ error: GENERIC_LLM_ERROR });
     }
+      if (!replyText.trim()) console.error('LLM returned a blank reply');
+    }
 
     const items = parseReply(replyText, config);
     if (!items.length) {
       console.error('LLM request failed (empty reply after parsing)');
+      if (process.env.DEBUG_REPLY === '1') console.error(`raw reply: ${String(replyText).slice(0, 500)}`);
       return res.status(502).json({ error: GENERIC_LLM_ERROR });
     }
 
@@ -846,6 +877,7 @@ function createApp() {
     } catch (err) {
       console.error('Relationship update failed');
     }
+    memory.noteOpening(req.userId, req.characterId, displayBubbles[0]);
     const memTask = memory.afterTurn({
       userId: req.userId,
       characterId: req.characterId,
@@ -915,6 +947,7 @@ module.exports = {
   splitBubbles,
   stripAudioTags,
   toSpeechText,
+  toLlmMessages,
   isSpeakable,
   parseReply,
   resolveRuntimeConfig,

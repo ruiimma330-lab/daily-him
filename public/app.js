@@ -771,7 +771,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return messages
       .filter((item) => item && (item.role === 'user' || item.role === 'assistant') && typeof item.text === 'string' && item.text.trim() && !item.ephemeral)
       .slice(-20)
-      .map((item) => ({ role: item.role, content: item.text }));
+      .map((item) => (item.role === 'assistant' && item.zh ? { role: item.role, content: item.text, zh: item.zh } : { role: item.role, content: item.text }));
   }
 
   function failReply() {
