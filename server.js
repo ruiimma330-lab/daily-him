@@ -241,7 +241,15 @@ function isLlmTimeout(err) {
 
 const APP_PASSWORD = readEnv('APP_PASSWORD');
 const GATE_ENABLED = APP_PASSWORD.length > 0;
-const SESSION_SECRET = readEnv('SESSION_SECRET') || crypto.randomBytes(32).toString('hex');
+let SESSION_SECRET = readEnv('SESSION_SECRET') || crypto.randomBytes(32).toString('hex');
+
+// Without SESSION_SECRET, keep a generated secret in storage so logins survive restarts.
+function loadSessionSecret() {
+  if (readEnv('SESSION_SECRET')) return;
+  const saved = store.getSetting('session_secret');
+  if (typeof saved === 'string' && saved.length >= 32) { SESSION_SECRET = saved; return; }
+  store.putSetting('session_secret', SESSION_SECRET);
+}
 const SESSION_MAX_AGE_SEC = 30 * 24 * 60 * 60;
 const AUTH_WINDOW_MS = 15 * 60 * 1000;
 const AUTH_MAX_ATTEMPTS = 10;
@@ -760,6 +768,7 @@ function createApp() {
       model: config.llmModel,
       voiceId: config.voiceId,
       ttsModel: config.ttsModel,
+      storage: store.storageName(),
     });
   });
 
@@ -921,7 +930,7 @@ function createApp() {
   return app;
 }
 
-function main() {
+async function main() {
   if (process.env.NODE_ENV === 'production' && !readEnv('SESSION_SECRET')) {
     console.error('SESSION_SECRET is required when NODE_ENV=production. Refusing to start without it.');
     process.exit(1);
@@ -934,7 +943,14 @@ function main() {
     process.exit(1);
   }
 
-  store.ensureDirs();
+  try {
+    const kind = await store.init();
+    console.log(`Storage: ${kind}`);
+  } catch (err) {
+    console.error('Storage could not start; exiting.');
+    process.exit(1);
+  }
+  loadSessionSecret();
   fs.mkdirSync(AUDIO_DIR, { recursive: true });
   const portValue = Number.parseInt(process.env.PORT, 10);
   const port = Number.isFinite(portValue) && portValue > 0 ? portValue : 3000;
@@ -948,10 +964,14 @@ function main() {
 
 if (require.main === module) {
   main();
+  const shutdown = () => { store.flush().finally(() => process.exit(0)); };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 module.exports = {
   createApp,
+  loadSessionSecret,
   parseMood,
   splitBubbles,
   stripAudioTags,

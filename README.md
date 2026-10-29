@@ -38,7 +38,7 @@ When `NODE_ENV` is `production`, `SESSION_SECRET` is required (process exits if 
 
 History is stored **on the server per user** under `data/history/<userId>.json` (also mirrored in browser `localStorage` as a cache). Opening the app loads from the server. 「대화 기록 삭제」 clears both server and device.
 
-**Important:** Render’s free disk is ephemeral. Redeploy / sleep can wipe `data/`. This phase uses local JSON so the feature works; next step is a free cloud DB such as **Turso**. Do not commit `data/`.
+**Storage:** with `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` set, all data (users, history, relationship, memory, session secret) is stored in Turso (libSQL); otherwise it falls back to local JSON files in `data/` (wiped on Render free redeploys). `/api/health` shows `storage: turso|file`. Do not commit `data/`.
 
 ## Config
 
@@ -93,6 +93,20 @@ Generated mp3 files are cached in `cache/audio/` and served at `/audio/<sha256>.
 - Model timeout → `504` `{ "error": "timeout" }`. Other model failures → `502`.
 
 Register / login are rate-limited (per IP + global failure window).
+
+## 数据存储（Turso）
+
+只有 **两个变量都填了** 才会用 Turso，否则自动用本地文件（Render 免费盘重部署会丢）：
+
+| 变量 | 填什么 |
+|---|---|
+| `TURSO_DATABASE_URL` | Turso 数据库地址，形如 `libsql://<库名>-<用户名>.turso.io` |
+| `TURSO_AUTH_TOKEN` | 这个库的访问令牌（Turso 后台 → 数据库 → Generate Token，或 `turso db tokens create <库名>`） |
+
+- 在 Render → 服务 → **Environment** 里添加这两个变量，点 **Save, rebuild, and deploy**。
+- 首次启动会自动建表；如果库是空的而服务器本地 `data/` 里有数据，会一次性导入。
+- 部署后打开 `/api/health`，看到 `"storage":"turso"` 就成功了。连不上时日志只显示错误名（如 `Database connection failed (SERVER_ERROR)`），服务会退出，Render 会保留上一个版本。
+- 以后换腾讯云等数据库：仿照 `lib/storage/libsql.js` 写一个同样接口的 backend（init / loadAll / putUser / putDoc / delDoc / putSetting），在 `lib/store.js` 的 `selectBackend()` 里接上即可。
 
 ## Render 部署步骤
 
