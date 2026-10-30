@@ -26,6 +26,7 @@
       headers: { 'Content-Type': 'application/json', ...(opt.headers || {}) },
     });
     if (r.status === 401) {
+      if (opt.allow401) return null;
       location.href = '/login';
       throw new Error('auth');
     }

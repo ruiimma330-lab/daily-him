@@ -833,7 +833,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   if (meLogout) meLogout.addEventListener('click', () => logout());
   const meReset = document.getElementById('me-reset');
   if (meReset) meReset.addEventListener('click', async () => {
-    if (!confirm('重新走封面→选人→认识引导？当前聊天记录不会删。')) return;
+    if (!confirm('重新从封面选人？当前聊天记录不会删。')) return;
     try {
       await fetch(withChar('/api/profile'), {
         method: 'PUT',
@@ -864,6 +864,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     setMenu(false);
     closeSheet();
     closeProfile();
+    if (document.activeElement && room.contains(document.activeElement)) document.activeElement.blur();
     room.classList.remove('open');
     room.setAttribute('aria-hidden', 'true');
     room.inert = true;
@@ -1434,13 +1435,45 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   loadAlias();
 
-  pullHistoryFromServer().then((remote) => {
+  async function welcomeIfNeeded(remote) {
+    try {
+      const params = new URLSearchParams(location.search);
+      if (params.get('welcome') !== '1' || remote.length) return remote;
+      const response = await fetch('/api/characters');
+      if (!response.ok) return remote;
+      const data = await response.json();
+      const ch = (data.characters || []).find((item) => item.id === CHARACTER_ID);
+      const text = ch && typeof ch.welcomeKo === 'string' ? ch.welcomeKo.trim() : '';
+      if (!text) return remote;
+      return [{
+        role: 'assistant',
+        text,
+        time: Date.now(),
+        audioUrl: null,
+        zh: typeof ch.welcomeZh === 'string' ? ch.welcomeZh : '',
+      }];
+    } catch (_) {
+      return remote;
+    }
+  }
+
+  pullHistoryFromServer().then(async (remote) => {
     if (!remote) return;
-    messages = remote;
-    saveLocalHistory();
-    if (roomOpen) settings.seen = messages.length;
+    const params = new URLSearchParams(location.search);
+    const wantRoom = params.get('welcome') === '1';
+    const seeded = await welcomeIfNeeded(remote);
+    messages = seeded;
+    if (seeded !== remote) saveHistory();
+    else saveLocalHistory();
+    if (wantRoom) {
+      params.delete('welcome');
+      const cleaned = params.toString();
+      history.replaceState(null, '', cleaned ? `${location.pathname}?${cleaned}` : location.pathname);
+    }
+    if (roomOpen || wantRoom) settings.seen = messages.length;
     saveSettings();
     render();
+    if (wantRoom) openRoom();
   }).catch(() => {
     showToast('서버에서 대화 기록을 불러오지 못했어요');
   });

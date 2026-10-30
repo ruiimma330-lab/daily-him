@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#FEE500" />
+  <meta name="theme-color" content="#ffffff" />
   <meta name="robots" content="noindex" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
@@ -12,6 +12,9 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
   <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     html, body {
       margin: 0;
@@ -43,19 +46,20 @@
       height: 88px;
       margin: 0 auto 16px;
       border-radius: 50%;
-      background: #fff4e8;
+      background: #f4f4f4;
       display: grid;
       place-items: center;
-      box-shadow: inset 0 0 0 1px rgba(90, 60, 40, 0.08);
+      overflow: hidden;
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
     }
 
-    .mark svg { width: 100%; height: 100%; display: block; }
+    .mark img, .mark svg { width: 100%; height: 100%; object-fit: cover; display: block; }
 
     h1 {
       margin: 0 0 8px;
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: -0.04em;
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
     }
 
     p.lead {
@@ -84,17 +88,18 @@
 
     button {
       height: 48px;
-      border: 0;
-      border-radius: 12px;
-      background: #FEE500;
-      color: #191919;
-      font-size: 16px;
-      font-weight: 700;
+      border: 1px solid #1c1c1c;
+      border-radius: 0;
+      background: #1c1c1c;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
       cursor: pointer;
     }
 
     button:disabled { opacity: 0.6; }
-    button:active { background: #f0d800; }
+    button:active { background: #333; }
 
     button.secondary {
       background: #f7f7f8;
@@ -124,13 +129,29 @@
 
     .tabs button {
       height: 40px;
-      background: #f7f7f8;
+      border: 0;
+      border-bottom: 1px solid transparent;
+      border-radius: 0;
+      background: transparent;
+      color: #8d8d8d;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 400;
+      letter-spacing: 0.12em;
     }
 
     .tabs button.active {
-      background: #FEE500;
+      background: transparent;
+      color: #1c1c1c;
+      border-bottom-color: #1c1c1c;
+    }
+
+    a.back-cover {
+      display: inline-block;
+      margin-bottom: 18px;
+      color: #8d8883;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-decoration: none;
     }
 
     [hidden] { display: none !important; }
@@ -139,42 +160,30 @@
 <body>
   <main>
     <div class="mark" aria-hidden="true">
-      <svg viewBox="0 0 64 64">
-        <ellipse cx="18" cy="20" rx="9" ry="13" fill="#E8A878"/>
-        <ellipse cx="46" cy="20" rx="9" ry="13" fill="#E8A878"/>
-        <ellipse cx="18" cy="20" rx="5" ry="8" fill="#F6D8C0"/>
-        <ellipse cx="46" cy="20" rx="5" ry="8" fill="#F6D8C0"/>
-        <circle cx="32" cy="36" r="18" fill="#F4C9A4"/>
-        <ellipse cx="25" cy="34.5" rx="2.3" ry="3" fill="#3C2C24"/>
-        <ellipse cx="39" cy="34.5" rx="2.3" ry="3" fill="#3C2C24"/>
-        <ellipse cx="32" cy="41" rx="3.6" ry="2.5" fill="#E07B6C"/>
-        <path d="M32 42.2v2.2" fill="none" stroke="#C85A52" stroke-width="1.3" stroke-linecap="round"/>
-        <path d="M26.8 46.2c1.6 1.8 3.3 2.6 5.2 2.6s3.6-.8 5.2-2.6" fill="none" stroke="#3C2C24" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="21.5" cy="40" r="2.3" fill="#F3A8A8" opacity=".9"/>
-        <circle cx="42.5" cy="40" r="2.3" fill="#F3A8A8" opacity=".9"/>
-      </svg>
+      <img src="/icons/icon-192.png" alt="" width="88" height="88" />
     </div>
-    <h1>백현</h1>
-    <p class="lead" id="lead">계정으로 들어가 주세요</p>
+    <a class="back-cover" href="/shell/cover.html">返回</a>
+    <h1>Idol Chat</h1>
+    <p class="lead" id="lead">登录或注册后选择爱豆</p>
 
     <form id="site-form" hidden>
-      <input id="site-password" type="password" name="site-password" autocomplete="current-password" placeholder="사이트 비밀번호" aria-label="사이트 비밀번호" required />
-      <button type="submit" id="site-submit">잠금 해제</button>
+      <input id="site-password" type="password" name="site-password" autocomplete="current-password" placeholder="站点密码" aria-label="站点密码" required />
+      <button type="submit" id="site-submit">解锁</button>
       <p class="error" id="site-error" role="alert"></p>
-      <p class="hint">사이트 잠금이 켜져 있어요. 해제한 뒤 계정을 만들거나 로그인할 수 있어요.</p>
+      <p class="hint">站点锁已开启。解锁后即可注册或登录。</p>
     </form>
 
     <div id="account-panel" hidden>
       <div class="tabs" role="tablist">
-        <button type="button" class="active" id="tab-login" role="tab" aria-selected="true">로그인</button>
-        <button type="button" id="tab-register" role="tab" aria-selected="false">회원가입</button>
+        <button type="button" class="active" id="tab-login" role="tab" aria-selected="true">登录</button>
+        <button type="button" id="tab-register" role="tab" aria-selected="false">注册</button>
       </div>
       <form id="account-form">
-        <input id="username" type="text" name="username" autocomplete="username" placeholder="사용자 이름" aria-label="사용자 이름" required minlength="3" maxlength="32" pattern="[A-Za-z0-9_]{3,32}" />
-        <input id="password" type="password" name="password" autocomplete="current-password" placeholder="비밀번호 (8자 이상)" aria-label="비밀번호" required minlength="8" maxlength="128" />
-        <button type="submit" id="account-submit">로그인</button>
+        <input id="username" type="text" name="username" autocomplete="username" placeholder="用户名" aria-label="用户名" required minlength="3" maxlength="32" pattern="[A-Za-z0-9_]{3,32}" />
+        <input id="password" type="password" name="password" autocomplete="current-password" placeholder="密码（至少 8 位）" aria-label="密码" required minlength="8" maxlength="128" />
+        <button type="submit" id="account-submit">登录</button>
         <p class="error" id="account-error" role="alert"></p>
-        <p class="hint" id="account-hint">사용자 이름은 영문·숫자·밑줄 3~32자. 비밀번호는 8자 이상.</p>
+        <p class="hint" id="account-hint">用户名为 3–32 位字母、数字或下划线。密码至少 8 位。</p>
       </form>
     </div>
     <p class="login-disclaimer" style="margin:24px 0 8px;text-align:center;font-size:11px;color:#9a9a9a;">角色均为 AI 模拟，非本人 · 仅供个人使用</p>
@@ -197,6 +206,13 @@
 
       let mode = 'login';
 
+      function destination() {
+        const next = new URLSearchParams(location.search).get('next') || '';
+        if (next === 'pick') return '/shell/pick.html';
+        if (next === 'chat') return '/';
+        return '/shell/cover.html';
+      }
+
       function setMode(next) {
         mode = next;
         const register = next === 'register';
@@ -204,9 +220,9 @@
         tabRegister.classList.toggle('active', register);
         tabLogin.setAttribute('aria-selected', register ? 'false' : 'true');
         tabRegister.setAttribute('aria-selected', register ? 'true' : 'false');
-        accountSubmit.textContent = register ? '회원가입' : '로그인';
+        accountSubmit.textContent = register ? '注册' : '登录';
         password.autocomplete = register ? 'new-password' : 'current-password';
-        lead.textContent = register ? '새 계정을 만들어 주세요' : '계정으로 들어가 주세요';
+        lead.textContent = register ? '注册一个账号' : '登录后选择爱豆';
         accountError.textContent = '';
       }
 
@@ -219,7 +235,7 @@
       function showSiteGate() {
         siteForm.hidden = false;
         accountPanel.hidden = true;
-        lead.textContent = '사이트 비밀번호를 입력해 주세요';
+        lead.textContent = '请输入站点密码';
         sitePassword.focus();
       }
 
@@ -237,16 +253,16 @@
             body: JSON.stringify({ password: sitePassword.value }),
           });
           if (response.status === 429) {
-            siteError.textContent = '시도가 너무 많아요. 잠시 후 다시 해 주세요.';
+            siteError.textContent = '尝试太多次了，请稍后再试。';
             return;
           }
           if (!response.ok) {
-            siteError.textContent = '비밀번호가 맞지 않아요.';
+            siteError.textContent = '密码不正确。';
             return;
           }
           showAccount();
         } catch (err) {
-          siteError.textContent = '연결을 확인해 주세요.';
+          siteError.textContent = '请检查网络连接。';
         } finally {
           siteSubmit.disabled = false;
         }
@@ -267,36 +283,36 @@
             }),
           });
           if (response.status === 429) {
-            accountError.textContent = '시도가 너무 많아요. 잠시 후 다시 해 주세요.';
+            accountError.textContent = '尝试太多次了，请稍后再试。';
             return;
           }
           if (response.status === 409) {
-            accountError.textContent = '이미 쓰이는 사용자 이름이에요.';
+            accountError.textContent = '这个用户名已经被使用。';
             return;
           }
           if (response.status === 400) {
-            accountError.textContent = '사용자 이름 또는 비밀번호 형식을 확인해 주세요.';
+            accountError.textContent = '请检查用户名或密码格式。';
             return;
           }
           if (response.status === 401) {
             const data = await response.json().catch(() => ({}));
             if (data && data.need === 'site') {
               showSiteGate();
-              siteError.textContent = '사이트 잠금을 먼저 해제해 주세요.';
+              siteError.textContent = '请先解锁站点。';
               return;
             }
             accountError.textContent = mode === 'register'
-              ? '가입에 실패했어요.'
-              : '사용자 이름 또는 비밀번호가 맞지 않아요.';
+              ? '注册失败。'
+              : '用户名或密码不正确。';
             return;
           }
           if (!response.ok) {
-            accountError.textContent = '잠시 후 다시 해 주세요.';
+            accountError.textContent = '请稍后再试。';
             return;
           }
-          location.href = '/shell/cover.html';
+          location.href = destination();
         } catch (err) {
-          accountError.textContent = '연결을 확인해 주세요.';
+          accountError.textContent = '请检查网络连接。';
         } finally {
           accountSubmit.disabled = false;
         }
@@ -306,7 +322,7 @@
         .then((r) => r.json())
         .then((cfg) => {
           if (cfg && cfg.loggedIn) {
-            location.href = '/shell/cover.html';
+            location.href = destination();
             return;
           }
           if (cfg && cfg.siteGate && !cfg.siteUnlocked) {

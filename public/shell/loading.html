@@ -26,7 +26,6 @@
       const timer = setInterval(() => { i = (i + 1) % tips.length; tip.textContent = tips[i]; }, 700);
       const next = Shell.qs('next') || 'pick';
       const c = Shell.qs('c') || Shell.selectedCharacter();
-      await new Promise((r) => setTimeout(r, 1200));
       clearInterval(timer);
       if (next === 'chat') Shell.go('/', { c });
       else if (next === 'onboard') Shell.go('/shell/onboard.html', { c });

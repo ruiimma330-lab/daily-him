@@ -135,15 +135,28 @@
 
   async function start() {
     const current = filtered()[state.index];
-    if (!current || current.available === false) return;
+    if (!current || current.available === false || goBtn.disabled) return;
     Shell.setSelectedCharacter(current.id);
-    let onboarded = false;
+    goBtn.disabled = true;
     try {
-      const profile = await Shell.api('/api/profile?characterId=' + encodeURIComponent(current.id));
-      onboarded = Boolean(profile.profile && profile.profile.onboardedAt);
-    } catch (_) { /* treat as not set up */ }
-    if (onboarded) Shell.go('/', { c: current.id });
-    else Shell.go('/shell/onboard.html', { c: current.id });
+      let onboarded = false;
+      try {
+        const profile = await Shell.api('/api/profile?characterId=' + encodeURIComponent(current.id));
+        onboarded = Boolean(profile.profile && profile.profile.onboardedAt);
+      } catch (_) { /* treat as not set up */ }
+      if (onboarded) {
+        Shell.go('/', { c: current.id });
+        return;
+      }
+      await Shell.api('/api/profile?characterId=' + encodeURIComponent(current.id), {
+        method: 'PUT',
+        body: JSON.stringify({ onboarded: true }),
+      });
+      Shell.go('/', { c: current.id, welcome: '1' });
+    } catch (_) {
+      Shell.toast('暂时进不去，请重试');
+      goBtn.disabled = current.available === false;
+    }
   }
 
   function leave() {

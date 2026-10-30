@@ -28,7 +28,6 @@
       </div>
       <button type="submit" class="btn" id="next">进入聊天</button>
     </form>
-    <a class="link" id="recharge" href="#"></a>
     <p class="disclaimer" id="disclaimer"></p>
   </div>
   <script src="/shell/shell.js"></script>
@@ -44,13 +43,8 @@
       document.getElementById('callName').placeholder = copy.onboard.callNamePlaceholder;
       document.getElementById('displayName').placeholder = copy.onboard.displayNamePlaceholder;
       document.getElementById('next').textContent = copy.onboard.next;
-      document.getElementById('recharge').textContent = copy.onboard.rechargeLink;
       document.getElementById('disclaimer').textContent = copy.disclaimer;
       document.getElementById('back').onclick = () => Shell.go('/shell/pick.html', { c });
-      document.getElementById('recharge').onclick = (e) => {
-        e.preventDefault();
-        Shell.go('/shell/recharge.html', { c, from: 'onboard' });
-      };
 
       try {
         const chars = await Shell.api('/api/characters');
@@ -61,6 +55,9 @@
           if (p.profile.characterNickname) document.getElementById('charNick').value = p.profile.characterNickname;
           if (p.profile.callName) document.getElementById('callName').value = p.profile.callName;
           if (p.profile.displayName) document.getElementById('displayName').value = p.profile.displayName;
+        }
+        if (!document.getElementById('callName').value && ch && ch.defaultCallName) {
+          document.getElementById('callName').value = ch.defaultCallName;
         }
       } catch (_) {}
 
@@ -81,7 +78,7 @@
             }),
           });
           Shell.setSelectedCharacter(c);
-          Shell.go('/shell/loading.html', { next: 'chat', c });
+          Shell.go('/', { c, welcome: '1' });
         } catch (_) {
           Shell.toast('保存失败，请重试');
           btn.disabled = false;
