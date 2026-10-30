@@ -73,6 +73,8 @@ LLM_MODEL=deepseek-flash npm start
 
 Text chat still works when `voiceId` is `PLACEHOLDER`. Speech is skipped until a real voice id is set, and the reply includes `audioError`. Sending `{ "voice": false }` skips TTS entirely (no ElevenLabs call) and returns `audioUrl: null`.
 
+The chat screen always sends `voice: false`, so a reply does not spend ElevenLabs credits. Each character bubble shows the Korean text with a speaker icon; tapping it calls `POST /api/tts` and plays the mp3. Audio is cached under `cache/audio/` (same hash as before), and the bubble stores `audioUrl` after the first successful play.
+
 The system prompt is read from `persona/system_prompt.md` on each chat request. A short Korean fallback is used if that file is missing.
 
 Generated mp3 files are cached in `cache/audio/` and served at `/audio/<sha256>.mp3`.
@@ -90,6 +92,7 @@ Generated mp3 files are cached in `cache/audio/` and served at `/audio/<sha256>.
 - `PUT /api/history` `{ messages }` → replace saved history
 - `DELETE /api/history` → clear server history
 - `POST /api/chat` with `{ messages: [{ role, content }], voice?: boolean }` → `{ bubbles, audioUrl, audioError? }`
+- `POST /api/tts` with `{ text, mood? }` → `{ audioUrl }` (login required). Generates speech for one bubble on demand; a repeated request for the same line reads the cache and does not call ElevenLabs again.
 - Model timeout → `504` `{ "error": "timeout" }`. Other model failures → `502`.
 
 Register / login are rate-limited (per IP + global failure window).

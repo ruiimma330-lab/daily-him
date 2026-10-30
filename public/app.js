@@ -26,7 +26,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   const SETTINGS_KEY = 'idolchat_settings_v1';
   const CLIENT_TIMEOUT_MS = 100000;
   const RETRY_TEXT = '앗 미안 ㅠㅠ 잠깐 신호가 안 좋았나 봐… 다시 보내줄래? 🐶';
-  const WAVE = [8, 14, 20, 11, 24, 16, 22, 10, 18, 26, 13, 21, 9, 17, 23, 12, 19, 8];
 
   const room = document.getElementById('screen-room');
   const messagesEl = document.getElementById('messages');
@@ -285,14 +284,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return `${date.getMonth() + 1}월 ${date.getDate()}일`;
   }
 
-  function formatDur(seconds) {
-    if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
-    const total = Math.round(seconds);
-    const minutes = Math.floor(total / 60);
-    const remain = total % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(remain).padStart(2, '0')}`;
-  }
-
   function dayKey(ts) {
     const date = new Date(ts);
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
@@ -316,63 +307,43 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     });
   }
 
-  function svgIcon(pathD, width) {
+  function speakerIcon(playing) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
-    svg.setAttribute('width', String(width || 16));
-    svg.setAttribute('height', String(width || 16));
+    svg.setAttribute('width', '14');
+    svg.setAttribute('height', '14');
     svg.setAttribute('aria-hidden', 'true');
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('fill', 'currentColor');
-    path.setAttribute('d', pathD);
+    path.setAttribute('d', playing
+      ? 'M7 5h3.2v14H7V5zm6.8 0H17v14h-3.2V5z'
+      : 'M4 9.5v5h3.2L12 19V5L7.2 9.5H4zm10.15-1.55a4.3 4.3 0 0 1 0 8.1l-.85-1.35a2.7 2.7 0 0 0 0-5.4l.85-1.35z');
     svg.append(path);
     return svg;
   }
 
-  function setPlayIcon(button, playing) {
-    const icon = playing
-      ? svgIcon('M7 5h3.2v14H7V5zm6.8 0H17v14h-3.2V5z', 14)
-      : svgIcon('M8 5.5v13l11-6.5-11-6.5z', 14);
-    button.replaceChildren(icon);
-    button.setAttribute('aria-label', playing ? '일시정지' : '재생');
+  function setSpeakIcon(button, playing) {
+    const want = playing ? 'pause' : 'play';
+    if (button.dataset.icon === want) return;
+    button.dataset.icon = want;
+    button.replaceChildren(speakerIcon(playing));
     button.setAttribute('aria-pressed', playing ? 'true' : 'false');
+    button.setAttribute('aria-label', playing ? '일시정지' : '음성 재생');
   }
 
-  function knownDuration(audio) {
-    return Number.isFinite(audio.duration) && audio.duration > 0 && audio.duration !== Infinity;
-  }
-
-  function updateVoiceUI(bubble) {
-    const audio = bubble.querySelector('audio');
-    const button = bubble.querySelector('.play');
-    const durationEl = bubble.querySelector('.dur');
-    const fill = bubble.querySelector('.track-fill');
-    const bars = bubble.querySelectorAll('.bars i');
-    if (!audio || !durationEl) return;
-    const playing = !audio.paused && !audio.ended;
-    bubble.classList.toggle('playing', playing);
-    if (button) setPlayIcon(button, playing);
-    const known = knownDuration(audio);
-    const mid = known && !audio.ended && audio.currentTime > 0.05;
-    const ratio = known ? Math.min(1, Math.max(0, audio.currentTime / audio.duration)) : 0;
-    const visual = (playing || mid) && !audio.ended ? ratio : 0;
-    if (playing && known) durationEl.textContent = formatDur(audio.currentTime);
-    else if (mid) durationEl.textContent = formatDur(audio.currentTime);
-    else durationEl.textContent = known ? formatDur(audio.duration) : '00:00';
-    if (fill) fill.style.width = `${Math.round(visual * 1000) / 10}%`;
-    bars.forEach((bar, index) => {
-      const mark = (index + 1) / bars.length;
-      bar.classList.toggle('filled', visual > 0 && mark <= visual + 0.001);
+  function syncSpeakState() {
+    document.querySelectorAll('.bubble.reply').forEach((bubble) => {
+      const audio = bubble.querySelector('audio');
+      const button = bubble.querySelector('.speak');
+      const playing = Boolean(audio && audio.getAttribute('src') && !audio.paused && !audio.ended);
+      bubble.classList.toggle('playing', playing);
+      if (button && !button.classList.contains('busy')) setSpeakIcon(button, playing);
     });
-  }
-
-  function syncPlayState() {
-    document.querySelectorAll('.voice').forEach((bubble) => updateVoiceUI(bubble));
   }
 
   function stopAllAudio() {
     document.querySelectorAll('audio').forEach((audio) => audio.pause());
-    syncPlayState();
+    syncSpeakState();
   }
 
   function playExclusive(audio) {
@@ -382,95 +353,132 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return audio.play();
   }
 
-  function toggleAudio(audio) {
-    if (!audio.paused && !audio.ended) {
+  async function playMessageAudio(message, bubble) {
+    const button = bubble.querySelector('.speak');
+    const audio = bubble.querySelector('audio');
+    if (!button || !audio || button.classList.contains('busy')) return;
+    if (audio.getAttribute('src') && !audio.paused && !audio.ended) {
       audio.pause();
-      syncPlayState();
+      syncSpeakState();
       return;
     }
-    playExclusive(audio).then(syncPlayState).catch(() => {
-      showToast('음성을 재생하지 못했어요');
-      syncPlayState();
-    });
-  }
-
-  function buildVoiceBubble(message) {
-    const bubble = el('div', 'bubble voice');
-    const button = el('button', 'play');
-    button.type = 'button';
-    setPlayIcon(button, false);
-    const col = el('div', 'voice-col');
-    const bars = el('div', 'bars');
-    bars.setAttribute('aria-hidden', 'true');
-    WAVE.forEach((height, index) => {
-      const bar = document.createElement('i');
-      bar.style.setProperty('--h', `${height}px`);
-      bar.style.setProperty('--d', `${(index % 6) * 0.08}s`);
-      bars.append(bar);
-    });
-    const track = el('div', 'track');
-    track.setAttribute('aria-hidden', 'true');
-    const fill = el('span', 'track-fill');
-    track.append(fill);
-    col.append(bars, track);
-    const duration = el('span', 'dur');
-    duration.textContent = '00:00';
-    const audio = el('audio');
-    audio.preload = 'metadata';
-    audio.setAttribute('playsinline', '');
-    const refresh = () => updateVoiceUI(bubble);
-    audio.addEventListener('loadedmetadata', refresh);
-    audio.addEventListener('durationchange', refresh);
-    audio.addEventListener('timeupdate', refresh);
-    audio.addEventListener('play', syncPlayState);
-    audio.addEventListener('pause', syncPlayState);
-    audio.addEventListener('ended', syncPlayState);
-    audio.addEventListener('error', () => {
-      duration.textContent = '00:00';
-    });
-    audio.src = message.audioUrl;
-    button.addEventListener('click', () => toggleAudio(audio));
-    bubble.append(button, col, duration, audio);
-    return bubble;
-  }
-
-  // New-format reply: one voice clip (or text fallback) with a collapsible 原文+翻译.
-  function buildVoiceItem(message) {
-    const wrap = el('div', 'vitem');
-    const failed = !message.audioUrl;
-    const bubble = failed ? buildTextBubble(message) : buildVoiceBubble(message);
-    wrap.append(bubble);
-    if (failed && message.ttsFailed) {
-      const note = el('p', 'vnote');
-      note.textContent = '语音没发出来，先看文字吧';
-      wrap.append(note);
+    if (!audio.getAttribute('src')) {
+      const cached = safeAudioUrl(message.audioUrl);
+      if (cached) {
+        audio.src = cached;
+      } else if (!settings.voice) {
+        showToast('음성 재생이 꺼져 있어요');
+        return;
+      } else if (!message.text || !String(message.text).trim()) {
+        showToast('음성은 이번엔 못 보냈어요');
+        return;
+      } else {
+        button.classList.add('busy');
+        button.setAttribute('aria-busy', 'true');
+        try {
+          const response = await fetch(withChar('/api/tts'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: message.text, mood: message.mood || '' }),
+          });
+          if (response.status === 401) {
+            location.href = '/login';
+            return;
+          }
+          const data = await response.json().catch(() => ({}));
+          const url = safeAudioUrl(data && data.audioUrl);
+          if (!response.ok || !url) {
+            showToast(data && data.audioError === 'Voice is not configured'
+              ? '음성은 아직 준비되지 않았어요'
+              : '음성은 이번엔 못 보냈어요');
+            return;
+          }
+          message.audioUrl = url;
+          message.ttsFailed = false;
+          saveHistory();
+          audio.src = url;
+        } catch (err) {
+          showToast('음성은 이번엔 못 보냈어요');
+          return;
+        } finally {
+          button.classList.remove('busy');
+          button.removeAttribute('aria-busy');
+        }
+      }
     }
-    const hasText = !failed || message.zh;
-    if (hasText) {
+    if (!audio.getAttribute('src')) return;
+    try {
+      await playExclusive(audio);
+      syncSpeakState();
+    } catch (err) {
+      showToast('음성을 재생하지 못했어요');
+      syncSpeakState();
+    }
+  }
+
+  // Character reply: Korean text, speaker (TTS on tap), Chinese collapsed underneath.
+  function buildReplyBubble(message) {
+    const bubble = el('div', 'bubble reply');
+    const text = typeof message.text === 'string' ? message.text : '';
+    if (text) {
+      const ko = el('p', 'ko-text');
+      ko.textContent = text;
+      bubble.append(ko);
+    } else {
+      bubble.classList.add('audio-only');
+    }
+
+    const zhText = typeof message.zh === 'string' ? message.zh.trim() : '';
+    const canSpeak = Boolean(safeAudioUrl(message.audioUrl)) || /[\p{L}\p{N}]/u.test(text);
+    if (canSpeak) {
+      const button = el('button', 'speak');
+      button.type = 'button';
+      setSpeakIcon(button, false);
+      const audio = el('audio');
+      audio.preload = 'none';
+      audio.setAttribute('playsinline', '');
+      audio.addEventListener('play', syncSpeakState);
+      audio.addEventListener('pause', syncSpeakState);
+      audio.addEventListener('ended', syncSpeakState);
+      audio.addEventListener('error', () => {
+        if (!audio.getAttribute('src')) return;
+        if (audio.dataset.retried === '1') {
+          showToast('음성을 재생하지 못했어요');
+          syncSpeakState();
+          return;
+        }
+        audio.dataset.retried = '1';
+        message.audioUrl = null;
+        audio.removeAttribute('src');
+        playMessageAudio(message, bubble);
+      });
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        playMessageAudio(message, bubble);
+      });
+      bubble.append(button, audio);
+    }
+
+    if (zhText) {
       const toggle = el('button', 'vtoggle');
       toggle.type = 'button';
-      toggle.textContent = failed ? '中文翻译 ▾' : '原文 · 翻译 ▾';
+      toggle.textContent = '翻译 ▾';
       toggle.setAttribute('aria-expanded', 'false');
-      const box = el('div', 'vtext');
-      box.hidden = true;
-      if (!failed) {
-        const ko = el('p', 'vko');
-        ko.textContent = message.text;
-        box.append(ko);
-      }
-      if (message.zh) {
-        const zh = el('p', 'vzh');
-        zh.textContent = message.zh;
-        box.append(zh);
-      }
-      toggle.addEventListener('click', () => {
-        box.hidden = !box.hidden;
-        toggle.setAttribute('aria-expanded', box.hidden ? 'false' : 'true');
-        toggle.textContent = (failed ? '中文翻译 ' : '原文 · 翻译 ') + (box.hidden ? '▾' : '▴');
+      const zh = el('p', 'vzh');
+      zh.hidden = true;
+      zh.textContent = zhText;
+      toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const open = zh.hidden;
+        zh.hidden = !open;
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        toggle.textContent = open ? '翻译 ▴' : '翻译 ▾';
       });
-      wrap.append(toggle, box);
+      bubble.append(toggle, zh);
     }
-    return wrap;
+    return bubble;
   }
 
   function buildTextBubble(message) {
@@ -555,10 +563,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     group.forEach((message, messageIndex) => {
       const line = el('div', 'line');
       const last = messageIndex === group.length - 1;
-      const bubble = message.voice
-        ? buildVoiceItem(message)
-        : (message.audioUrl && !message.text ? buildVoiceBubble(message) : buildTextBubble(message));
-      if (messageIndex === 0) (bubble.classList.contains('vitem') ? bubble.firstChild : bubble).classList.add('sharp');
+      const bubble = incoming ? buildReplyBubble(message) : buildTextBubble(message);
+      if (messageIndex === 0) bubble.classList.add('sharp');
       const meta = el('div', 'meta');
       if (!incoming && unread) {
         const read = el('span', 'read');
@@ -637,8 +643,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function previewText(message) {
     if (!message) return '대화를 시작해 보세요';
-    if ((message.audioUrl && !message.text) || (message.voice && message.audioUrl)) return '음성메시지';
-    return message.text;
+    if (message.text) return message.text;
+    if (message.audioUrl) return '음성';
+    return '대화를 시작해 보세요';
   }
 
   function updateList() {
@@ -900,7 +907,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const response = await fetch(withChar('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: historyPayload(), voice: settings.voice, sceneId: pendingSceneId || undefined }),
+        body: JSON.stringify({ messages: historyPayload(), voice: false, sceneId: pendingSceneId || undefined }),
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -917,26 +924,28 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         : [];
       const voiceItems = Array.isArray(data.messages) ? data.messages.filter((m) => m && typeof m.ko === 'string' && m.ko.trim()).slice(0, 3) : [];
       if (voiceItems.length) {
-        let failedAny = false;
         for (let i = 0; i < voiceItems.length; i += 1) {
           const item = voiceItems[i];
           if (myGen !== generation) return;
-          const audio = settings.voice ? safeAudioUrl(item.audioUrl) : null;
-          recording = Boolean(audio);
           typing = true;
+          recording = false;
           render();
-          // "Recording" gap scales with clip length; first one a bit shorter since we already waited.
-          await sleep(Math.min(3200, (i === 0 ? 300 : 700) + item.ko.length * 45));
+          await sleep(i === 0 ? Math.min(900, 320 + item.ko.length * 18) : bubbleDelay(item.ko));
           if (myGen !== generation) return;
           typing = false;
-          recording = false;
-          if (item.ttsFailed) failedAny = true;
-          messages.push({ role: 'assistant', text: item.ko.trim(), zh: String(item.zh || ''), mood: String(item.mood || ''), time: Date.now(), audioUrl: audio, voice: true, ttsFailed: Boolean(item.ttsFailed) });
+          messages.push({
+            role: 'assistant',
+            text: item.ko.trim(),
+            zh: String(item.zh || ''),
+            mood: String(item.mood || ''),
+            time: Date.now(),
+            audioUrl: safeAudioUrl(item.audioUrl),
+            voice: true,
+          });
           saveHistory();
           animateLast = true;
           render();
         }
-        if (failedAny) showToast('有条语音没发出来，已改成文字');
         return;
       }
       if (!bubbles.length) throw new Error('chat failed');
@@ -948,41 +957,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         await sleep(bubbleDelay(bubbles[i]));
         if (myGen !== generation) return;
         typing = false;
-        messages.push({ role: 'assistant', text: bubbles[i], time: Date.now(), audioUrl: null });
+        messages.push({ role: 'assistant', text: bubbles[i], time: Date.now(), audioUrl: null, voice: true });
         saveHistory();
         animateLast = true;
-        render();
-      }
-
-      const audioUrl = settings.voice ? safeAudioUrl(data.audioUrl) : null;
-      if (audioUrl) {
-        if (myGen !== generation) return;
-        typing = true;
-        render();
-        await sleep(bubbleDelay(bubbles.join('\n')));
-        if (myGen !== generation) return;
-        typing = false;
-        messages.push({ role: 'assistant', text: '', time: Date.now(), audioUrl });
-        saveHistory();
-        animateLast = true;
-        render();
-        if (false && settings.autoplay && roomOpen) {
-          const audios = messagesEl.querySelectorAll('audio');
-          const newest = audios[audios.length - 1];
-          if (newest) {
-            playExclusive(newest).then(() => {
-              if (!roomOpen) {
-                newest.pause();
-                return;
-              }
-              syncPlayState();
-            }).catch(() => {});
-          }
-        }
-      } else if (settings.voice && myGen === generation && data.audioError) {
-        voiceNote = data.audioError === 'Voice is not configured'
-          ? '음성은 아직 준비되지 않았어요'
-          : '음성은 이번엔 못 보냈어요';
         render();
       }
     } catch (err) {
