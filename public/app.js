@@ -78,9 +78,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     document.querySelectorAll('[data-char-label]').forEach((node) => {
       node.textContent = node.getAttribute('data-char-label') === 'title' ? shownTitle() : shownName();
     });
-    document.title = shownName();
-    const apple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
-    if (apple) apple.setAttribute('content', shownName());
+    document.title = `Daily Him · ${shownName()}`;
   }
 
   let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar`;
