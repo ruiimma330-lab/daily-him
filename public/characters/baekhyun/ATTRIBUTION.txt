@@ -5,5 +5,14 @@ Avatar
   Source: https://commons.wikimedia.org/wiki/File:Baekhyun_during_the_Exo_Planet_5_%E2%80%93_Exploration_concert_on_December_2019.jpg
   Changes: cropped to a centered square and resized to 512×512 JPEG.
 
-Each character picks its own file with the "avatar" field in characters/<id>/character.json.
-The server serves that file from public/characters/<id>/ or characters/<id>/.
+Portrait
+- portrait.jpg: tall crop of File:Baekhyun at EXplOration in Taipei in 28 September 2019.jpg
+  Author: DonutB_56 (http://donutb56.lofter.com/)
+  License: CC BY 2.5 (https://creativecommons.org/licenses/by/2.5)
+  Source: https://commons.wikimedia.org/wiki/File:Baekhyun_at_EXplOration_in_Taipei_in_28_September_2019.jpg
+  Changes: cropped to a 3:4 portrait and resized to 900×1199 JPEG.
+
+Each character picks its own files in characters/<id>/character.json:
+- avatar: filename served at /characters/<id>/avatar
+- portrait: public path used by the idol picker
+- company, group, nameZh, nameRoman: picker tabs and search

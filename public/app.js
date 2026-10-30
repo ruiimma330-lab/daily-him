@@ -1373,7 +1373,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   const friendAdd = document.getElementById('friend-add-btn');
-  if (friendAdd) friendAdd.addEventListener('click', () => showToast('更多角色以后再加'));
+  if (friendAdd) friendAdd.addEventListener('click', () => {
+    location.href = '/shell/pick.html?from=chat&c=' + encodeURIComponent(CHARACTER_ID);
+  });
   const friendSettings = document.getElementById('friend-settings-btn');
   if (friendSettings) friendSettings.addEventListener('click', () => switchMainTab('me'));
   const meProfileRow = document.getElementById('me-profile-row');

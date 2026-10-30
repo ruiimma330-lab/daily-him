@@ -1,0 +1,12 @@
+{
+  "id": "gdragon",
+  "name": "지드래곤",
+  "displayName": "지드래곤",
+  "nameZh": "权志龙",
+  "nameRoman": "G-Dragon",
+  "company": "YG",
+  "group": "BIGBANG",
+  "available": false,
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/gdragon/portrait.jpg"
+}
