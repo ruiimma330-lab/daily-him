@@ -61,6 +61,28 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let retryFresh = false;
   let retryAt = 0;
   let voiceNote = '';
+  let charRemark = '';
+  const charDefault = { name: '백현', emoji: '🐶' };
+
+  function shownName() {
+    const nick = String(charRemark || '').trim();
+    return nick || charDefault.name;
+  }
+
+  function shownTitle() {
+    return charDefault.emoji ? `${shownName()} ${charDefault.emoji}` : shownName();
+  }
+
+  function applyCharacterLabels() {
+    document.querySelectorAll('[data-char-label]').forEach((node) => {
+      node.textContent = node.getAttribute('data-char-label') === 'title' ? shownTitle() : shownName();
+    });
+    document.title = shownName();
+    const apple = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (apple) apple.setAttribute('content', shownName());
+  }
+
+  window.IdolChat = { shownName, shownTitle };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -199,7 +221,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     relState = rel;
     renderSpark();
     renderRelPop();
-    if (wasUp) showToast(`和백현的关系变近了一点：${TIER_LABEL[rel.tier.id] || rel.tier.name} 💛`);
+    if (wasUp) showToast(`和${shownName()}的关系变近了一点：${TIER_LABEL[rel.tier.id] || rel.tier.name} 💛`);
   }
   async function loadRelationship() {
     try {
@@ -557,7 +579,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const stack = el('div', 'stack');
     if (incoming) {
       const name = el('div', 'sender');
-      name.textContent = '백현';
+      name.setAttribute('data-char-label', 'name');
+      name.textContent = shownName();
       stack.append(name);
     }
     group.forEach((message, messageIndex) => {
@@ -613,7 +636,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     retryFresh = false;
     const stack = el('div', 'stack');
     const name = el('div', 'sender');
-    name.textContent = '백현';
+    name.setAttribute('data-char-label', 'name');
+    name.textContent = shownName();
     const line = el('div', 'line');
     const bubble = el('div', 'bubble sharp');
     bubble.textContent = RETRY_TEXT;
@@ -709,7 +733,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       if (el('me-display')) el('me-display').textContent = display;
       if (el('me-username')) el('me-username').textContent = me.user ? ('@' + me.user.username) : '';
       if (el('me-call')) el('me-call').textContent = p.callName || '—';
-      if (el('me-charnick')) el('me-charnick').textContent = p.characterNickname || '백현';
+      if (typeof p.characterNickname === 'string') charRemark = p.characterNickname;
+      applyCharacterLabels();
       if (el('me-balance')) el('me-balance').textContent = String(wal.balance ?? 0);
     } catch (_) { /* ignore */ }
   }
@@ -1101,9 +1126,93 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     setMenu(false);
   });
 
+  const remarkModal = document.getElementById('remark-modal');
+  const remarkInput = document.getElementById('remark-input');
+  const remarkForm = document.getElementById('remark-form');
+
+  function openRemark() {
+    setMenu(false);
+    if (!remarkModal || !remarkInput) return;
+    remarkInput.value = charRemark;
+    remarkInput.placeholder = charDefault.name;
+    remarkModal.hidden = false;
+    remarkInput.focus();
+  }
+
+  function closeRemark() {
+    if (!remarkModal || remarkModal.hidden) return;
+    remarkModal.hidden = true;
+  }
+
+  async function saveRemark(event) {
+    event.preventDefault();
+    const next = remarkInput.value.trim().slice(0, 20);
+    const saveBtn = document.getElementById('remark-save');
+    if (saveBtn) saveBtn.disabled = true;
+    try {
+      const response = await fetch(withChar('/api/profile'), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterNickname: next }),
+      });
+      if (response.status === 401) {
+        location.href = '/login';
+        return;
+      }
+      if (!response.ok) throw new Error('save failed');
+      const data = await response.json();
+      const saved = data && data.profile && data.profile.characterNickname;
+      charRemark = typeof saved === 'string' ? saved : next;
+      applyCharacterLabels();
+      closeRemark();
+      showToast('备注已更新');
+    } catch (err) {
+      showToast('备注没保存上');
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  }
+
+  async function loadAlias() {
+    try {
+      const [profRes, charsRes] = await Promise.all([
+        fetch(withChar('/api/profile')),
+        fetch('/api/characters'),
+      ]);
+      if (charsRes.ok) {
+        const chars = await charsRes.json();
+        const ch = (chars.characters || []).find((item) => item.id === CHARACTER_ID);
+        if (ch) {
+          if (ch.displayName || ch.name) charDefault.name = ch.displayName || ch.name;
+          if (typeof ch.displayEmoji === 'string') charDefault.emoji = ch.displayEmoji;
+        }
+      }
+      if (profRes.ok) {
+        const prof = await profRes.json();
+        const nick = prof && prof.profile && prof.profile.characterNickname;
+        charRemark = typeof nick === 'string' ? nick : '';
+      }
+    } catch (err) { /* keep the default name */ }
+    applyCharacterLabels();
+  }
+
+  const remarkOpen = document.getElementById('remark-open');
+  if (remarkOpen) remarkOpen.addEventListener('click', openRemark);
+  const meRemark = document.getElementById('me-remark-open');
+  if (meRemark) meRemark.addEventListener('click', openRemark);
+  const remarkCancel = document.getElementById('remark-cancel');
+  if (remarkCancel) remarkCancel.addEventListener('click', closeRemark);
+  if (remarkForm) remarkForm.addEventListener('submit', saveRemark);
+  if (remarkModal) {
+    remarkModal.addEventListener('click', (event) => {
+      if (event.target === remarkModal) closeRemark();
+    });
+  }
+
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
-    if (!modal.hidden) closeModal();
+    if (remarkModal && !remarkModal.hidden) closeRemark();
+    else if (!modal.hidden) closeModal();
     else if (!profileSheet.hidden) closeProfile();
     else if (!sheet.hidden) closeSheet();
     else if (menuOpen) setMenu(false);
@@ -1114,6 +1223,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   syncToggles();
   updateSendButton();
   render();
+
+  loadAlias();
 
   pullHistoryFromServer().then((remote) => {
     if (!remote) return;

@@ -46,7 +46,8 @@
         r.className = 'mom-reply';
         const w2 = document.createElement('span');
         w2.className = 'who';
-        w2.textContent = '백현';
+        w2.textContent = window.IdolChat && window.IdolChat.shownName ? window.IdolChat.shownName() : '백현';
+        w2.setAttribute('data-char-label', 'name');
         r.append(w2, document.createTextNode('：' + c.reply.text));
         frag.appendChild(r);
       }
@@ -123,7 +124,8 @@
     body.className = 'mom-card-body';
     const name = document.createElement('p');
     name.className = 'mom-name';
-    name.textContent = '백현';
+    name.textContent = window.IdolChat && window.IdolChat.shownName ? window.IdolChat.shownName() : '백현';
+    name.setAttribute('data-char-label', 'name');
     const text = document.createElement('p');
     text.className = 'mom-text';
     text.textContent = post.ko;
