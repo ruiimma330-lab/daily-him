@@ -554,6 +554,8 @@ function normalizeMessages(input) {
   return cleaned.slice(-20);
 }
 
+const synthInflight = new Map();
+
 async function synthesize(voiceId, model, text, apiKey, voiceSettings) {
   const hash = audioFileHash(voiceId, model, text);
   const filename = `${hash}.mp3`;
@@ -561,7 +563,15 @@ async function synthesize(voiceId, model, text, apiKey, voiceSettings) {
   if (fs.existsSync(filePath) && fs.statSync(filePath).size > 0) {
     return `/audio/${filename}`;
   }
+  const pending = synthInflight.get(hash);
+  if (pending) return pending;
+  const job = requestTts(voiceId, model, text, apiKey, voiceSettings, hash, filename, filePath)
+    .finally(() => { synthInflight.delete(hash); });
+  synthInflight.set(hash, job);
+  return job;
+}
 
+async function requestTts(voiceId, model, text, apiKey, voiceSettings, hash, filename, filePath) {
   const endpoint = `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`;
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -864,6 +874,41 @@ function createApp() {
       ttsModel: config.ttsModel,
       storage: store.storageName(),
     });
+  });
+
+  // On-demand TTS. Chat sends voice:false so unplayed replies do not spend credits.
+  app.post('/api/tts', requireUser, requireCharacter, async (req, res) => {
+    let keys;
+    try {
+      keys = requireKeys();
+    } catch (err) {
+      console.error(`Missing required environment variable(s): ${(err.missing || []).join(', ')}`);
+      return res.status(500).json({ error: 'Server is not configured' });
+    }
+
+    const config = resolveRuntimeConfig(req.characterId);
+    if (!voiceReady(config.voiceId)) {
+      return res.status(503).json({ error: 'Voice is not configured', audioError: 'Voice is not configured' });
+    }
+
+    const rawText = req.body && typeof req.body.text === 'string' ? req.body.text : '';
+    const mood = req.body && typeof req.body.mood === 'string' ? req.body.mood.slice(0, 20) : '';
+    const speech = toSpeechText([stripAudioTags(rawText)]).slice(0, 1000);
+    if (!speech || !isSpeakable(speech)) {
+      return res.status(400).json({ error: 'nothing to speak' });
+    }
+
+    const ttsText = `${moodDelivery(config, mood).prefix} ${speech}`.trim();
+    try {
+      const audioUrl = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
+      return res.json({ audioUrl });
+    } catch (err) {
+      const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
+      const vk = keys.voiceKey || '';
+      const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
+      console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${vk.length})`);
+      return res.status(502).json({ error: 'TTS failed', audioError: 'TTS failed' });
+    }
   });
 
   app.post('/api/chat', requireUser, requireCharacter, async (req, res) => {
