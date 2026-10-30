@@ -24,8 +24,11 @@
     const a = document.createElement('span');
     a.className = 'avatar sm';
     a.setAttribute('aria-hidden', 'true');
-    const tpl = document.getElementById('puppy-svg');
-    if (tpl && tpl.content) a.append(tpl.content.cloneNode(true));
+    if (window.IdolChat && window.IdolChat.paintAvatar) window.IdolChat.paintAvatar(a);
+    else {
+      const tpl = document.getElementById('puppy-svg');
+      if (tpl && tpl.content) a.append(tpl.content.cloneNode(true));
+    }
     return a;
   };
 

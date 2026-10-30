@@ -82,7 +82,42 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (apple) apple.setAttribute('content', shownName());
   }
 
-  window.IdolChat = { shownName, shownTitle };
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar`;
+  let userAvatarVersion = 0;
+
+  function paintCharacterAvatar(node) {
+    if (!node) return;
+    const img = document.createElement('img');
+    img.className = 'char-photo';
+    img.alt = '';
+    img.src = characterAvatarUrl;
+    img.addEventListener('error', () => {
+      img.remove();
+      if (!node.querySelector('svg')) node.append(puppyIcon());
+    });
+    node.replaceChildren(img);
+  }
+
+  function applyUserAvatar() {
+    document.querySelectorAll('[data-user-avatar]').forEach((node) => {
+      let img = node.querySelector('img.user-photo');
+      if (!userAvatarVersion) {
+        if (img) img.remove();
+        return;
+      }
+      if (!img) {
+        img = document.createElement('img');
+        img.className = 'user-photo';
+        img.alt = '';
+        node.append(img);
+      }
+      img.src = `/api/me/avatar?v=${userAvatarVersion}`;
+    });
+    const clearBtn = document.getElementById('me-avatar-clear');
+    if (clearBtn) clearBtn.hidden = !userAvatarVersion;
+  }
+
+  window.IdolChat = { shownName, shownTitle, paintAvatar: paintCharacterAvatar };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -319,14 +354,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   function makeAvatar(sizeClass) {
     const node = el('span', sizeClass ? `avatar ${sizeClass}` : 'avatar');
     node.setAttribute('aria-hidden', 'true');
-    node.append(puppyIcon());
+    paintCharacterAvatar(node);
     return node;
   }
 
   function mountStaticAvatars() {
-    document.querySelectorAll('[data-avatar]').forEach((node) => {
-      if (!node.querySelector('svg')) node.append(puppyIcon());
-    });
+    document.querySelectorAll('[data-avatar]').forEach((node) => paintCharacterAvatar(node));
   }
 
   function speakerIcon(playing) {
@@ -511,7 +544,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function render() {
     messagesEl.replaceChildren();
-    if (roomSub) roomSub.textContent = typing ? '입력 중...' : '지금 대화할 수 있어요';
+    if (roomSub) {
+      roomSub.textContent = typing ? (recording ? '녹음 중...' : '입력 중...') : '';
+      roomSub.hidden = !typing;
+    }
     if (!messages.length && !typing && !showRetry) {
       messagesEl.append(datePill(Date.now()));
     }
@@ -541,6 +577,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     else if (showRetry) messagesEl.append(renderRetry());
     if (voiceNote && !typing) messagesEl.append(renderVoiceNote());
     animateLast = false;
+    applyRoomSearch();
 
     if (roomOpen) {
       settings.seen = messages.length;
@@ -550,6 +587,19 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       });
     }
     updateList();
+  }
+
+  function applyRoomSearch() {
+    const field = document.getElementById('room-search-input');
+    const q = field ? field.value.trim().toLowerCase() : '';
+    document.querySelectorAll('#messages .line').forEach((line) => {
+      line.hidden = Boolean(q) && !line.textContent.toLowerCase().includes(q);
+    });
+    document.querySelectorAll('#messages .group').forEach((group) => {
+      const lines = [...group.querySelectorAll('.line')];
+      if (!lines.length) return;
+      group.hidden = Boolean(q) && lines.every((line) => line.hidden);
+    });
   }
 
   function countGroups(list) {
@@ -574,7 +624,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function renderGroup(group, unread, fresh) {
     const incoming = group[0].role === 'assistant';
-    const wrap = el('div', `group ${incoming ? 'in' : 'out'}${fresh ? ' fresh' : ''}`);
+    const wrap = el('div', `group ${incoming ? 'in named' : 'out'}${fresh ? ' fresh' : ''}`);
     if (incoming) wrap.append(makeAvatar('sm'));
     const stack = el('div', 'stack');
     if (incoming) {
@@ -632,7 +682,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function renderRetry() {
-    const wrap = el('div', `group in${retryFresh ? ' fresh' : ''}`);
+    const wrap = el('div', `group in named${retryFresh ? ' fresh' : ''}`);
     retryFresh = false;
     const stack = el('div', 'stack');
     const name = el('div', 'sender');
@@ -729,8 +779,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const wal = await fetch('/api/wallet').then((r) => r.json());
       const p = (prof && prof.profile) || {};
       const display = p.displayName || (me.user && me.user.username) || '—';
+      if (me && me.hasAvatar) userAvatarVersion = userAvatarVersion || Date.now();
+      else userAvatarVersion = 0;
+      applyUserAvatar();
       const el = (id) => document.getElementById(id);
       if (el('me-display')) el('me-display').textContent = display;
+      const profileName = document.getElementById('me-profile-name');
+      if (profileName) profileName.textContent = display;
       if (el('me-username')) el('me-username').textContent = me.user ? ('@' + me.user.username) : '';
       if (el('me-call')) el('me-call').textContent = p.callName || '—';
       if (typeof p.characterNickname === 'string') charRemark = p.characterNickname;
@@ -1173,12 +1228,21 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
   }
 
+  function setMyName(profile, me) {
+    const node = document.getElementById('me-profile-name');
+    if (!node) return;
+    const display = (profile && profile.displayName) || (me && me.user && me.user.username) || '我';
+    node.textContent = display;
+  }
+
   async function loadAlias() {
     try {
-      const [profRes, charsRes] = await Promise.all([
+      const [profRes, charsRes, meRes] = await Promise.all([
         fetch(withChar('/api/profile')),
         fetch('/api/characters'),
+        fetch('/api/me'),
       ]);
+      let profile = null;
       if (charsRes.ok) {
         const chars = await charsRes.json();
         const ch = (chars.characters || []).find((item) => item.id === CHARACTER_ID);
@@ -1189,9 +1253,14 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       }
       if (profRes.ok) {
         const prof = await profRes.json();
-        const nick = prof && prof.profile && prof.profile.characterNickname;
+        profile = prof && prof.profile;
+        const nick = profile && profile.characterNickname;
         charRemark = typeof nick === 'string' ? nick : '';
       }
+      const me = meRes.ok ? await meRes.json() : null;
+      setMyName(profile, me);
+      if (me && me.hasAvatar) userAvatarVersion = Date.now();
+      applyUserAvatar();
     } catch (err) { /* keep the default name */ }
     applyCharacterLabels();
   }
@@ -1218,6 +1287,143 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     else if (menuOpen) setMenu(false);
     else if (roomOpen) closeRoom();
   });
+
+  function togglePanel(button, panel, field) {
+    if (!button || !panel) return;
+    const open = panel.hidden;
+    panel.hidden = !open;
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && field) field.focus();
+  }
+
+  const friendSearchBtn = document.getElementById('friend-search-btn');
+  const friendSearch = document.getElementById('friend-search');
+  const friendSearchInput = document.getElementById('friend-search-input');
+  if (friendSearchBtn) {
+    friendSearchBtn.addEventListener('click', () => togglePanel(friendSearchBtn, friendSearch, friendSearchInput));
+  }
+  if (friendSearchInput) {
+    friendSearchInput.addEventListener('input', () => {
+      const row = document.getElementById('open-chat');
+      if (!row) return;
+      const q = friendSearchInput.value.trim().toLowerCase();
+      row.hidden = Boolean(q) && !row.innerText.toLowerCase().includes(q);
+    });
+  }
+  const avatarFile = document.getElementById('me-avatar-file');
+  const avatarClear = document.getElementById('me-avatar-clear');
+
+  function jpegBytesToBase64(bytes) {
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  async function fileToAvatarJpeg(file) {
+    const bitmap = await createImageBitmap(file);
+    const side = Math.min(bitmap.width, bitmap.height);
+    const sx = Math.floor((bitmap.width - side) / 2);
+    const sy = Math.floor((bitmap.height - side) / 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    canvas.getContext('2d').drawImage(bitmap, sx, sy, side, side, 0, 0, 256, 256);
+    if (bitmap.close) bitmap.close();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    if (!blob) throw new Error('encode failed');
+    return jpegBytesToBase64(new Uint8Array(await blob.arrayBuffer()));
+  }
+
+  if (avatarFile) {
+    avatarFile.addEventListener('change', async () => {
+      const file = avatarFile.files && avatarFile.files[0];
+      avatarFile.value = '';
+      if (!file) return;
+      try {
+        const image = await fileToAvatarJpeg(file);
+        const response = await fetch('/api/me/avatar', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image }),
+        });
+        if (response.status === 401) { location.href = '/login'; return; }
+        if (!response.ok) throw new Error('upload failed');
+        userAvatarVersion = Date.now();
+        applyUserAvatar();
+        showToast('头像已更新');
+      } catch (err) {
+        showToast('头像没换上');
+      }
+    });
+  }
+  if (avatarClear) {
+    avatarClear.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/me/avatar', { method: 'DELETE' });
+        if (!response.ok) throw new Error('clear failed');
+        userAvatarVersion = 0;
+        applyUserAvatar();
+      } catch (err) {
+        showToast('没能恢复默认头像');
+      }
+    });
+  }
+
+  const friendAdd = document.getElementById('friend-add-btn');
+  if (friendAdd) friendAdd.addEventListener('click', () => showToast('更多角色以后再加'));
+  const friendSettings = document.getElementById('friend-settings-btn');
+  if (friendSettings) friendSettings.addEventListener('click', () => switchMainTab('me'));
+  const meProfileRow = document.getElementById('me-profile-row');
+  if (meProfileRow) meProfileRow.addEventListener('click', () => switchMainTab('me'));
+  const friendsToggle = document.getElementById('friends-section-toggle');
+  const friendsSection = document.getElementById('friends-section');
+  if (friendsToggle && friendsSection) {
+    friendsToggle.addEventListener('click', () => {
+      const open = friendsToggle.getAttribute('aria-expanded') !== 'false';
+      friendsToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+      friendsToggle.classList.toggle('collapsed', open);
+      friendsSection.hidden = open;
+    });
+  }
+
+  const roomSearchBtn = document.getElementById('room-search-btn');
+  const roomSearch = document.getElementById('room-search');
+  const roomSearchInput = document.getElementById('room-search-input');
+  if (roomSearchBtn) {
+    roomSearchBtn.addEventListener('click', () => togglePanel(roomSearchBtn, roomSearch, roomSearchInput));
+  }
+  if (roomSearchInput) roomSearchInput.addEventListener('input', applyRoomSearch);
+
+  const emojiBtn = document.getElementById('emoji-btn');
+  const emojiPop = document.getElementById('emoji-pop');
+  if (emojiBtn && emojiPop) {
+    emojiBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      emojiPop.hidden = !emojiPop.hidden;
+      emojiBtn.setAttribute('aria-expanded', emojiPop.hidden ? 'false' : 'true');
+    });
+    emojiPop.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-emoji]');
+      if (!button) return;
+      const emoji = button.dataset.emoji;
+      const start = input.selectionStart == null ? input.value.length : input.selectionStart;
+      const end = input.selectionEnd == null ? input.value.length : input.selectionEnd;
+      input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+      const pos = start + emoji.length;
+      input.focus();
+      input.setSelectionRange(pos, pos);
+      updateSendButton();
+    });
+    document.addEventListener('click', (event) => {
+      if (emojiPop.hidden) return;
+      if (emojiPop.contains(event.target) || emojiBtn.contains(event.target)) return;
+      emojiPop.hidden = true;
+      emojiBtn.setAttribute('aria-expanded', 'false');
+    });
+  }
 
   mountStaticAvatars();
   syncToggles();
