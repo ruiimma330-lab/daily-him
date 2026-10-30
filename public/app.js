@@ -62,6 +62,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let retryAt = 0;
   let voiceNote = '';
   let charRemark = '';
+  let userNickname = '';
   const charDefault = { name: '백현', emoji: '🐶' };
 
   function shownName() {
@@ -117,7 +118,14 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (clearBtn) clearBtn.hidden = !userAvatarVersion;
   }
 
-  window.IdolChat = { shownName, shownTitle, paintAvatar: paintCharacterAvatar };
+  window.IdolChat = {
+    shownName,
+    shownTitle,
+    paintAvatar: paintCharacterAvatar,
+    applyUserAvatar,
+    logout,
+    applyPrefs: (next) => applyPrefs(next),
+  };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -154,13 +162,19 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   function loadSettings() {
     try {
       const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      let prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem('idol_prefs_v1') || '{}'); } catch (_) { prefs = {}; }
+      const playback = prefs.playback === 'auto' || raw.playback === 'auto' ? 'auto' : 'tap';
+      const translation = prefs.translation === 'expanded' || raw.translation === 'expanded' ? 'expanded' : 'collapsed';
       return {
-        autoplay: raw.autoplay === true,
-        voice: raw.voice !== false,
+        autoplay: playback === 'auto',
+        voice: true,
         seen: Number.isFinite(raw.seen) && raw.seen > 0 ? raw.seen : 0,
+        playback,
+        translation,
       };
     } catch (err) {
-      return { autoplay: false, voice: true, seen: 0 };
+      return { autoplay: false, voice: true, seen: 0, playback: 'tap', translation: 'collapsed' };
     }
   }
 
@@ -421,9 +435,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const cached = safeAudioUrl(message.audioUrl);
       if (cached) {
         audio.src = cached;
-      } else if (!settings.voice) {
-        showToast('음성 재생이 꺼져 있어요');
-        return;
       } else if (!message.text || !String(message.text).trim()) {
         showToast('음성은 이번엔 못 보냈어요');
         return;
@@ -516,12 +527,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
 
     if (zhText) {
+      const expanded = settings.translation === 'expanded';
       const toggle = el('button', 'vtoggle');
       toggle.type = 'button';
-      toggle.textContent = '翻译 ▾';
-      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = expanded ? '翻译 ▴' : '翻译 ▾';
+      toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       const zh = el('p', 'vzh');
-      zh.hidden = true;
+      zh.hidden = !expanded;
       zh.textContent = zhText;
       toggle.addEventListener('click', (event) => {
         event.preventDefault();
@@ -749,8 +761,50 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function syncToggles() {
-    autoplayBtn.setAttribute('aria-checked', settings.autoplay ? 'true' : 'false');
-    voiceBtn.setAttribute('aria-checked', settings.voice ? 'true' : 'false');
+    const auto = settings.playback === 'auto';
+    settings.autoplay = auto;
+    if (autoplayBtn) autoplayBtn.setAttribute('aria-checked', auto ? 'true' : 'false');
+    if (voiceBtn) {
+      voiceBtn.setAttribute('aria-checked', auto ? 'true' : 'false');
+      const label = voiceBtn.querySelector('span');
+      if (label) label.textContent = auto ? '自动播放' : '点了才播';
+    }
+  }
+
+  function maybeAutoplay() {
+    if (settings.playback !== 'auto' || !roomOpen) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant' || !String(last.text || '').trim()) return;
+    const bubbles = messagesEl.querySelectorAll('.bubble.reply');
+    const bubble = bubbles[bubbles.length - 1];
+    if (bubble) playMessageAudio(last, bubble);
+  }
+
+  function applyPrefs(next) {
+    if (!next || typeof next !== 'object') return;
+    if (next.playback === 'tap' || next.playback === 'auto') settings.playback = next.playback;
+    if (next.translation === 'collapsed' || next.translation === 'expanded') settings.translation = next.translation;
+    if (typeof next.nickname === 'string') userNickname = next.nickname.trim();
+    document.documentElement.dataset.playback = settings.playback || 'tap';
+    document.documentElement.dataset.translation = settings.translation || 'collapsed';
+    try {
+      const prev = JSON.parse(localStorage.getItem('idol_prefs_v1') || '{}');
+      localStorage.setItem('idol_prefs_v1', JSON.stringify({
+        ...prev,
+        playback: settings.playback,
+        translation: settings.translation,
+        nickname: userNickname,
+        aiNoticeSeen: typeof next.aiNoticeSeen === 'boolean' ? next.aiNoticeSeen : prev.aiNoticeSeen === true,
+      }));
+    } catch (_) { /* ignore */ }
+    saveSettings();
+    syncToggles();
+    const profileName = document.getElementById('me-profile-name');
+    if (profileName && (userNickname || profileName.textContent === '我' || profileName.textContent === '—')) {
+      profileName.textContent = userNickname || profileName.textContent;
+    }
+    if (userNickname && profileName) profileName.textContent = userNickname;
+    if (roomOpen) render();
   }
 
   function setMenu(open) {
@@ -807,7 +861,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       btn.classList.toggle('active', btn.dataset.tab === tab);
     });
     setTabBarVisible(true);
-    if (tab === 'me') refreshMe();
+    if (tab === 'me' && window.Me && window.Me.open) window.Me.open();
+    else if (tab === 'me') refreshMe();
   }
 
   if (tabBar) {
@@ -1027,6 +1082,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           animateLast = true;
           render();
         }
+        maybeAutoplay();
         return;
       }
       if (!bubbles.length) throw new Error('chat failed');
@@ -1043,6 +1099,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         animateLast = true;
         render();
       }
+      maybeAutoplay();
     } catch (err) {
       if (myGen !== generation) return;
       if (err && err.name === 'AbortError' && !timedOut) return;
@@ -1150,16 +1207,30 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
   });
-  autoplayBtn.addEventListener('click', () => {
-    settings.autoplay = !settings.autoplay;
-    saveSettings();
-    syncToggles();
-  });
-  voiceBtn.addEventListener('click', () => {
-    settings.voice = !settings.voice;
-    saveSettings();
-    syncToggles();
-  });
+  async function persistPrefs(patch) {
+    applyPrefs(patch);
+    try {
+      const response = await fetch('/api/me/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.settings) applyPrefs(data.settings);
+      }
+    } catch (_) { /* local copy still applies */ }
+  }
+  if (autoplayBtn) {
+    autoplayBtn.addEventListener('click', () => {
+      persistPrefs({ playback: settings.playback === 'auto' ? 'tap' : 'auto' });
+    });
+  }
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', () => {
+      persistPrefs({ playback: settings.playback === 'auto' ? 'tap' : 'auto' });
+    });
+  }
   input.addEventListener('input', updateSendButton);
   input.addEventListener('compositionend', () => {
     lastCompositionEnd = Date.now();
@@ -1232,7 +1303,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   function setMyName(profile, me) {
     const node = document.getElementById('me-profile-name');
     if (!node) return;
-    const display = (profile && profile.displayName) || (me && me.user && me.user.username) || '我';
+    const display = userNickname || (profile && profile.displayName) || (me && me.user && me.user.username) || '我';
     node.textContent = display;
   }
 
@@ -1433,7 +1504,47 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   updateSendButton();
   render();
 
+  document.addEventListener('idol-prefs', (event) => applyPrefs(event.detail || {}));
+  document.addEventListener('idol-avatar', (event) => {
+    userAvatarVersion = event.detail && event.detail.hasAvatar ? Date.now() : 0;
+    applyUserAvatar();
+  });
+  document.addEventListener('idol-profile', (event) => {
+    const detail = event.detail || {};
+    if (detail.characterId !== CHARACTER_ID) return;
+    if (typeof detail.characterNickname === 'string') {
+      charRemark = detail.characterNickname;
+      applyCharacterLabels();
+    }
+  });
+  document.addEventListener('idol-history-cleared', (event) => {
+    const detail = event.detail || {};
+    if (detail.all) {
+      const keys = [];
+      for (let i = 0; i < localStorage.length; i += 1) {
+        const key = localStorage.key(i);
+        if (key && key.indexOf('idolchat_history_v1') === 0) keys.push(key);
+      }
+      keys.forEach((key) => localStorage.removeItem(key));
+      messages = [];
+      settings.seen = 0;
+      saveSettings();
+      render();
+      return;
+    }
+    if (detail.characterId !== CHARACTER_ID) return;
+    messages = [];
+    settings.seen = 0;
+    saveLocalHistory();
+    saveSettings();
+    render();
+  });
+
+  applyPrefs(settings);
   loadAlias();
+  fetch('/api/me/settings').then((response) => (response.ok ? response.json() : null)).then((data) => {
+    if (data && data.settings) applyPrefs(data.settings);
+  }).catch(() => {});
 
   async function welcomeIfNeeded(remote) {
     try {

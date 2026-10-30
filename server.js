@@ -10,6 +10,8 @@ const memory = require('./lib/memory');
 const moments = require('./lib/moments');
 const profile = require('./lib/profile');
 const wallet = require('./lib/wallet');
+const prefs = require('./lib/prefs');
+const PKG = require('./package.json');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -465,9 +467,14 @@ function normalizeRequestPath(req) {
   return normalized.toLowerCase();
 }
 
+function isLegalPath(p) {
+  return p === '/legal/privacy.html' || p === '/legal/terms.html';
+}
+
 function isPublicPath(p) {
   return PUBLIC_PATHS.has(p)
     || p.startsWith('/icons/')
+    || isLegalPath(p)
     || p === '/shell/cover.html'
     || p === '/shell/shell.css'
     || p === '/shell/shell.js'
@@ -482,6 +489,7 @@ function isGatePublicPath(p) {
     || p === '/api/auth-config'
     || p === '/manifest.webmanifest'
     || p.startsWith('/icons/')
+    || isLegalPath(p)
   );
 }
 
@@ -676,7 +684,7 @@ function createApp() {
     }
     const username = req.body && req.body.username;
     const password = req.body && req.body.password;
-    if (!validateUsername(username) || !validatePassword(password)) {
+    if (!validateUsername(username) || !validatePassword(password) || !req.body || req.body.age14 !== true) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
     try {
@@ -768,6 +776,66 @@ function createApp() {
     return res.json({ ok: true });
   });
 
+  app.get('/api/me/settings', requireUser, (req, res) => {
+    res.json({ ok: true, settings: prefs.load(req.userId) });
+  });
+
+  app.put('/api/me/settings', requireUser, (req, res) => {
+    try {
+      return res.json({ ok: true, settings: prefs.save(req.userId, req.body || {}) });
+    } catch (err) {
+      if (err && String(err.code || '').startsWith('BAD_')) return res.status(400).json({ error: err.code });
+      throw err;
+    }
+  });
+
+  app.put('/api/me/password', requireUser, async (req, res) => {
+    const oldPassword = req.body && req.body.oldPassword;
+    const newPassword = req.body && req.body.newPassword;
+    if (typeof oldPassword !== 'string' || !oldPassword || !validatePassword(newPassword)) {
+      return res.status(400).json({ error: 'Invalid password' });
+    }
+    const user = store.findUserById(req.userId);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+    const matches = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!matches) return res.status(401).json({ error: 'Unauthorized' });
+    store.updateUser(req.userId, { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS) });
+    return res.json({ ok: true });
+  });
+
+  app.delete('/api/me', requireUser, (req, res) => {
+    const confirm = req.body && typeof req.body.confirm === 'string' ? req.body.confirm.trim() : '';
+    if (confirm !== '注销') return res.status(400).json({ error: 'confirm required' });
+    store.deleteUser(req.userId);
+    clearSessionCookie(req, res);
+    return res.json({ ok: true });
+  });
+
+  app.get('/api/feedback', requireUser, (req, res) => {
+    const doc = store.getDoc('feedback', req.userId, 'user') || { items: [] };
+    res.json({ ok: true, items: Array.isArray(doc.items) ? doc.items : [] });
+  });
+
+  app.post('/api/feedback', requireUser, (req, res) => {
+    const text = req.body && typeof req.body.text === 'string' ? req.body.text.trim() : '';
+    const kind = req.body && req.body.kind === 'report' ? 'report' : 'feedback';
+    if (!text || text.length > 1000) return res.status(400).json({ error: 'text required' });
+    const doc = store.getDoc('feedback', req.userId, 'user') || { items: [] };
+    const items = Array.isArray(doc.items) ? doc.items.slice(-29) : [];
+    const item = { id: crypto.randomBytes(6).toString('hex'), kind, text, createdAt: Date.now() };
+    items.push(item);
+    store.putDoc('feedback', req.userId, 'user', { items });
+    return res.status(201).json({ ok: true, item });
+  });
+
+  app.get('/api/about', requireUser, (req, res) => {
+    res.json({
+      ok: true,
+      version: typeof PKG.version === 'string' ? PKG.version : '',
+      notice: 'AI 模拟角色，非本人',
+    });
+  });
+
   app.get('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
     const messages = store.getHistory(req.userId, req.characterId);
     res.json({ messages });
@@ -778,9 +846,20 @@ function createApp() {
     res.json({ messages });
   });
 
-  app.delete('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
+  app.delete('/api/history', requireUser, requireCharacter, requireAvailable, async (req, res) => {
     store.deleteHistory(req.userId, req.characterId);
-    res.json({ messages: [] });
+    if (req.query.summary === '1') await memory.clearSummary(req.userId, req.characterId);
+    res.json({ messages: [], summaryCleared: req.query.summary === '1' });
+  });
+
+  app.delete('/api/histories', requireUser, async (req, res) => {
+    if (!req.body || req.body.confirm !== 'CLEAR') return res.status(400).json({ error: 'confirm required' });
+    const ids = characters.list().map((item) => item.id);
+    for (const id of ids) {
+      store.deleteHistory(req.userId, id);
+      await memory.clearSummary(req.userId, id);
+    }
+    res.json({ ok: true, cleared: ids });
   });
 
   app.get('/api/relationship', requireUser, requireCharacter, (req, res) => {
