@@ -10,6 +10,8 @@ const memory = require('./lib/memory');
 const moments = require('./lib/moments');
 const profile = require('./lib/profile');
 const wallet = require('./lib/wallet');
+const prefs = require('./lib/prefs');
+const PKG = require('./package.json');
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, 'public');
@@ -766,6 +768,97 @@ function createApp() {
   app.delete('/api/me/avatar', requireUser, (req, res) => {
     store.delDoc('avatar', req.userId, 'user');
     return res.json({ ok: true });
+  });
+
+  app.get('/api/me/settings', requireUser, (req, res) => {
+    res.json({ ok: true, settings: prefs.load(req.userId) });
+  });
+
+  app.put('/api/me/settings', requireUser, (req, res) => {
+    try {
+      const settings = prefs.save(req.userId, req.body || {});
+      return res.json({ ok: true, settings });
+    } catch (err) {
+      if (err && String(err.code || '').startsWith('BAD_')) {
+        return res.status(400).json({ error: err.code });
+      }
+      throw err;
+    }
+  });
+
+  app.put('/api/me/password', requireUser, async (req, res) => {
+    const oldPassword = req.body && req.body.oldPassword;
+    const newPassword = req.body && req.body.newPassword;
+    if (typeof oldPassword !== 'string' || !oldPassword || !validatePassword(newPassword)) {
+      return res.status(400).json({ error: 'Invalid password' });
+    }
+    const user = store.findUserById(req.userId);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+    const matches = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!matches) return res.status(401).json({ error: 'Unauthorized' });
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    store.updateUser(req.userId, { passwordHash });
+    return res.json({ ok: true });
+  });
+
+  app.delete('/api/me', requireUser, (req, res) => {
+    const confirm = req.body && typeof req.body.confirm === 'string' ? req.body.confirm : '';
+    if (confirm !== req.user.username) return res.status(400).json({ error: 'confirm required' });
+    store.deleteUser(req.userId);
+    clearSessionCookie(req, res);
+    return res.json({ ok: true });
+  });
+
+  app.get('/api/feedback', requireUser, (req, res) => {
+    const doc = store.getDoc('feedback', req.userId, 'user') || { items: [] };
+    const items = Array.isArray(doc.items) ? doc.items : [];
+    res.json({ ok: true, items });
+  });
+
+  app.post('/api/feedback', requireUser, (req, res) => {
+    const text = req.body && typeof req.body.text === 'string' ? req.body.text.trim() : '';
+    if (!text || text.length > 1000) return res.status(400).json({ error: 'text required' });
+    const doc = store.getDoc('feedback', req.userId, 'user') || { items: [] };
+    const items = Array.isArray(doc.items) ? doc.items.slice(-29) : [];
+    const item = { id: crypto.randomBytes(6).toString('hex'), text, createdAt: Date.now() };
+    items.push(item);
+    store.putDoc('feedback', req.userId, 'user', { items });
+    return res.status(201).json({ ok: true, item });
+  });
+
+  function creditEntries() {
+    const out = [];
+    for (const info of characters.list()) {
+      const files = [
+        path.join(PUBLIC_DIR, 'characters', info.id, 'ATTRIBUTION.txt'),
+        path.join(PUBLIC_DIR, 'characters', info.id, 'moments', 'ATTRIBUTION.txt'),
+      ];
+      for (const file of files) {
+        if (!fs.existsSync(file)) continue;
+        let text = '';
+        try { text = fs.readFileSync(file, 'utf8').trim(); } catch (_) { text = ''; }
+        if (!text) continue;
+        out.push({
+          id: info.id,
+          name: info.nameZh || info.displayName || info.name || info.id,
+          file: path.basename(path.dirname(file)) === 'moments' ? 'moments/ATTRIBUTION.txt' : 'ATTRIBUTION.txt',
+          text: text.slice(0, 8000),
+        });
+      }
+    }
+    return out;
+  }
+
+  app.get('/api/credits', requireUser, (req, res) => {
+    res.json({ ok: true, credits: creditEntries() });
+  });
+
+  app.get('/api/about', requireUser, (req, res) => {
+    res.json({
+      ok: true,
+      version: typeof PKG.version === 'string' ? PKG.version : '',
+      notice: 'AI 模拟角色，非本人',
+    });
   });
 
   app.get('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {

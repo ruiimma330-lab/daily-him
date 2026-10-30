@@ -1,0 +1,350 @@
+/* 我的. Self-contained. Text-size rules are the chat effect of this module's setting. */
+.screen-me {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f7f6f4;
+  color: #1c1c1c;
+  font-family: "Noto Sans KR", "Noto Sans SC", "PingFang SC", sans-serif;
+  font-weight: 400;
+}
+.screen-me[hidden] { display: none; }
+#me-root { position: relative; flex: 1; min-height: 0; }
+
+.me-page {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(24px + var(--tab-h) + env(safe-area-inset-bottom));
+}
+.me-page-sub {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: #f7f6f4;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.me-page-sub[hidden] { display: none; }
+
+.me-top {
+  padding: calc(18px + env(safe-area-inset-top)) 22px 8px;
+}
+.me-top h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+}
+
+.me-profile {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 22px 22px;
+}
+.me-avatar {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: #efece8;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(28, 28, 28, 0.08);
+}
+.me-avatar svg { width: 100%; height: 100%; display: block; }
+.me-avatar img.user-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.me-avatar-edit {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 2px 0 4px;
+  background: rgba(28, 28, 28, 0.45);
+  color: #fff;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.me-nick {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  font: inherit;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: #1c1c1c;
+  cursor: pointer;
+}
+.me-nick-input {
+  width: 100%;
+  height: 36px;
+  border: 0;
+  border-bottom: 1px solid #1c1c1c;
+  background: transparent;
+  font: inherit;
+  font-size: 20px;
+  outline: none;
+}
+.me-handle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: #9a9590;
+}
+.me-clear-avatar {
+  margin-top: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  color: #9a9590;
+  cursor: pointer;
+}
+
+.me-kicker {
+  margin: 0;
+  padding: 18px 22px 8px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: #9a9590;
+}
+.me-group { background: #fff; }
+.me-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 22px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+.me-group > * + * { box-shadow: inset 0 1px 0 rgba(28, 28, 28, 0.08); }
+.me-line span { flex: 1; min-width: 0; }
+.me-line b {
+  font-weight: 400;
+  color: #6f6a64;
+  max-width: 46%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.me-line i { color: #c4bfb8; font-style: normal; font-size: 18px; }
+.me-static {
+  padding: 14px 22px;
+  background: #fff;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6f6a64;
+}
+.me-idol {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.me-idol img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #efece8;
+}
+.me-idol small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 300;
+  color: #9a9590;
+}
+
+.me-bar {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  height: calc(52px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
+  background: #f7f6f4;
+}
+.me-bar h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+}
+.me-back {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.me-block { padding: 8px 22px 18px; }
+.me-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.me-field span { font-size: 12px; letter-spacing: 0.08em; color: #9a9590; }
+.me-field input, .me-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid rgba(28, 28, 28, 0.16);
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  padding: 10px 0;
+  outline: none;
+}
+.me-field textarea { min-height: 120px; resize: vertical; border: 1px solid rgba(28, 28, 28, 0.12); padding: 12px; }
+.me-field input:focus, .me-field textarea:focus { border-color: #1c1c1c; }
+.me-read {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  box-shadow: inset 0 -1px 0 rgba(28, 28, 28, 0.08);
+  font-size: 15px;
+}
+.me-read b { font-weight: 400; }
+
+.me-seg {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-bottom: 1px solid rgba(28, 28, 28, 0.12);
+}
+.me-seg.two { grid-template-columns: 1fr 1fr; }
+.me-seg button {
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: #9a9590;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.me-seg button[aria-checked="true"] {
+  color: #1c1c1c;
+  box-shadow: inset 0 -1px 0 #1c1c1c;
+}
+
+.me-submit, .me-danger, .me-quiet {
+  display: block;
+  width: 100%;
+  height: 48px;
+  margin-top: 8px;
+  border: 0;
+  background: #1c1c1c;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+.me-submit:disabled { opacity: 0.4; }
+.me-danger { background: transparent; color: #b42318; letter-spacing: 0.08em; }
+.me-quiet { background: transparent; color: #1c1c1c; border: 1px solid rgba(28, 28, 28, 0.16); }
+
+.me-note { margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: #9a9590; }
+.me-card {
+  display: block;
+  margin: 0;
+  padding: 16px 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: inset 0 -1px 0 rgba(28, 28, 28, 0.08);
+}
+.me-card p { margin: 0; font-size: 15px; line-height: 1.5; }
+.me-card time { display: block; margin-top: 6px; font-size: 12px; color: #9a9590; }
+.me-card-actions { display: flex; gap: 16px; margin-top: 8px; }
+.me-card-actions button {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: #6f6a64;
+  cursor: pointer;
+}
+.me-card-actions .is-delete { color: #b42318; }
+.me-credit { padding: 16px 0; box-shadow: inset 0 -1px 0 rgba(28, 28, 28, 0.08); }
+.me-credit h2 { margin: 0 0 8px; font-size: 15px; font-weight: 400; }
+.me-credit pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #6f6a64;
+}
+
+.me-dialog {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  background: rgba(28, 28, 28, 0.28);
+  padding: 24px;
+}
+.me-dialog[hidden] { display: none; }
+.me-dialog form {
+  width: min(320px, 100%);
+  background: #fff;
+  padding: 22px 20px 16px;
+}
+.me-dialog h2 { margin: 0 0 8px; font-size: 16px; font-weight: 400; letter-spacing: 0.08em; }
+.me-dialog p { margin: 0 0 14px; font-size: 14px; line-height: 1.5; color: #6f6a64; white-space: pre-wrap; }
+.me-dialog input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 44px;
+  margin-bottom: 14px;
+  border: 0;
+  border-bottom: 1px solid rgba(28, 28, 28, 0.16);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+.me-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.me-dialog-actions button {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.me-dialog-actions .is-danger { color: #b42318; }
+
+html[data-text="s"] .bubble { font-size: 13px; }
+html[data-text="s"] .bubble.reply .vzh { font-size: 12px; }
+html[data-text="m"] .bubble { font-size: 15px; }
+html[data-text="m"] .bubble.reply .vzh { font-size: 13px; }
+html[data-text="l"] .bubble { font-size: 18px; }
+html[data-text="l"] .bubble.reply .vzh { font-size: 15px; }

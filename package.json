@@ -5,7 +5,8 @@
   "description": "Personal-use KakaoTalk-style AI character chat demo",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/me-api.test.js"
   },
   "engines": {
     "node": ">=18"

@@ -62,6 +62,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let retryAt = 0;
   let voiceNote = '';
   let charRemark = '';
+  let userNickname = '';
+  let accountName = '';
   const charDefault = { name: '백현', emoji: '🐶' };
 
   function shownName() {
@@ -117,7 +119,14 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (clearBtn) clearBtn.hidden = !userAvatarVersion;
   }
 
-  window.IdolChat = { shownName, shownTitle, paintAvatar: paintCharacterAvatar };
+  window.IdolChat = {
+    shownName,
+    shownTitle,
+    paintAvatar: paintCharacterAvatar,
+    applyUserAvatar,
+    logout,
+    applyPrefs: (next) => applyPrefs(next),
+  };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -155,12 +164,15 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     try {
       const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
       return {
-        autoplay: raw.autoplay === true,
+        autoplay: raw.playback === 'auto' || raw.autoplay === true,
         voice: raw.voice !== false,
         seen: Number.isFinite(raw.seen) && raw.seen > 0 ? raw.seen : 0,
+        playback: raw.playback === 'auto' ? 'auto' : 'tap',
+        translation: raw.translation === 'expanded' ? 'expanded' : 'collapsed',
+        textSize: raw.textSize === 's' || raw.textSize === 'l' ? raw.textSize : 'm',
       };
     } catch (err) {
-      return { autoplay: false, voice: true, seen: 0 };
+      return { autoplay: false, voice: true, seen: 0, playback: 'tap', translation: 'collapsed', textSize: 'm' };
     }
   }
 
@@ -421,9 +433,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const cached = safeAudioUrl(message.audioUrl);
       if (cached) {
         audio.src = cached;
-      } else if (!settings.voice) {
-        showToast('음성 재생이 꺼져 있어요');
-        return;
       } else if (!message.text || !String(message.text).trim()) {
         showToast('음성은 이번엔 못 보냈어요');
         return;
@@ -516,12 +525,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
 
     if (zhText) {
+      const expanded = settings.translation === 'expanded';
       const toggle = el('button', 'vtoggle');
       toggle.type = 'button';
-      toggle.textContent = '翻译 ▾';
-      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = expanded ? '翻译 ▴' : '翻译 ▾';
+      toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       const zh = el('p', 'vzh');
-      zh.hidden = true;
+      zh.hidden = !expanded;
       zh.textContent = zhText;
       toggle.addEventListener('click', (event) => {
         event.preventDefault();
@@ -749,8 +759,47 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function syncToggles() {
-    autoplayBtn.setAttribute('aria-checked', settings.autoplay ? 'true' : 'false');
-    voiceBtn.setAttribute('aria-checked', settings.voice ? 'true' : 'false');
+    const auto = settings.playback === 'auto';
+    settings.autoplay = auto;
+    if (autoplayBtn) autoplayBtn.setAttribute('aria-checked', auto ? 'true' : 'false');
+    if (voiceBtn) {
+      voiceBtn.setAttribute('aria-checked', auto ? 'true' : 'false');
+      const label = voiceBtn.querySelector('span');
+      if (label) label.textContent = auto ? '自动播放最新语音' : '点击播放语音';
+    }
+  }
+
+  function maybeAutoplay() {
+    if (settings.playback !== 'auto' || !roomOpen) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant' || !String(last.text || '').trim()) return;
+    const bubbles = messagesEl.querySelectorAll('.bubble.reply');
+    const bubble = bubbles[bubbles.length - 1];
+    if (bubble) playMessageAudio(last, bubble);
+  }
+
+  function shownUserName(profile, me) {
+    if (userNickname) return userNickname;
+    if (profile && profile.displayName) return profile.displayName;
+    if (accountName) return accountName;
+    if (me && me.user && me.user.username) return me.user.username;
+    return '我';
+  }
+
+  function applyPrefs(next) {
+    if (!next || typeof next !== 'object') return;
+    if (next.playback === 'tap' || next.playback === 'auto') settings.playback = next.playback;
+    if (next.translation === 'collapsed' || next.translation === 'expanded') settings.translation = next.translation;
+    if (next.textSize === 's' || next.textSize === 'm' || next.textSize === 'l') settings.textSize = next.textSize;
+    if (typeof next.nickname === 'string') userNickname = next.nickname.trim();
+    document.documentElement.dataset.text = settings.textSize || 'm';
+    document.documentElement.dataset.playback = settings.playback || 'tap';
+    document.documentElement.dataset.translation = settings.translation || 'collapsed';
+    saveSettings();
+    syncToggles();
+    const profileName = document.getElementById('me-profile-name');
+    if (profileName) profileName.textContent = shownUserName(null, null);
+    if (roomOpen) render();
   }
 
   function setMenu(open) {
@@ -807,7 +856,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       btn.classList.toggle('active', btn.dataset.tab === tab);
     });
     setTabBarVisible(true);
-    if (tab === 'me') refreshMe();
+    if (tab === 'me' && window.Me && window.Me.open) window.Me.open();
+    else if (tab === 'me') refreshMe();
   }
 
   if (tabBar) {
@@ -1027,6 +1077,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           animateLast = true;
           render();
         }
+        maybeAutoplay();
         return;
       }
       if (!bubbles.length) throw new Error('chat failed');
@@ -1043,6 +1094,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         animateLast = true;
         render();
       }
+      maybeAutoplay();
     } catch (err) {
       if (myGen !== generation) return;
       if (err && err.name === 'AbortError' && !timedOut) return;
@@ -1150,16 +1202,30 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
   });
-  autoplayBtn.addEventListener('click', () => {
-    settings.autoplay = !settings.autoplay;
-    saveSettings();
-    syncToggles();
-  });
-  voiceBtn.addEventListener('click', () => {
-    settings.voice = !settings.voice;
-    saveSettings();
-    syncToggles();
-  });
+  async function persistPrefs(patch) {
+    applyPrefs(patch);
+    try {
+      const response = await fetch('/api/me/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.settings) applyPrefs(data.settings);
+      }
+    } catch (_) { /* local copy still applies */ }
+  }
+  if (autoplayBtn) {
+    autoplayBtn.addEventListener('click', () => {
+      persistPrefs({ playback: settings.playback === 'auto' ? 'tap' : 'auto' });
+    });
+  }
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', () => {
+      persistPrefs({ playback: settings.playback === 'auto' ? 'tap' : 'auto' });
+    });
+  }
   input.addEventListener('input', updateSendButton);
   input.addEventListener('compositionend', () => {
     lastCompositionEnd = Date.now();
@@ -1230,10 +1296,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function setMyName(profile, me) {
+    if (me && me.user && me.user.username) accountName = me.user.username;
     const node = document.getElementById('me-profile-name');
     if (!node) return;
-    const display = (profile && profile.displayName) || (me && me.user && me.user.username) || '我';
-    node.textContent = display;
+    node.textContent = shownUserName(profile, me);
   }
 
   async function loadAlias() {
@@ -1433,7 +1499,36 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   updateSendButton();
   render();
 
+  document.addEventListener('idol-prefs', (event) => applyPrefs(event.detail || {}));
+  document.addEventListener('idol-avatar', (event) => {
+    const has = Boolean(event.detail && event.detail.hasAvatar);
+    userAvatarVersion = has ? Date.now() : 0;
+    applyUserAvatar();
+  });
+  document.addEventListener('idol-profile', (event) => {
+    const detail = event.detail || {};
+    if (detail.characterId !== CHARACTER_ID) return;
+    if (typeof detail.characterNickname === 'string') {
+      charRemark = detail.characterNickname;
+      applyCharacterLabels();
+    }
+  });
+  document.addEventListener('idol-history-cleared', (event) => {
+    const id = event.detail && event.detail.characterId;
+    if (id !== CHARACTER_ID) return;
+    messages = [];
+    settings.seen = 0;
+    showRetry = false;
+    saveLocalHistory();
+    saveSettings();
+    render();
+  });
+
+  applyPrefs(settings);
   loadAlias();
+  fetch('/api/me/settings').then((response) => response.ok ? response.json() : null).then((data) => {
+    if (data && data.settings) applyPrefs(data.settings);
+  }).catch(() => {});
 
   async function welcomeIfNeeded(remote) {
     try {
