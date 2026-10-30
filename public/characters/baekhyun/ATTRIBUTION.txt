@@ -1,0 +1,9 @@
+Avatar
+- avatar.jpg: square headshot cropped from File:Baekhyun during the Exo Planet 5 – Exploration concert on December 2019.jpg
+  Author: Light Monde (https://19929256.tistory.com/)
+  License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)
+  Source: https://commons.wikimedia.org/wiki/File:Baekhyun_during_the_Exo_Planet_5_%E2%80%93_Exploration_concert_on_December_2019.jpg
+  Changes: cropped to a centered square and resized to 512×512 JPEG.
+
+Each character picks its own file with the "avatar" field in characters/<id>/character.json.
+The server serves that file from public/characters/<id>/ or characters/<id>/.

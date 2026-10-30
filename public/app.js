@@ -82,7 +82,42 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (apple) apple.setAttribute('content', shownName());
   }
 
-  window.IdolChat = { shownName, shownTitle };
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar`;
+  let userAvatarVersion = 0;
+
+  function paintCharacterAvatar(node) {
+    if (!node) return;
+    const img = document.createElement('img');
+    img.className = 'char-photo';
+    img.alt = '';
+    img.src = characterAvatarUrl;
+    img.addEventListener('error', () => {
+      img.remove();
+      if (!node.querySelector('svg')) node.append(puppyIcon());
+    });
+    node.replaceChildren(img);
+  }
+
+  function applyUserAvatar() {
+    document.querySelectorAll('[data-user-avatar]').forEach((node) => {
+      let img = node.querySelector('img.user-photo');
+      if (!userAvatarVersion) {
+        if (img) img.remove();
+        return;
+      }
+      if (!img) {
+        img = document.createElement('img');
+        img.className = 'user-photo';
+        img.alt = '';
+        node.append(img);
+      }
+      img.src = `/api/me/avatar?v=${userAvatarVersion}`;
+    });
+    const clearBtn = document.getElementById('me-avatar-clear');
+    if (clearBtn) clearBtn.hidden = !userAvatarVersion;
+  }
+
+  window.IdolChat = { shownName, shownTitle, paintAvatar: paintCharacterAvatar };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -319,14 +354,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   function makeAvatar(sizeClass) {
     const node = el('span', sizeClass ? `avatar ${sizeClass}` : 'avatar');
     node.setAttribute('aria-hidden', 'true');
-    node.append(puppyIcon());
+    paintCharacterAvatar(node);
     return node;
   }
 
   function mountStaticAvatars() {
-    document.querySelectorAll('[data-avatar]').forEach((node) => {
-      if (!node.querySelector('svg')) node.append(puppyIcon());
-    });
+    document.querySelectorAll('[data-avatar]').forEach((node) => paintCharacterAvatar(node));
   }
 
   function speakerIcon(playing) {
@@ -746,6 +779,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const wal = await fetch('/api/wallet').then((r) => r.json());
       const p = (prof && prof.profile) || {};
       const display = p.displayName || (me.user && me.user.username) || '—';
+      if (me && me.hasAvatar) userAvatarVersion = userAvatarVersion || Date.now();
+      else userAvatarVersion = 0;
+      applyUserAvatar();
       const el = (id) => document.getElementById(id);
       if (el('me-display')) el('me-display').textContent = display;
       const profileName = document.getElementById('me-profile-name');
@@ -1223,6 +1259,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       }
       const me = meRes.ok ? await meRes.json() : null;
       setMyName(profile, me);
+      if (me && me.hasAvatar) userAvatarVersion = Date.now();
+      applyUserAvatar();
     } catch (err) { /* keep the default name */ }
     applyCharacterLabels();
   }
@@ -1272,6 +1310,68 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       row.hidden = Boolean(q) && !row.innerText.toLowerCase().includes(q);
     });
   }
+  const avatarFile = document.getElementById('me-avatar-file');
+  const avatarClear = document.getElementById('me-avatar-clear');
+
+  function jpegBytesToBase64(bytes) {
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(binary);
+  }
+
+  async function fileToAvatarJpeg(file) {
+    const bitmap = await createImageBitmap(file);
+    const side = Math.min(bitmap.width, bitmap.height);
+    const sx = Math.floor((bitmap.width - side) / 2);
+    const sy = Math.floor((bitmap.height - side) / 2);
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    canvas.getContext('2d').drawImage(bitmap, sx, sy, side, side, 0, 0, 256, 256);
+    if (bitmap.close) bitmap.close();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    if (!blob) throw new Error('encode failed');
+    return jpegBytesToBase64(new Uint8Array(await blob.arrayBuffer()));
+  }
+
+  if (avatarFile) {
+    avatarFile.addEventListener('change', async () => {
+      const file = avatarFile.files && avatarFile.files[0];
+      avatarFile.value = '';
+      if (!file) return;
+      try {
+        const image = await fileToAvatarJpeg(file);
+        const response = await fetch('/api/me/avatar', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image }),
+        });
+        if (response.status === 401) { location.href = '/login'; return; }
+        if (!response.ok) throw new Error('upload failed');
+        userAvatarVersion = Date.now();
+        applyUserAvatar();
+        showToast('头像已更新');
+      } catch (err) {
+        showToast('头像没换上');
+      }
+    });
+  }
+  if (avatarClear) {
+    avatarClear.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/me/avatar', { method: 'DELETE' });
+        if (!response.ok) throw new Error('clear failed');
+        userAvatarVersion = 0;
+        applyUserAvatar();
+      } catch (err) {
+        showToast('没能恢复默认头像');
+      }
+    });
+  }
+
   const friendAdd = document.getElementById('friend-add-btn');
   if (friendAdd) friendAdd.addEventListener('click', () => showToast('更多角色以后再加'));
   const friendSettings = document.getElementById('friend-settings-btn');

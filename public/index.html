@@ -14,7 +14,7 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐶%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
@@ -22,19 +22,8 @@
     <section class="screen screen-list" id="screen-list">
       <div class="snow-scene" aria-hidden="true">
         <div class="snow-dots">
-          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i><i></i>
         </div>
-        <svg class="snow-ground" viewBox="0 0 390 170" preserveAspectRatio="none">
-          <path d="M0 78c48-28 96 18 150-6 42-18 78 8 120-8 28-10 70 6 120-14v120H0Z" fill="#f4f9fd"/>
-          <path d="M0 112c70-34 120 16 190-8 48-16 90 10 200-6v72H0Z" fill="#fff"/>
-          <path d="M58 104l14 26H44z" fill="#b7d4d0"/>
-          <path d="M64 92l8 16h-16z" fill="#d5ebe6"/>
-          <path d="M312 90l16 32h-32z" fill="#b7d4d0"/>
-          <path d="M318 76l10 18h-20z" fill="#d5ebe6"/>
-          <circle cx="188" cy="124" r="9" fill="#fff"/>
-          <circle cx="204" cy="128" r="6" fill="#f7fbfe"/>
-        </svg>
       </div>
       <header class="friends-header">
         <h1>好友</h1>
@@ -55,17 +44,8 @@
       </div>
       <div class="list-body">
         <button type="button" class="me-profile-row" id="me-profile-row">
-          <span class="squircle me-face" aria-hidden="true">
-            <svg viewBox="0 0 64 64" width="48" height="48">
-              <rect width="64" height="64" rx="18" fill="#f6d7c3"/>
-              <circle cx="32" cy="28" r="12" fill="#ffe9dc"/>
-              <path d="M20 26c2-8 22-8 24 0" fill="#6f8f86"/>
-              <circle cx="27" cy="28" r="1.6" fill="#3c2c24"/>
-              <circle cx="37" cy="28" r="1.6" fill="#3c2c24"/>
-              <path d="M28 33.5c1.2 1.2 2.6 1.6 4 1.6s2.8-.4 4-1.6" fill="none" stroke="#c47b6a" stroke-width="1.4" stroke-linecap="round"/>
-              <ellipse cx="22" cy="32" rx="2.2" ry="1.3" fill="#f3b7b0"/>
-              <ellipse cx="42" cy="32" rx="2.2" ry="1.3" fill="#f3b7b0"/>
-            </svg>
+          <span class="squircle me-face" data-user-avatar aria-hidden="true">
+            <svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#efece8"/><circle cx="32" cy="26" r="10" fill="none" stroke="#1c1c1c" stroke-width="1.4"/><path d="M16 50c2.4-8 8-12 16-12s13.6 4 16 12" fill="none" stroke="#1c1c1c" stroke-width="1.4" stroke-linecap="round"/></svg>
           </span>
           <span class="me-profile-name" id="me-profile-name">我</span>
         </button>
@@ -263,7 +243,9 @@
       </header>
       <div class="me-body">
         <div class="me-card">
-          <span class="avatar lg" data-avatar aria-hidden="true"></span>
+          <span class="avatar lg me-face" data-user-avatar aria-hidden="true">
+            <svg viewBox="0 0 64 64"><rect width="64" height="64" fill="#efece8"/><circle cx="32" cy="26" r="10" fill="none" stroke="#1c1c1c" stroke-width="1.4"/><path d="M16 50c2.4-8 8-12 16-12s13.6 4 16 12" fill="none" stroke="#1c1c1c" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </span>
           <div class="me-info">
             <p class="me-name" id="me-display">—</p>
             <p class="me-sub" id="me-username"></p>
@@ -277,6 +259,9 @@
           </button>
           <div class="me-row"><span>余额（演示）</span><b id="me-balance">0</b></div>
         </div>
+        <label class="me-btn ghost" for="me-avatar-file">更换头像</label>
+        <input id="me-avatar-file" type="file" accept="image/jpeg,image/png,image/webp,image/*" hidden />
+        <button type="button" class="me-btn ghost" id="me-avatar-clear" hidden>恢复默认头像</button>
         <button type="button" class="me-btn" id="me-recharge">充值（演示）</button>
         <button type="button" class="me-btn" id="me-memory">他记得的事</button>
         <button type="button" class="me-btn ghost" id="me-reset">重新走一遍引导</button>
@@ -287,17 +272,17 @@
     <nav class="tab-bar" id="tab-bar" aria-label="主导航">
       <button type="button" class="tab-item active" data-tab="chat" id="tab-chat" aria-label="聊天">
         <span class="tab-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M7.2 16.1 5.6 18.2c-.3.4-.9.2-.9-.3V8.7A2.2 2.2 0 0 1 6.9 6.5h10.2A2.2 2.2 0 0 1 19.3 8.7v4.7a2.2 2.2 0 0 1-2.2 2.2H7.2z" fill="currentColor" fill-opacity=".16" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M7 16.2 5.6 18.2c-.3.3-.8.1-.8-.3V8.6A2.1 2.1 0 0 1 6.9 6.5h10.2A2.1 2.1 0 0 1 19.2 8.6v4.6a2.1 2.1 0 0 1-2.1 2.1H7z" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/></svg>
         </span>
       </button>
       <button type="button" class="tab-item" data-tab="moments" id="tab-moments" aria-label="朋友圈">
         <span class="tab-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M12 4.2 13.5 9.2 18.6 10.6 13.5 12 12 17l-1.5-5-5.1-1.4 5.1-1.4z" fill="currentColor" fill-opacity=".18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M12 5.2 13.1 10 18 11.1 13.1 12.2 12 17l-1.1-4.8L6 11.1 10.9 10z" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/></svg>
         </span>
       </button>
       <button type="button" class="tab-item" data-tab="me" id="tab-me" aria-label="我的">
         <span class="tab-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="3" fill="currentColor" fill-opacity=".16" stroke="currentColor" stroke-width="1.6"/><path d="M6.4 18.2c1.1-2.5 3-3.7 5.6-3.7s4.5 1.2 5.6 3.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="2.7" fill="none" stroke="currentColor" stroke-width="1.35"/><path d="M6.6 18.2c1-2.3 2.8-3.5 5.4-3.5s4.4 1.2 5.4 3.5" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/></svg>
         </span>
       </button>
     </nav>

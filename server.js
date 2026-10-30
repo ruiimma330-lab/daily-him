@@ -717,7 +717,42 @@ function createApp() {
   });
 
   app.get('/api/me', requireUser, (req, res) => {
-    res.json({ ok: true, user: req.user });
+    const avatar = store.getDoc('avatar', req.userId, 'user');
+    res.json({ ok: true, user: req.user, hasAvatar: Boolean(avatar && avatar.data) });
+  });
+
+  function readUserJpeg(body) {
+    let raw = body && typeof body.image === 'string' ? body.image.trim() : '';
+    const wrapped = raw.match(/^data:image\/jpeg;base64,([\s\S]+)$/i);
+    if (wrapped) raw = wrapped[1];
+    raw = raw.replace(/\s/g, '');
+    if (!raw || raw.length > 160000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(raw)) return null;
+    const buf = Buffer.from(raw, 'base64');
+    if (buf.length < 64 || buf.length > 120000) return null;
+    if (buf[0] !== 0xff || buf[1] !== 0xd8 || buf[2] !== 0xff) return null;
+    return buf;
+  }
+
+  app.get('/api/me/avatar', requireUser, (req, res) => {
+    const avatar = store.getDoc('avatar', req.userId, 'user');
+    if (!avatar || typeof avatar.data !== 'string') return res.status(404).end();
+    const buf = Buffer.from(avatar.data, 'base64');
+    if (buf.length < 64 || buf[0] !== 0xff || buf[1] !== 0xd8) return res.status(404).end();
+    res.set('Content-Type', 'image/jpeg');
+    res.set('Cache-Control', 'private, max-age=3600');
+    return res.send(buf);
+  });
+
+  app.put('/api/me/avatar', requireUser, (req, res) => {
+    const buf = readUserJpeg(req.body);
+    if (!buf) return res.status(400).json({ error: 'jpeg required' });
+    store.putDoc('avatar', req.userId, 'user', { data: buf.toString('base64'), updatedAt: Date.now() });
+    return res.json({ ok: true });
+  });
+
+  app.delete('/api/me/avatar', requireUser, (req, res) => {
+    store.delDoc('avatar', req.userId, 'user');
+    return res.json({ ok: true });
   });
 
   app.get('/api/history', requireUser, requireCharacter, (req, res) => {
@@ -859,8 +894,14 @@ function createApp() {
     const id = characters.resolveId(req.params.id);
     if (!id) return res.status(404).end();
     const meta = characters.loadMeta(id);
-    const file = path.join(characters.CHAR_DIR, id, path.basename(meta.avatar || 'avatar.svg'));
-    if (!fs.existsSync(file)) return res.status(404).end();
+    const name = path.basename(String(meta.avatar || 'avatar.svg'));
+    if (!name || name === '.' || name === '..') return res.status(404).end();
+    const candidates = [
+      path.join(PUBLIC_DIR, 'characters', id, name),
+      path.join(characters.CHAR_DIR, id, name),
+    ];
+    const file = candidates.find((candidate) => fs.existsSync(candidate));
+    if (!file) return res.status(404).end();
     return res.sendFile(file);
   });
 
