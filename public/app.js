@@ -511,7 +511,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function render() {
     messagesEl.replaceChildren();
-    if (roomSub) roomSub.textContent = typing ? '입력 중...' : '지금 대화할 수 있어요';
+    if (roomSub) {
+      roomSub.textContent = typing ? (recording ? '녹음 중...' : '입력 중...') : '';
+      roomSub.hidden = !typing;
+    }
     if (!messages.length && !typing && !showRetry) {
       messagesEl.append(datePill(Date.now()));
     }
@@ -541,6 +544,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     else if (showRetry) messagesEl.append(renderRetry());
     if (voiceNote && !typing) messagesEl.append(renderVoiceNote());
     animateLast = false;
+    applyRoomSearch();
 
     if (roomOpen) {
       settings.seen = messages.length;
@@ -550,6 +554,19 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       });
     }
     updateList();
+  }
+
+  function applyRoomSearch() {
+    const field = document.getElementById('room-search-input');
+    const q = field ? field.value.trim().toLowerCase() : '';
+    document.querySelectorAll('#messages .line').forEach((line) => {
+      line.hidden = Boolean(q) && !line.textContent.toLowerCase().includes(q);
+    });
+    document.querySelectorAll('#messages .group').forEach((group) => {
+      const lines = [...group.querySelectorAll('.line')];
+      if (!lines.length) return;
+      group.hidden = Boolean(q) && lines.every((line) => line.hidden);
+    });
   }
 
   function countGroups(list) {
@@ -574,7 +591,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function renderGroup(group, unread, fresh) {
     const incoming = group[0].role === 'assistant';
-    const wrap = el('div', `group ${incoming ? 'in' : 'out'}${fresh ? ' fresh' : ''}`);
+    const wrap = el('div', `group ${incoming ? 'in named' : 'out'}${fresh ? ' fresh' : ''}`);
     if (incoming) wrap.append(makeAvatar('sm'));
     const stack = el('div', 'stack');
     if (incoming) {
@@ -632,7 +649,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function renderRetry() {
-    const wrap = el('div', `group in${retryFresh ? ' fresh' : ''}`);
+    const wrap = el('div', `group in named${retryFresh ? ' fresh' : ''}`);
     retryFresh = false;
     const stack = el('div', 'stack');
     const name = el('div', 'sender');
@@ -731,6 +748,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const display = p.displayName || (me.user && me.user.username) || '—';
       const el = (id) => document.getElementById(id);
       if (el('me-display')) el('me-display').textContent = display;
+      const profileName = document.getElementById('me-profile-name');
+      if (profileName) profileName.textContent = display;
       if (el('me-username')) el('me-username').textContent = me.user ? ('@' + me.user.username) : '';
       if (el('me-call')) el('me-call').textContent = p.callName || '—';
       if (typeof p.characterNickname === 'string') charRemark = p.characterNickname;
@@ -1173,12 +1192,21 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
   }
 
+  function setMyName(profile, me) {
+    const node = document.getElementById('me-profile-name');
+    if (!node) return;
+    const display = (profile && profile.displayName) || (me && me.user && me.user.username) || '我';
+    node.textContent = display;
+  }
+
   async function loadAlias() {
     try {
-      const [profRes, charsRes] = await Promise.all([
+      const [profRes, charsRes, meRes] = await Promise.all([
         fetch(withChar('/api/profile')),
         fetch('/api/characters'),
+        fetch('/api/me'),
       ]);
+      let profile = null;
       if (charsRes.ok) {
         const chars = await charsRes.json();
         const ch = (chars.characters || []).find((item) => item.id === CHARACTER_ID);
@@ -1189,9 +1217,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       }
       if (profRes.ok) {
         const prof = await profRes.json();
-        const nick = prof && prof.profile && prof.profile.characterNickname;
+        profile = prof && prof.profile;
+        const nick = profile && profile.characterNickname;
         charRemark = typeof nick === 'string' ? nick : '';
       }
+      const me = meRes.ok ? await meRes.json() : null;
+      setMyName(profile, me);
     } catch (err) { /* keep the default name */ }
     applyCharacterLabels();
   }
@@ -1218,6 +1249,81 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     else if (menuOpen) setMenu(false);
     else if (roomOpen) closeRoom();
   });
+
+  function togglePanel(button, panel, field) {
+    if (!button || !panel) return;
+    const open = panel.hidden;
+    panel.hidden = !open;
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open && field) field.focus();
+  }
+
+  const friendSearchBtn = document.getElementById('friend-search-btn');
+  const friendSearch = document.getElementById('friend-search');
+  const friendSearchInput = document.getElementById('friend-search-input');
+  if (friendSearchBtn) {
+    friendSearchBtn.addEventListener('click', () => togglePanel(friendSearchBtn, friendSearch, friendSearchInput));
+  }
+  if (friendSearchInput) {
+    friendSearchInput.addEventListener('input', () => {
+      const row = document.getElementById('open-chat');
+      if (!row) return;
+      const q = friendSearchInput.value.trim().toLowerCase();
+      row.hidden = Boolean(q) && !row.innerText.toLowerCase().includes(q);
+    });
+  }
+  const friendAdd = document.getElementById('friend-add-btn');
+  if (friendAdd) friendAdd.addEventListener('click', () => showToast('更多角色以后再加'));
+  const friendSettings = document.getElementById('friend-settings-btn');
+  if (friendSettings) friendSettings.addEventListener('click', () => switchMainTab('me'));
+  const meProfileRow = document.getElementById('me-profile-row');
+  if (meProfileRow) meProfileRow.addEventListener('click', () => switchMainTab('me'));
+  const friendsToggle = document.getElementById('friends-section-toggle');
+  const friendsSection = document.getElementById('friends-section');
+  if (friendsToggle && friendsSection) {
+    friendsToggle.addEventListener('click', () => {
+      const open = friendsToggle.getAttribute('aria-expanded') !== 'false';
+      friendsToggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+      friendsToggle.classList.toggle('collapsed', open);
+      friendsSection.hidden = open;
+    });
+  }
+
+  const roomSearchBtn = document.getElementById('room-search-btn');
+  const roomSearch = document.getElementById('room-search');
+  const roomSearchInput = document.getElementById('room-search-input');
+  if (roomSearchBtn) {
+    roomSearchBtn.addEventListener('click', () => togglePanel(roomSearchBtn, roomSearch, roomSearchInput));
+  }
+  if (roomSearchInput) roomSearchInput.addEventListener('input', applyRoomSearch);
+
+  const emojiBtn = document.getElementById('emoji-btn');
+  const emojiPop = document.getElementById('emoji-pop');
+  if (emojiBtn && emojiPop) {
+    emojiBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      emojiPop.hidden = !emojiPop.hidden;
+      emojiBtn.setAttribute('aria-expanded', emojiPop.hidden ? 'false' : 'true');
+    });
+    emojiPop.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-emoji]');
+      if (!button) return;
+      const emoji = button.dataset.emoji;
+      const start = input.selectionStart == null ? input.value.length : input.selectionStart;
+      const end = input.selectionEnd == null ? input.value.length : input.selectionEnd;
+      input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+      const pos = start + emoji.length;
+      input.focus();
+      input.setSelectionRange(pos, pos);
+      updateSendButton();
+    });
+    document.addEventListener('click', (event) => {
+      if (emojiPop.hidden) return;
+      if (emojiPop.contains(event.target) || emojiBtn.contains(event.target)) return;
+      emojiPop.hidden = true;
+      emojiBtn.setAttribute('aria-expanded', 'false');
+    });
+  }
 
   mountStaticAvatars();
   syncToggles();
