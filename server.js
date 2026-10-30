@@ -466,7 +466,12 @@ function normalizeRequestPath(req) {
 }
 
 function isPublicPath(p) {
-  return PUBLIC_PATHS.has(p) || p.startsWith('/icons/');
+  return PUBLIC_PATHS.has(p)
+    || p.startsWith('/icons/')
+    || p === '/shell/cover.html'
+    || p === '/shell/shell.css'
+    || p === '/shell/shell.js'
+    || p === '/shell/copy.json';
 }
 
 function isGatePublicPath(p) {
@@ -503,6 +508,7 @@ function gateMiddleware(req, res, next) {
   if (p.startsWith('/api/') || p.startsWith('/audio/')) {
     return res.status(401).json({ error: 'Unauthorized', need: 'login' });
   }
+  if (p === '/' || p === '/index.html') return res.redirect('/shell/cover.html');
   return res.redirect('/login');
 }
 

@@ -174,7 +174,7 @@ html, body { margin: 0; background: #fff; }
   letter-spacing: 0.08em;
   color: var(--pk-muted);
 }
-.picker-go {
+.picker button.picker-go {
   margin: 8px 18px calc(14px + env(safe-area-inset-bottom));
   height: 44px;
   border: 1px solid var(--pk-ink);
@@ -185,8 +185,8 @@ html, body { margin: 0; background: #fff; }
   font-weight: 400;
   flex: none;
 }
-.picker-go:disabled { opacity: 0.45; }
-.picker-go.is-soon {
+.picker button.picker-go:disabled { opacity: 0.45; }
+.picker button.picker-go.is-soon {
   background: transparent;
   color: var(--pk-muted);
   border-color: var(--pk-line);

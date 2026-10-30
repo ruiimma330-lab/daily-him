@@ -9,6 +9,8 @@
   "displayEmoji": "🐶",
   "avatar": "avatar.jpg",
   "portrait": "/characters/baekhyun/portrait.jpg",
+  "welcomeKo": "왔구나. 오늘 뭐 하고 있었어?",
+  "welcomeZh": "来了呀。今天在做什么？",
   "defaultUserName": "에리",
   "voiceId": "zG6oPYFpVjyTj1zUmVTY",
   "ttsModel": "eleven_v3",
