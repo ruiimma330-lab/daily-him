@@ -527,6 +527,13 @@ function requireCharacter(req, res, next) {
   return next();
 }
 
+function requireAvailable(req, res, next) {
+  if (!characters.isAvailable(req.characterId)) {
+    return res.status(404).json({ error: 'character unavailable' });
+  }
+  return next();
+}
+
 function validateUsername(username) {
   return typeof username === 'string' && USERNAME_RE.test(username.trim());
 }
@@ -755,17 +762,17 @@ function createApp() {
     return res.json({ ok: true });
   });
 
-  app.get('/api/history', requireUser, requireCharacter, (req, res) => {
+  app.get('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
     const messages = store.getHistory(req.userId, req.characterId);
     res.json({ messages });
   });
 
-  app.put('/api/history', requireUser, requireCharacter, (req, res) => {
+  app.put('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
     const messages = store.putHistory(req.userId, req.characterId, req.body && req.body.messages);
     res.json({ messages });
   });
 
-  app.delete('/api/history', requireUser, requireCharacter, (req, res) => {
+  app.delete('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
     store.deleteHistory(req.userId, req.characterId);
     res.json({ messages: [] });
   });
@@ -797,24 +804,24 @@ function createApp() {
     return res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
   });
 
-  app.get('/api/moments', requireUser, requireCharacter, (req, res) => {
+  app.get('/api/moments', requireUser, requireCharacter, requireAvailable, (req, res) => {
     res.json({ ok: true, posts: moments.list(req.userId, req.characterId) });
   });
 
-  app.post('/api/moments/:id/like', requireUser, requireCharacter, (req, res) => {
+  app.post('/api/moments/:id/like', requireUser, requireCharacter, requireAvailable, (req, res) => {
     const result = moments.toggleLike(req.userId, req.characterId, req.params.id);
     if (!result) return res.status(404).json({ error: 'not found' });
     return res.json({ ok: true, ...result });
   });
 
-  app.get('/api/moments/:id/comments', requireUser, requireCharacter, (req, res) => {
+  app.get('/api/moments/:id/comments', requireUser, requireCharacter, requireAvailable, (req, res) => {
     if (!moments.loadPosts(req.characterId).some((p) => p.id === req.params.id)) {
       return res.status(404).json({ error: 'not found' });
     }
     res.json({ ok: true, comments: moments.commentsFor(req.userId, req.characterId, req.params.id) });
   });
 
-  app.post('/api/moments/:id/comments', requireUser, requireCharacter, async (req, res) => {
+  app.post('/api/moments/:id/comments', requireUser, requireCharacter, requireAvailable, async (req, res) => {
     let comment;
     try {
       comment = moments.addComment(req.userId, req.characterId, req.params.id, req.body && req.body.text);
@@ -881,7 +888,7 @@ function createApp() {
     }
   });
 
-  app.get('/api/scenes', requireUser, requireCharacter, (req, res) => {
+  app.get('/api/scenes', requireUser, requireCharacter, requireAvailable, (req, res) => {
     const scenes = characters.loadScenes(req.characterId).map(({ id, label, hintZh, messageKo }) => ({ id, label, hintZh, messageKo }));
     res.json({ ok: true, scenes });
   });
@@ -918,7 +925,7 @@ function createApp() {
   });
 
   // On-demand TTS. Chat sends voice:false so unplayed replies do not spend credits.
-  app.post('/api/tts', requireUser, requireCharacter, async (req, res) => {
+  app.post('/api/tts', requireUser, requireCharacter, requireAvailable, async (req, res) => {
     let keys;
     try {
       keys = requireKeys();
@@ -952,7 +959,7 @@ function createApp() {
     }
   });
 
-  app.post('/api/chat', requireUser, requireCharacter, async (req, res) => {
+  app.post('/api/chat', requireUser, requireCharacter, requireAvailable, async (req, res) => {
     let keys;
     try {
       keys = requireKeys();

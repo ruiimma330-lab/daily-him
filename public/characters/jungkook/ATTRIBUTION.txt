@@ -1,0 +1,6 @@
+Picker-only for now (available: false). Not chattable: no persona, no voice.
+Photos cropped from File:Jeon Jung-kook performing "Fake Love" during Love Yourself tour in Berlin, 16 October 2018 01.jpg
+Author: I DARE U JK (https://www.youtube.com/channel/UC_k_00khubofbNR8DwreMDg)
+License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0)
+Source: https://commons.wikimedia.org/wiki/File:Jeon_Jung-kook_performing_%22Fake_Love%22_during_Love_Yourself_tour_in_Berlin,_16_October_2018_01.jpg
+Changes: tall 3:4 portrait for the picker, and a square face crop saved as avatar.jpg.

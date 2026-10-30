@@ -1183,104 +1183,7 @@ button, input { -webkit-tap-highlight-color: transparent; }
 .vko + .vzh { border-top: 1px dashed #e5e7eb; padding-top: 4px; }
 .vnote { margin: 0 4px; font-size: 11px; color: #e5484d; }
 
-/* ---- 朋友圈 Moments ---- */
-.mom-panel { position: absolute; inset: 0; z-index: 60; background: #ededed; display: flex; flex-direction: column; width: 100%; }
-.mom-panel[hidden] { display: none; }
-.mom-head { display: flex; align-items: center; justify-content: space-between; height: 52px; padding: 0 8px; padding-top: env(safe-area-inset-top); background: #fff; border-bottom: 1px solid #e5e7eb; flex: none; }
-.mom-head h2 { font-size: 17px; font-weight: 600; margin: 0; }
-.mom-back { width: 40px; height: 40px; border: 0; background: none; font-size: 30px; line-height: 1; color: #222; cursor: pointer; }
-.mom-head-pad { width: 40px; }
-.mom-hero { background: linear-gradient(180deg, #f7e9dc 0%, #ededed 100%); padding: 28px 16px 18px; text-align: center; flex: none; }
-.mom-hero-name { margin: 10px 0 2px; font-size: 18px; font-weight: 600; }
-.mom-hero-sub { margin: 0; font-size: 12px; color: #8a8f98; }
-.mom-feed { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 0 calc(24px + env(safe-area-inset-bottom)); }
-.mom-empty { text-align: center; color: #9aa0a6; font-size: 14px; margin: 40px 0; }
-.mom-card { background: #fff; margin: 0 0 10px; padding: 14px 14px 10px; }
-.mom-card-top { display: flex; gap: 10px; align-items: flex-start; }
-.mom-card-body { flex: 1; min-width: 0; }
-.mom-name { margin: 0; font-size: 15px; font-weight: 600; color: #576b95; }
-.mom-text { margin: 6px 0 0; font-size: 15px; line-height: 1.55; color: #1a1a1a; white-space: pre-wrap; word-break: break-word; }
-.mom-zh { margin: 6px 0 0; font-size: 13px; line-height: 1.5; color: #8a8f98; white-space: pre-wrap; }
-.mom-photos { margin-top: 8px; max-width: 100%; }
-.mom-photos.cols-2,
-.mom-photos.cols-3 {
-  display: grid;
-  gap: 4px;
-  max-width: 100%;
-}
-/* Same thumb size as WeChat: 2 and 4 stay on 2 columns; 3 and 5–9 use 3. */
-.mom-photos.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); width: min(100%, 196px); }
-.mom-photos.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 292px); }
-.mom-photo {
-  display: block;
-  padding: 0;
-  border: 0;
-  background: #f2f2f2;
-  border-radius: 4px;
-  overflow: hidden;
-  cursor: zoom-in;
-  line-height: 0;
-}
-.mom-photos.cols-2 .mom-photo,
-.mom-photos.cols-3 .mom-photo {
-  position: relative;
-  aspect-ratio: 1;
-  width: 100%;
-}
-.mom-photos.cols-2 .mom-photo img,
-.mom-photos.cols-3 .mom-photo img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.mom-photos.single .mom-photo {
-  width: fit-content;
-  max-width: 100%;
-  background: transparent;
-  border-radius: 8px;
-}
-.mom-photos.single .mom-photo img {
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: min(420px, 68vh);
-  border-radius: 8px;
-}
-.mom-lightbox {
-  position: absolute;
-  inset: 0;
-  z-index: 80;
-  background: rgba(0, 0, 0, 0.92);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  cursor: zoom-out;
-}
-.mom-lightbox img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 4px;
-}
-.mom-time { margin: 8px 0 0; font-size: 12px; color: #b0b0b0; }
-.mom-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f0f0f0; }
-.mom-btn { border: 0; background: #f5f5f5; border-radius: 999px; padding: 6px 14px; font-size: 13px; color: #555; cursor: pointer; }
-.mom-btn.liked { color: #e5484d; background: #ffecec; }
-.mom-comments { margin-top: 8px; background: #f7f7f7; border-radius: 8px; padding: 8px 10px; }
-.mom-comments[hidden] { display: none; }
-.mom-citem { font-size: 13px; line-height: 1.45; color: #333; margin: 0 0 6px; }
-.mom-citem .who { color: #576b95; font-weight: 600; }
-.mom-reply { margin: 4px 0 0 12px; padding: 6px 8px; background: #fff; border-radius: 6px; font-size: 13px; color: #444; }
-.mom-compose { display: flex; gap: 6px; margin-top: 6px; }
-.mom-compose input { flex: 1; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; font-size: 14px; outline: none; background: #fff; }
-.mom-compose button { border: 0; background: #fee500; border-radius: 8px; padding: 0 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.mom-compose button:disabled { opacity: .5; }
+/* Moments feed styles live in /moments.css */
 
 /* ---- scene chips ---- */
 .scene-bar {
@@ -1438,10 +1341,3 @@ button.me-row:hover { background: #fafafa; }
 .me-btn.ghost { color: #576b95; font-weight: 500; }
 .me-btn.danger { color: #e5484d; }
 
-/* Moments as tab page: sit above tab bar, leave room for it */
-.mom-panel.tab-mode {
-  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom));
-  z-index: 4;
-}
-.mom-panel.tab-mode .mom-back { visibility: hidden; pointer-events: none; }
-.mom-panel.tab-mode .mom-feed { padding-bottom: 16px; }

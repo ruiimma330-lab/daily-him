@@ -1,0 +1,12 @@
+{
+  "id": "mark",
+  "name": "마크",
+  "displayName": "마크",
+  "nameZh": "马克",
+  "nameRoman": "Mark",
+  "company": "SM",
+  "group": "NCT",
+  "available": false,
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/mark/portrait.jpg"
+}

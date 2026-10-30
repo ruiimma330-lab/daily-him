@@ -1,0 +1,6 @@
+Picker-only for now (available: false). Not chattable: no persona, no voice.
+Photos cropped from File:Hyunjin of Stray Kids, December 4, 2024.png
+Author: 티비텐 (https://www.youtube.com/@_TV10)
+License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0)
+Source: https://commons.wikimedia.org/wiki/File:Hyunjin_of_Stray_Kids,_December_4,_2024.png
+Changes: tall 3:4 portrait for the picker, and a square face crop saved as avatar.jpg.

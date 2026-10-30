@@ -1,0 +1,6 @@
+Picker-only for now (available: false). Not chattable: no persona, no voice.
+Photos cropped from File:Park Ji-min at The Wings Tour in Hong Kong 01.jpg
+Author: Jimson Weed (http://www.jimsonweed.kr/)
+License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)
+Source: https://commons.wikimedia.org/wiki/File:Park_Ji-min_at_The_Wings_Tour_in_Hong_Kong_01.jpg
+Changes: tall 3:4 portrait for the picker, and a square face crop saved as avatar.jpg.
