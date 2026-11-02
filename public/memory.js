@@ -36,8 +36,9 @@
       const main = document.createElement('div');
       main.className = 'mem-item-main';
       const p = document.createElement('p'); p.className = 'mem-text'; p.textContent = c.text;
-      const meta = document.createElement('p'); meta.className = 'mem-date';
-      meta.textContent = (c.date ? `📅 ${fmtDay(c.date)} · ` : '') + `记于 ${fmt(c.updatedAt || c.createdAt)}`;
+      const meta = document.createElement('p'); meta.className = 'mem-date mem-kind';
+      const kind = [c.categoryLabel, c.statusLabel].filter(Boolean).join(' · ');
+      meta.textContent = (kind ? `${kind} · ` : '') + (c.date ? `📅 ${fmtDay(c.date)} · ` : '') + `记于 ${fmt(c.updatedAt || c.createdAt)}`;
       main.append(p, meta);
       const del = document.createElement('button');
       del.type = 'button'; del.className = 'mem-del'; del.textContent = '删除';
