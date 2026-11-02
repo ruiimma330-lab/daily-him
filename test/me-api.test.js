@@ -149,7 +149,9 @@ test('age gate, prefs, history summary, and account deletion', async () => {
   assert.equal(store.getDoc('memory', userId, 'baekhyun'), null);
   assert.equal(store.getDoc('moments', userId, 'baekhyun'), null);
   assert.equal(store.getDoc('prefs', userId, 'user'), null);
+  assert.equal(store.getDoc('prefs', userId, 'account'), null);
   assert.equal(store.getDoc('feedback', userId, 'user'), null);
+  assert.equal(store.getDoc('feedback', userId, 'account'), null);
   assert.deepEqual(store.getHistory(userId, 'baekhyun'), []);
   const relog = await request('/api/login', {
     method: 'POST',
