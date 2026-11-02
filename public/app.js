@@ -1,5 +1,20 @@
-const CHARACTER_ID = (new URLSearchParams(location.search).get('c') || localStorage.getItem('idol_selected_character') || 'baekhyun').toLowerCase();
-try { localStorage.setItem('idol_selected_character', CHARACTER_ID); } catch (_) {}
+function readCharacterId() {
+  const fromUrl = new URLSearchParams(location.search).get('c');
+  if (fromUrl) return fromUrl.toLowerCase();
+  try {
+    const account = localStorage.getItem('idol_account_id');
+    if (account && window.AccountCache) {
+      const saved = window.AccountCache.getSelected(localStorage, account);
+      if (saved) return saved;
+    }
+    if (!account) {
+      const legacy = localStorage.getItem('idol_selected_character');
+      if (legacy) return String(legacy).toLowerCase();
+    }
+  } catch (_) { /* ignore */ }
+  return 'baekhyun';
+}
+const CHARACTER_ID = readCharacterId();
 const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
 (function () {
   // profile onboarded gate: first-time users go through shell (cover→pick→onboard)
@@ -22,8 +37,11 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     });
   };
 
-  const HISTORY_KEY = CHARACTER_ID === 'baekhyun' ? 'idolchat_history_v1' : `${'idolchat_history_v1'}:${CHARACTER_ID}`;
-  const SETTINGS_KEY = 'idolchat_settings_v1';
+  let accountId = '';
+  let historyReady = false;
+  let historyError = false;
+  let HISTORY_KEY = '';
+  let SETTINGS_KEY = '';
   const CLIENT_TIMEOUT_MS = 100000;
   const RETRY_TEXT = '앗 미안 ㅠㅠ 잠깐 신호가 안 좋았나 봐… 다시 보내줄래? 🐶';
 
@@ -45,8 +63,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   const roomSub = document.getElementById('room-sub');
   const themeMeta = document.querySelector('meta[name="theme-color"]');
 
-  let messages = loadLocalHistory();
-  let settings = loadSettings();
+  let messages = [];
+  let settings = { autoplay: false, seen: 0, playback: 'tap', translation: 'collapsed' };
   let roomOpen = false;
   let menuOpen = false;
   let typing = false;
@@ -150,19 +168,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       }));
   }
 
-  function loadLocalHistory() {
-    try {
-      return normalizeHistoryList(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'));
-    } catch (err) {
-      return [];
-    }
-  }
-
   function loadSettings() {
     try {
       const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
       let prefs = {};
-      try { prefs = JSON.parse(localStorage.getItem('idol_prefs_v1') || '{}'); } catch (_) { prefs = {}; }
+      try {
+        prefs = accountId ? JSON.parse(localStorage.getItem(window.AccountCache.prefsKey(accountId)) || '{}') : {};
+      } catch (_) { prefs = {}; }
       const playback = prefs.playback === 'auto' || raw.playback === 'auto' ? 'auto' : 'tap';
       const translation = prefs.translation === 'expanded' || raw.translation === 'expanded' ? 'expanded' : 'collapsed';
       return {
@@ -195,6 +207,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function saveLocalHistory() {
+    if (!HISTORY_KEY || !historyReady) return;
     try {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(historySnapshot()));
     } catch (err) {
@@ -209,6 +222,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   async function syncHistoryToServer() {
+    if (!historyReady) return;
     if (historySyncing) {
       clearTimeout(historySyncTimer);
       historySyncTimer = setTimeout(syncHistoryToServer, 250);
@@ -306,6 +320,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function saveSettings() {
+    if (!SETTINGS_KEY) return;
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     } catch (err) {
@@ -577,6 +592,19 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       roomSub.textContent = typing ? (recording ? '녹음 중...' : '입력 중...') : '';
       roomSub.hidden = !typing;
     }
+    if (historyError && !messages.length && !typing) {
+      const box = el('div', 'history-miss');
+      const note = el('p', 'history-miss-text');
+      note.textContent = '没能加载对话';
+      const retry = el('button', 'history-retry');
+      retry.type = 'button';
+      retry.textContent = '重试';
+      retry.addEventListener('click', () => { loadAccountHistory(); });
+      box.append(note, retry);
+      messagesEl.append(box);
+      updateList();
+      return;
+    }
     if (!messages.length && !typing && !showRetry) {
       messagesEl.append(datePill(Date.now()));
     }
@@ -817,14 +845,17 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     document.documentElement.dataset.playback = settings.playback || 'tap';
     document.documentElement.dataset.translation = settings.translation || 'collapsed';
     try {
-      const prev = JSON.parse(localStorage.getItem('idol_prefs_v1') || '{}');
-      localStorage.setItem('idol_prefs_v1', JSON.stringify({
-        ...prev,
-        playback: settings.playback,
-        translation: settings.translation,
-        nickname: userNickname,
-        aiNoticeSeen: typeof next.aiNoticeSeen === 'boolean' ? next.aiNoticeSeen : prev.aiNoticeSeen === true,
-      }));
+      if (accountId && window.AccountCache) {
+        const key = window.AccountCache.prefsKey(accountId);
+        const prev = JSON.parse(localStorage.getItem(key) || '{}');
+        localStorage.setItem(key, JSON.stringify({
+          ...prev,
+          playback: settings.playback,
+          translation: settings.translation,
+          nickname: userNickname,
+          aiNoticeSeen: typeof next.aiNoticeSeen === 'boolean' ? next.aiNoticeSeen : prev.aiNoticeSeen === true,
+        }));
+      }
     } catch (_) { /* ignore */ }
     saveSettings();
     syncToggles();
@@ -1023,19 +1054,18 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     } catch (err) {
       /* still leave */
     }
-    try {
-      localStorage.removeItem(HISTORY_KEY);
-    } catch (err) {
-      /* ignore */
-    }
+    messages = [];
+    historyReady = false;
+    historyError = false;
+    try { localStorage.removeItem('idol_account_id'); } catch (err) { /* ignore */ }
     location.href = '/login';
   }
 
-  function historyPayload() {
-    return messages
-      .filter((item) => item && (item.role === 'user' || item.role === 'assistant') && typeof item.text === 'string' && item.text.trim() && !item.ephemeral)
-      .slice(-20)
-      .map((item) => (item.role === 'assistant' && item.zh ? { role: item.role, content: item.text, zh: item.zh } : { role: item.role, content: item.text }));
+  function currentUserText() {
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].role === 'user' && messages[i].text && messages[i].text.trim()) return messages[i].text.trim();
+    }
+    return '';
   }
 
   function failReply() {
@@ -1089,7 +1119,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const response = await fetch(withChar('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: historyPayload(), voice: false, sceneId: pendingSceneId || undefined }),
+        body: JSON.stringify({ text: currentUserText(), voice: false, sceneId: pendingSceneId || undefined }),
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -1566,11 +1596,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   });
   document.addEventListener('idol-history-cleared', (event) => {
     const detail = event.detail || {};
-    if (detail.all) {
+      if (detail.all) {
       const keys = [];
+      const prefix = accountId ? `idolchat_history_v1:${accountId}:` : '';
       for (let i = 0; i < localStorage.length; i += 1) {
         const key = localStorage.key(i);
-        if (key && key.indexOf('idolchat_history_v1') === 0) keys.push(key);
+        if (prefix && key && key.indexOf(prefix) === 0) keys.push(key);
       }
       keys.forEach((key) => localStorage.removeItem(key));
       messages = [];
@@ -1589,9 +1620,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   applyPrefs(settings);
   loadAlias();
-  fetch('/api/me/settings').then((response) => (response.ok ? response.json() : null)).then((data) => {
-    if (data && data.settings) applyPrefs(data.settings);
-  }).catch(() => {});
 
   async function welcomeIfNeeded(remote) {
     try {
@@ -1615,12 +1643,62 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
   }
 
-  pullHistoryFromServer().then(async (remote) => {
-    if (!remote) return;
+  async function ensureAccount() {
+    let response;
+    try {
+      response = await fetch('/api/me');
+    } catch (_) {
+      return '';
+    }
+    if (response.status === 401) {
+      location.href = '/login';
+      return 'leave';
+    }
+    if (!response.ok) return '';
+    const data = await response.json().catch(() => null);
+    const id = data && data.user && data.user.id;
+    if (!id || !window.AccountCache) return '';
+    const prev = localStorage.getItem('idol_account_id');
+    const urlChar = new URLSearchParams(location.search).get('c');
+    window.AccountCache.adopt(localStorage, id, urlChar || CHARACTER_ID);
+    if (prev && prev !== id && !urlChar) {
+      const saved = window.AccountCache.getSelected(localStorage, id) || 'baekhyun';
+      const next = new URL(location.href);
+      next.searchParams.set('c', saved);
+      location.replace(`${next.pathname}?${next.searchParams.toString()}`);
+      return 'leave';
+    }
+    accountId = id;
+    window.AccountCache.setSelected(localStorage, id, CHARACTER_ID);
+    HISTORY_KEY = window.AccountCache.historyKey(id, CHARACTER_ID);
+    SETTINGS_KEY = window.AccountCache.settingsKey(id, CHARACTER_ID);
+    return id;
+  }
+
+  async function loadAccountHistory() {
+    historyError = false;
+    historyReady = false;
+    messages = window.AccountCache.viewAfterFetch(false, null);
+    render();
+    let remote = null;
+    try {
+      remote = await pullHistoryFromServer();
+    } catch (_) {
+      remote = null;
+    }
+    if (!remote) {
+      messages = window.AccountCache.viewAfterFetch(false, null);
+      historyError = true;
+      historyReady = false;
+      render();
+      return;
+    }
     const params = new URLSearchParams(location.search);
     const wantRoom = params.get('welcome') === '1';
     const seeded = await welcomeIfNeeded(remote);
-    messages = seeded;
+    messages = window.AccountCache.viewAfterFetch(true, seeded);
+    historyError = false;
+    historyReady = true;
     if (seeded !== remote) saveHistory();
     else saveLocalHistory();
     if (wantRoom) {
@@ -1632,7 +1710,27 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     saveSettings();
     render();
     if (wantRoom) openRoom();
-  }).catch(() => {
-    showToast('서버에서 대화 기록을 불러오지 못했어요');
-  });
+  }
+
+  async function bootAccount() {
+    const id = await ensureAccount();
+    if (id === 'leave') return;
+    if (!id) {
+      historyError = true;
+      messages = [];
+      render();
+      return;
+    }
+    settings = loadSettings();
+    applyPrefs(settings);
+    try {
+      const response = await fetch('/api/me/settings');
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.settings) applyPrefs(data.settings);
+      }
+    } catch (_) { /* local prefs remain until the next visit */ }
+    await loadAccountHistory();
+  }
+  bootAccount();
 })();

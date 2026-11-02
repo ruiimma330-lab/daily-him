@@ -46,10 +46,22 @@
     location.href = u.pathname + u.search;
   }
   function selectedCharacter() {
-    return qs('c') || localStorage.getItem('idol_selected_character') || 'baekhyun';
+    const fromUrl = qs('c');
+    if (fromUrl) return fromUrl;
+    try {
+      const account = localStorage.getItem('idol_account_id');
+      if (account && global.AccountCache) {
+        const saved = global.AccountCache.getSelected(localStorage, account);
+        if (saved) return saved;
+      }
+    } catch (_) { /* ignore */ }
+    return 'baekhyun';
   }
   function setSelectedCharacter(id) {
-    localStorage.setItem('idol_selected_character', id);
+    try {
+      const account = localStorage.getItem('idol_account_id');
+      if (account && global.AccountCache) global.AccountCache.setSelected(localStorage, account, id);
+    } catch (_) { /* ignore */ }
   }
   global.Shell = { loadCopy, toast, api, qs, go, selectedCharacter, setSelectedCharacter };
 })(window);

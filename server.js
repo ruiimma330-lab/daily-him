@@ -11,6 +11,7 @@ const moments = require('./lib/moments');
 const profile = require('./lib/profile');
 const wallet = require('./lib/wallet');
 const prefs = require('./lib/prefs');
+const chatContext = require('./lib/chat-context');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -550,6 +551,7 @@ function requireUser(req, res, next) {
 
 function requireCharacter(req, res, next) {
   const raw = (req.query && req.query.characterId) || (req.body && req.body.characterId) || '';
+  if (!String(raw).trim()) return res.status(400).json({ error: 'characterId required' });
   const id = characters.resolveId(raw);
   if (!id) return res.status(404).json({ error: 'unknown character' });
   req.characterId = id;
@@ -1014,7 +1016,13 @@ function createApp() {
 
   app.get('/api/health', (req, res) => {
     if (!getSession(req)) return res.json({ ok: true, storage: store.storageName() });
-    const config = resolveRuntimeConfig(characters.resolveId(req.query.characterId) || undefined);
+    const raw = req.query && req.query.characterId;
+    if (raw == null || String(raw).trim() === '') {
+      return res.json({ ok: true, storage: store.storageName() });
+    }
+    const id = characters.resolveId(raw);
+    if (!id) return res.status(404).json({ error: 'unknown character' });
+    const config = resolveRuntimeConfig(id);
     res.json({
       ok: true,
       model: config.llmModel,
@@ -1060,6 +1068,12 @@ function createApp() {
   });
 
   app.post('/api/chat', requireUser, requireCharacter, requireAvailable, async (req, res) => {
+    const text = req.body && typeof req.body.text === 'string' ? req.body.text.trim() : '';
+    const recent = chatContext.fromHistory(store.getHistory(req.userId, req.characterId), text);
+    if (!recent) {
+      return res.status(400).json({ error: 'text required' });
+    }
+
     let keys;
     try {
       keys = requireKeys();
@@ -1068,16 +1082,10 @@ function createApp() {
       return res.status(500).json({ error: 'Server is not configured' });
     }
 
-    const recent = normalizeMessages(req.body && req.body.messages);
-    if (!recent || recent.length === 0) {
-      return res.status(400).json({ error: 'messages required' });
-    }
-
     const config = resolveRuntimeConfig(req.characterId);
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
     const relNow = relationship.view(relationship.load(req.userId, req.characterId));
-    const lastUser = [...recent].reverse().find((m) => m.role === 'user');
-    const lastUserText = lastUser ? lastUser.content : '';
+    const lastUserText = text;
     const sceneId = req.body && typeof req.body.sceneId === 'string' ? req.body.sceneId.slice(0, 40) : '';
     const scene = sceneId ? characters.findScene(req.characterId, sceneId) : null;
     const sceneHint = scene && scene.promptHint
@@ -1180,6 +1188,16 @@ function createApp() {
     const displayBubbles = items.map((it) => it.ko);
     const outMessages = items.map((it) => ({ ko: it.ko, zh: it.zh, mood: it.mood, audioUrl: it.audioUrl, ttsFailed: Boolean(it.ttsFailed) }));
     const audioUrl = outMessages.length && outMessages[0].audioUrl ? outMessages[0].audioUrl : null;
+
+    try {
+      store.putHistory(
+        req.userId,
+        req.characterId,
+        chatContext.appendTurn(store.getHistory(req.userId, req.characterId), lastUserText, items),
+      );
+    } catch (err) {
+      console.error('History update failed');
+    }
 
     let rel = null;
     try {

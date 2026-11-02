@@ -5,8 +5,18 @@
   if (!panel) return;
   const feed = document.getElementById('mom-feed');
   const empty = document.getElementById('mom-empty');
-  const characterId = () => new URLSearchParams(location.search).get('c')
-    || localStorage.getItem('idol_selected_character') || 'baekhyun';
+  const characterId = () => {
+    const fromUrl = new URLSearchParams(location.search).get('c');
+    if (fromUrl) return fromUrl.toLowerCase();
+    try {
+      const account = localStorage.getItem('idol_account_id');
+      if (account && window.AccountCache) {
+        const saved = window.AccountCache.getSelected(localStorage, account);
+        if (saved) return saved;
+      }
+    } catch (_) { /* ignore */ }
+    return 'baekhyun';
+  };
   const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(characterId())}`;
   const identity = { name: '', avatar: '' };
 

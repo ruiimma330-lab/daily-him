@@ -1,5 +1,5 @@
 /* Daily Him shell. Bump VERSION when the precache list changes. */
-const VERSION = 'dh-pwa-1';
+const VERSION = 'dh-pwa-2';
 const SHELL = `dh-shell-${VERSION}`;
 const MEDIA = `dh-media-${VERSION}`;
 
@@ -15,6 +15,7 @@ const PRECACHE = [
   '/brand/brand.js',
   '/brand/wordmark-italic.woff2',
   '/brand/mark.svg',
+  '/account-cache.js',
   '/app.js',
   '/memory.js',
   '/moments.js',
@@ -79,6 +80,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // Account data (/api/history, /api/me, /api/profile, and the rest) is never cached.
+  // Only the public character list is.
   if (isApi(url)) {
     if (!isCharacterConfig(request, url)) return;
     event.respondWith(staleWhileRevalidate(request, MEDIA));

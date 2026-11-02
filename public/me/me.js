@@ -4,10 +4,9 @@
   const root = document.getElementById('me-root');
   if (!screen || !root) return;
 
-  const LOCAL_KEY = 'idol_prefs_v1';
   const state = {
     me: null,
-    settings: readLocal(),
+    settings: blankSettings(),
     characters: [],
     profiles: {},
     rel: {},
@@ -26,23 +25,16 @@
   dialog.hidden = true;
   root.append(main, sub, dialog);
 
-  function readLocal() {
-    try {
-      const raw = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}');
-      return {
-        playback: raw.playback === 'auto' ? 'auto' : 'tap',
-        translation: raw.translation === 'expanded' ? 'expanded' : 'collapsed',
-        nickname: typeof raw.nickname === 'string' ? raw.nickname : '',
-        aiNoticeSeen: raw.aiNoticeSeen === true,
-      };
-    } catch (_) {
-      return { playback: 'tap', translation: 'collapsed', nickname: '', aiNoticeSeen: false };
-    }
+  function blankSettings() {
+    return { playback: 'tap', translation: 'collapsed', nickname: '', aiNoticeSeen: false };
   }
 
   function writeLocal(next) {
     state.settings = { ...state.settings, ...next };
-    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(state.settings)); } catch (_) { /* ignore */ }
+    const id = state.me && state.me.user && state.me.user.id;
+    if (id && window.AccountCache) {
+      try { localStorage.setItem(window.AccountCache.prefsKey(id), JSON.stringify(state.settings)); } catch (_) { /* ignore */ }
+    }
     if (window.IdolChat && window.IdolChat.applyPrefs) window.IdolChat.applyPrefs(state.settings);
     syncNotice();
   }
@@ -731,6 +723,10 @@
         api('/api/about'),
       ]);
       state.me = me;
+      if (window.AccountCache && me.user && me.user.id) {
+        const characterId = new URLSearchParams(location.search).get('c') || 'baekhyun';
+        window.AccountCache.adopt(localStorage, me.user.id, characterId);
+      }
       writeLocal(settings.settings || {});
       state.characters = (chars.characters || []).filter((ch) => ch.available !== false);
       state.about = about || state.about;

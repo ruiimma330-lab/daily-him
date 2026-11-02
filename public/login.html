@@ -209,6 +209,7 @@
     </div>
     <p class="login-disclaimer" style="margin:24px 0 8px;text-align:center;font-size:11px;color:#9a9a9a;">角色均为 AI 模拟，非本人 · 仅供个人使用</p>
   </main>
+  <script src="/account-cache.js"></script>
   <script>
     (function () {
       const siteForm = document.getElementById('site-form');
@@ -337,6 +338,10 @@
           if (!response.ok) {
             accountError.textContent = '请稍后再试。';
             return;
+          }
+          const data = await response.json().catch(() => ({}));
+          if (window.AccountCache && data.user && data.user.id) {
+            window.AccountCache.adopt(localStorage, data.user.id);
           }
           location.href = destination();
         } catch (err) {
