@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
-  <title>选爱豆</title>
+  <title>Daily Him</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/shell/picker.css" />
+  <link rel="stylesheet" href="/brand/brand.css" />
+  <link rel="icon" href="/brand/mark.svg" type="image/svg+xml" />
 </head>
 <body>
   <div class="picker" id="picker">
@@ -16,7 +18,7 @@
       <button type="button" class="picker-icon" id="picker-search-btn" aria-label="搜索" aria-expanded="false">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M16 16.2 19.5 19.7" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
       </button>
-      <p class="picker-mark" id="picker-mark">选爱豆</p>
+      <p class="picker-mark dh-wordmark dh-wordmark--bar" id="picker-mark" data-brand data-brand-bar data-brand-label="选爱豆" aria-label="选爱豆"></p>
       <button type="button" class="picker-icon" id="picker-menu-btn" aria-label="菜单" aria-expanded="false">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
       </button>
@@ -40,6 +42,7 @@
     </div>
   </div>
   <script src="/shell/shell.js"></script>
+  <script src="/brand/brand.js"></script>
   <script src="/shell/picker.js"></script>
 </body>
 </html>

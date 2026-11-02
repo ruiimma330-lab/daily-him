@@ -471,9 +471,14 @@ function isLegalPath(p) {
   return p === '/legal/privacy.html' || p === '/legal/terms.html';
 }
 
+function isBrandPath(p) {
+  return p.startsWith('/brand/');
+}
+
 function isPublicPath(p) {
   return PUBLIC_PATHS.has(p)
     || p.startsWith('/icons/')
+    || p.startsWith('/brand/')
     || isLegalPath(p)
     || p === '/shell/cover.html'
     || p === '/shell/shell.css'
@@ -489,6 +494,7 @@ function isGatePublicPath(p) {
     || p === '/api/auth-config'
     || p === '/manifest.webmanifest'
     || p.startsWith('/icons/')
+    || isBrandPath(p)
     || isLegalPath(p)
   );
 }
