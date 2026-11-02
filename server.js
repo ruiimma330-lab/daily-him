@@ -11,6 +11,7 @@ const moments = require('./lib/moments');
 const profile = require('./lib/profile');
 const wallet = require('./lib/wallet');
 const prefs = require('./lib/prefs');
+const { readAccountDoc, writeAccountDoc, deleteAccountDoc } = require('./lib/account-scope');
 const chatContext = require('./lib/chat-context');
 const PKG = require('./package.json');
 
@@ -755,7 +756,7 @@ function createApp() {
   });
 
   app.get('/api/me', requireUser, (req, res) => {
-    const avatar = store.getDoc('avatar', req.userId, 'user');
+    const avatar = readAccountDoc(store, 'avatar', req.userId);
     res.json({ ok: true, user: req.user, hasAvatar: Boolean(avatar && avatar.data) });
   });
 
@@ -772,7 +773,7 @@ function createApp() {
   }
 
   app.get('/api/me/avatar', requireUser, (req, res) => {
-    const avatar = store.getDoc('avatar', req.userId, 'user');
+    const avatar = readAccountDoc(store, 'avatar', req.userId);
     if (!avatar || typeof avatar.data !== 'string') return res.status(404).end();
     const buf = Buffer.from(avatar.data, 'base64');
     if (buf.length < 64 || buf[0] !== 0xff || buf[1] !== 0xd8) return res.status(404).end();
@@ -784,12 +785,12 @@ function createApp() {
   app.put('/api/me/avatar', requireUser, (req, res) => {
     const buf = readUserJpeg(req.body);
     if (!buf) return res.status(400).json({ error: 'jpeg required' });
-    store.putDoc('avatar', req.userId, 'user', { data: buf.toString('base64'), updatedAt: Date.now() });
+    writeAccountDoc(store, 'avatar', req.userId, { data: buf.toString('base64'), updatedAt: Date.now() });
     return res.json({ ok: true });
   });
 
   app.delete('/api/me/avatar', requireUser, (req, res) => {
-    store.delDoc('avatar', req.userId, 'user');
+    deleteAccountDoc(store, 'avatar', req.userId);
     return res.json({ ok: true });
   });
 
@@ -829,7 +830,7 @@ function createApp() {
   });
 
   app.get('/api/feedback', requireUser, (req, res) => {
-    const doc = store.getDoc('feedback', req.userId, 'user') || { items: [] };
+    const doc = readAccountDoc(store, 'feedback', req.userId) || { items: [] };
     res.json({ ok: true, items: Array.isArray(doc.items) ? doc.items : [] });
   });
 
@@ -837,11 +838,11 @@ function createApp() {
     const text = req.body && typeof req.body.text === 'string' ? req.body.text.trim() : '';
     const kind = req.body && req.body.kind === 'report' ? 'report' : 'feedback';
     if (!text || text.length > 1000) return res.status(400).json({ error: 'text required' });
-    const doc = store.getDoc('feedback', req.userId, 'user') || { items: [] };
+    const doc = readAccountDoc(store, 'feedback', req.userId) || { items: [] };
     const items = Array.isArray(doc.items) ? doc.items.slice(-29) : [];
     const item = { id: crypto.randomBytes(6).toString('hex'), kind, text, createdAt: Date.now() };
     items.push(item);
-    store.putDoc('feedback', req.userId, 'user', { items });
+    writeAccountDoc(store, 'feedback', req.userId, { items });
     return res.status(201).json({ ok: true, item });
   });
 
@@ -880,13 +881,13 @@ function createApp() {
   });
 
   app.get('/api/relationship', requireUser, requireCharacter, (req, res) => {
-    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId, req.characterId)) });
+    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId, req.characterId), Date.now(), req.characterId) });
   });
 
   app.delete('/api/relationship', requireUser, requireCharacter, (req, res) => {
     if (!req.body || req.body.confirm !== 'RESET') return res.status(400).json({ error: 'confirm required' });
     relationship.reset(req.userId, req.characterId);
-    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId, req.characterId)) });
+    res.json({ ok: true, relationship: relationship.view(relationship.load(req.userId, req.characterId), Date.now(), req.characterId) });
   });
 
   app.get('/api/memory', requireUser, requireCharacter, (req, res) => {
@@ -1084,7 +1085,7 @@ function createApp() {
 
     const config = resolveRuntimeConfig(req.characterId);
     const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Shanghai', year: 'numeric', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' });
-    const relNow = relationship.view(relationship.load(req.userId, req.characterId));
+    const relNow = relationship.view(relationship.load(req.userId, req.characterId), Date.now(), req.characterId);
     const lastUserText = text;
     const sceneId = req.body && typeof req.body.sceneId === 'string' ? req.body.sceneId.slice(0, 40) : '';
     const scene = sceneId ? characters.findScene(req.characterId, sceneId) : null;

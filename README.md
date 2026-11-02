@@ -75,7 +75,7 @@ Text chat still works when `voiceId` is `PLACEHOLDER`. Speech is skipped until a
 
 The chat screen always sends `voice: false`, so a reply does not spend ElevenLabs credits. Each character bubble shows the Korean text with a speaker icon; tapping it calls `POST /api/tts` and plays the mp3. Audio is cached under `cache/audio/` (same hash as before), and the bubble stores `audioUrl` after the first successful play.
 
-The system prompt is read from `persona/system_prompt.md` on each chat request. A short Korean fallback is used if that file is missing.
+The system prompt is assembled by `lib/build-prompt.js` from `persona/common.md` and the character pack under `characters/<id>/`. Old prompt drafts live in `archive/`.
 
 Generated mp3 files are cached in `cache/audio/` and served at `/audio/<sha256>.mp3`.
 

@@ -54,6 +54,11 @@ test.before(async () => {
     available: true,
     defaultUserName: 'you',
   }));
+  fs.writeFileSync(path.join(FIXTURE_DIR, 'persona.md'), '테스트 역할.\n');
+  fs.writeFileSync(path.join(FIXTURE_DIR, 'manifest.json'), JSON.stringify({
+    version: 1,
+    files: ['character.json', 'persona.md'],
+  }));
   await store.init();
   server = createApp().listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
