@@ -1340,4 +1340,14 @@ button.me-row:hover { background: #fafafa; }
 }
 .me-btn.ghost { color: #576b95; font-weight: 500; }
 .me-btn.danger { color: #e5484d; }
+.history-miss { margin: 48px 24px; text-align: center; }
+.history-miss-text { margin: 0 0 12px; color: #8e8e93; font-size: 14px; }
+.history-retry {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 18px;
+  background: #191919;
+  color: #fff;
+  font-size: 14px;
+}
 
