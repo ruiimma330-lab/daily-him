@@ -1093,13 +1093,22 @@ function createApp() {
       ? `\n\n## 지금 상황\n사용자가 장면 버튼「${scene.label}」을 눌렀어. ${scene.promptHint} 시스템·설정 이야기는 하지 마.`
       : '';
     const userName = profile.callNameFor(req.userId, req.characterId);
+    const prof = profile.load(req.userId, req.characterId);
+    const accountPrefs = prefs.load(req.userId);
     const memBlock = memory.promptBlock(req.userId, req.characterId, lastUserText, userName);
     const openings = [...new Set([...memory.recentOpenings(req.userId, req.characterId), ...recentOpenings(recent)])].slice(-6);
     const want = suggestCount(lastUserText);
     const memoryPrompt = (memBlock ? `\n\n${memBlock}` : '')
       + (openings.length ? `\n\n## 반복 피하기\n네 최근 답장 첫머리: ${openings.map((o) => `「${o}」`).join(' ')}\n이번 답장은 이것들과 다른 말로 시작하고, 다른 문장 구조로 말해.` : '')
       + `\n\n## 이번 답장\n이번엔 음성 ${want}개로 보내(상황상 정말 어색하면 ±1).`;
-    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow, userName) + memoryPrompt + sceneHint + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+    const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow, userName, {
+      account: { nickname: accountPrefs.nickname },
+      relation: {
+        callName: prof.callName,
+        characterNickname: prof.characterNickname,
+        habits: prof.habits,
+      },
+    }) + memoryPrompt + sceneHint + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     let replyText = '';
 
     for (let attempt = 0; attempt < 2 && !replyText.trim(); attempt += 1) {
