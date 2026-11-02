@@ -31,7 +31,7 @@ const CURRENT = [
   '아 진짜 그런 말 하면 부끄럽단 말이야',
 ];
 
-test('speech prep matches the baseline commit and the current chat route', () => {
+test('speech prep keeps the baseline tags and leaves the chat route unchanged', () => {
   const lines = voiceAb.LINES.map((line) => line.text);
   assert.deepEqual(lines, BASELINE);
   assert.deepEqual(lines.map((text) => voiceAb.baselineSpeech(text)), BASELINE);
@@ -43,9 +43,14 @@ test('speech prep matches the baseline commit and the current chat route', () =>
   );
   const src = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
   const route = src.slice(src.indexOf("app.post('/api/tts'"), src.indexOf("app.post('/api/chat'"));
-  assert.match(route, /toSpeechText\(\[stripAudioTags\(rawText\)\]\)\.slice\(0, 1000\)/);
-  assert.match(route, /moodDelivery\(config, mood\)\.prefix\} \$\{speech\}/);
-  assert.equal(route.includes('baselineSpeech'), false);
+  assert.equal(route.includes('stripAudioTags'), false);
+  assert.equal(route.includes('toSpeechText'), false);
+  assert.equal(route.includes('moodDelivery'), false);
+  assert.match(route, /voicePack\.load\(req\.characterId\)/);
+  assert.match(route, /voiceExec\.synthesize\(/);
+  const chat = src.slice(src.indexOf("app.post('/api/chat'"), src.indexOf('if (require.main === module)'));
+  assert.match(chat, /toSpeechText\(\[item\.raw\]\)/);
+  assert.equal(chat.includes('stripAudioTags(item.raw)'), false);
 });
 
 test('env status never includes the secret value', () => {
@@ -124,5 +129,8 @@ test('a non-admin cannot open the listening session', async () => {
   const allowed = await request('/api/admin/voice-ab/status', { cookie: admin.cookie });
   assert.equal(allowed.status, 200);
   assert.equal(allowed.json.voiceId.set, false);
+  assert.equal(allowed.json.locked, true);
+  assert.equal(allowed.json.lockVersion, 'baekhyun-voice-1');
+  assert.equal(allowed.json.lockedTags, 'keep');
   assert.equal(JSON.stringify(allowed.json).includes('zG6oPYFpVjyTj1zUmVTY'), false);
 });
