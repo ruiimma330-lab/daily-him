@@ -1168,6 +1168,7 @@ button, input { -webkit-tap-highlight-color: transparent; }
 .mem-item-main { flex: 1; min-width: 0; }
 .mem-text { font-size: 15px; line-height: 1.5; color: #222; margin: 0; word-break: break-word; }
 .mem-date { font-size: 12px; color: #9aa0a6; margin: 4px 0 0; }
+.mem-kind { font-size: 12px; color: #6b7280; }
 .mem-del { flex: none; border: 0; border-radius: 999px; padding: 6px 12px; font-size: 13px; background: #f1f2f4; color: #666; cursor: pointer; }
 .mem-del.armed, .mem-clear.armed { background: #ff5a5f; color: #fff; }
 .mem-empty { text-align: center; color: #9aa0a6; font-size: 14px; margin: 40px 0; }

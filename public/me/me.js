@@ -544,6 +544,9 @@
       item.className = 'me-card';
       const text = document.createElement('p');
       text.textContent = card.text;
+      const kind = document.createElement('p');
+      kind.className = 'me-note';
+      kind.textContent = [card.categoryLabel, card.statusLabel, card.date].filter(Boolean).join(' · ');
       const time = document.createElement('time');
       time.textContent = fmt(card.updatedAt || card.createdAt);
       const actions = document.createElement('div');
@@ -571,7 +574,7 @@
         } catch (_) { toast('删除失败'); }
       });
       actions.append(view, del);
-      item.append(text, time, actions);
+      item.append(text, kind, time, actions);
       block.append(item);
     });
   }
