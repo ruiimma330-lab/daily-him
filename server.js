@@ -475,10 +475,18 @@ function isBrandPath(p) {
   return p.startsWith('/brand/');
 }
 
+function isPwaAsset(p) {
+  return p === '/sw.js' || p === '/pwa.js' || p === '/pwa.css' || p === '/offline.html'
+    || p === '/app.js' || p === '/style.css' || p === '/moments.css' || p === '/moments.js' || p === '/memory.js'
+    || p.startsWith('/me/')
+    || p.startsWith('/shell/');
+}
+
 function isPublicPath(p) {
   return PUBLIC_PATHS.has(p)
     || p.startsWith('/icons/')
     || p.startsWith('/brand/')
+    || isPwaAsset(p)
     || isLegalPath(p)
     || p === '/shell/cover.html'
     || p === '/shell/shell.css'
@@ -495,6 +503,7 @@ function isGatePublicPath(p) {
     || p === '/manifest.webmanifest'
     || p.startsWith('/icons/')
     || isBrandPath(p)
+    || isPwaAsset(p)
     || isLegalPath(p)
   );
 }

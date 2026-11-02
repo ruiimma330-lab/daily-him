@@ -146,6 +146,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         zh: typeof item.zh === 'string' ? item.zh : '',
         mood: typeof item.mood === 'string' ? item.mood : '',
         ttsFailed: item.ttsFailed === true,
+        failed: item.failed === true,
       }));
   }
 
@@ -189,6 +190,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       zh: item.zh || undefined,
       mood: item.mood || undefined,
       ttsFailed: item.ttsFailed || undefined,
+      failed: item.failed || undefined,
     }));
   }
 
@@ -420,7 +422,24 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return audio.play();
   }
 
+  const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+  function unlockAudio() {
+    let node = document.getElementById('audio-unlock');
+    if (!node) {
+      node = document.createElement('audio');
+      node.id = 'audio-unlock';
+      node.setAttribute('playsinline', '');
+      node.setAttribute('webkit-playsinline', '');
+      document.body.append(node);
+    }
+    if (!node.src) node.src = SILENCE;
+    const played = node.play();
+    if (played && played.catch) played.catch(() => {});
+  }
+  document.addEventListener('pointerdown', unlockAudio, { passive: true });
+
   async function playMessageAudio(message, bubble) {
+    unlockAudio();
     const button = bubble.querySelector('.speak');
     const audio = bubble.querySelector('audio');
     if (!button || !audio || button.classList.contains('busy')) return;
@@ -475,7 +494,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       await playExclusive(audio);
       syncSpeakState();
     } catch (err) {
-      showToast('음성을 재생하지 못했어요');
+      showToast('点一下喇叭再听');
       syncSpeakState();
     }
   }
@@ -649,10 +668,22 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const bubble = incoming ? buildReplyBubble(message) : buildTextBubble(message);
       if (messageIndex === 0) bubble.classList.add('sharp');
       const meta = el('div', 'meta');
-      if (!incoming && unread) {
+      if (!incoming && unread && !message.failed) {
         const read = el('span', 'read');
         read.textContent = '1';
         meta.append(read);
+      }
+      if (!incoming && message.failed) {
+        const again = el('button', 'resend');
+        again.type = 'button';
+        again.textContent = '重发';
+        again.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          message.failed = false;
+          retryLast();
+        });
+        meta.append(again);
       }
       if (last) {
         const time = el('time', 'time');
@@ -1009,11 +1040,28 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function failReply() {
     typing = false;
-    showRetry = true;
-    retryFresh = true;
-    retryAt = Date.now();
+    showRetry = false;
+    retryFresh = false;
     voiceNote = '';
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].role === 'user') {
+        messages[i].failed = true;
+        break;
+      }
+    }
+    saveLocalHistory();
     render();
+  }
+
+  function clearSendFailures() {
+    let changed = false;
+    messages.forEach((item) => {
+      if (item.failed) {
+        item.failed = false;
+        changed = true;
+      }
+    });
+    if (changed) saveLocalHistory();
   }
 
   async function requestReply() {
@@ -1051,6 +1099,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         return;
       }
       if (!response.ok) throw new Error('chat failed');
+      clearSendFailures();
       const data = await response.json();
       if (data.relationship) applyRelationship(data.relationship, true);
       const bubbles = Array.isArray(data.bubbles)

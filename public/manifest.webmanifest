@@ -1,21 +1,30 @@
 {
   "name": "Daily Him",
   "short_name": "Daily Him",
-  "start_url": "/",
+  "start_url": "/shell/cover.html",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#FFF4E8",
-  "theme_color": "#FEE500",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#111111",
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
