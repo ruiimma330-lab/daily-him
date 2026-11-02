@@ -1,0 +1,50 @@
+{
+  "sources": [
+    {
+      "id": "sm-newsroom",
+      "kind": "rss",
+      "label": "SM Entertainment 뉴스룸",
+      "url": "https://www.smentertainment.com/newsroom/feed/",
+      "keywords": ["엑소", "EXO", "백현", "BAEKHYUN", "Baekhyun"]
+    },
+    {
+      "id": "inb100-notice",
+      "kind": "page",
+      "label": "INB100 공지",
+      "url": "http://inb100.com/notice",
+      "keywords": ["백현", "BAEKHYUN", "Baekhyun"]
+    },
+    {
+      "id": "x-baekhyun",
+      "kind": "x",
+      "label": "백현 공식 X (SM 아티스트 페이지에 연결)",
+      "url": "https://x.com/B_hundred_Hyun",
+      "handle": "B_hundred_Hyun",
+      "enabled": false
+    },
+    {
+      "id": "x-exo",
+      "kind": "x",
+      "label": "EXO 공식 X (SM 아티스트 페이지에 연결)",
+      "url": "https://x.com/weareoneEXO",
+      "handle": "weareoneEXO",
+      "enabled": false
+    },
+    {
+      "id": "x-inb100",
+      "kind": "x",
+      "label": "INB100 공식 X 자리 (무료 읽기 API 없음)",
+      "url": "https://x.com/INB100_official",
+      "handle": "INB100_official",
+      "enabled": false
+    },
+    {
+      "id": "x-baekhyun-inb",
+      "kind": "x",
+      "label": "백현 INB100 공식 X 자리 (무료 읽기 API 없음)",
+      "url": "https://x.com/BAEKHYUN_INB100",
+      "handle": "BAEKHYUN_INB100",
+      "enabled": false
+    }
+  ]
+}

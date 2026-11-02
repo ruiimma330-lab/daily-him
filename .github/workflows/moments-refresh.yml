@@ -1,0 +1,24 @@
+name: refresh moments
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake the app and refresh official moments
+        env:
+          MOMENTS_REFRESH_SECRET: ${{ secrets.MOMENTS_REFRESH_SECRET }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+        run: |
+          if [ -z "$MOMENTS_REFRESH_SECRET" ] || [ -z "$APP_BASE_URL" ]; then
+            echo "Moments refresh is not configured. Skipping."
+            exit 0
+          fi
+          curl -fsS -X POST "${APP_BASE_URL%/}/api/moments/refresh" \
+            -H "Authorization: Bearer ${MOMENTS_REFRESH_SECRET}" \
+            -H "Content-Type: application/json" \
+            -d '{"characterId":"baekhyun"}'
