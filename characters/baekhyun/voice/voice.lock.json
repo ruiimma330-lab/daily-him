@@ -1,0 +1,41 @@
+{
+  "version": "baekhyun-voice-1",
+  "tags": "keep",
+  "model": "eleven_v3",
+  "outputFormat": "mp3_44100_128",
+  "voiceId": "zG6oPYFpVjyTj1zUmVTY",
+  "voiceSettings": {
+    "stability": 0,
+    "similarity_boost": 0.85
+  },
+  "speechPrefix": "[playful] ",
+  "defaultMood": "playful",
+  "moodTags": {
+    "playful": "[playful]",
+    "excited": "[happy] [chuckles]",
+    "shy": "[shy] [whispers]",
+    "soft": "[whispers]",
+    "sweet": "[whispers]",
+    "sulky": "[sulky]",
+    "laughing": "[chuckles]"
+  },
+  "samples": [
+    {
+      "id": "playful",
+      "mood": "playful",
+      "text": "에리 뭐야 [chuckles] 그렇게 말하면 나 웃기잖아"
+    },
+    {
+      "id": "soft",
+      "mood": "soft",
+      "text": "오늘 수고했어 [laughs softly] 이제 좀 쉬어"
+    },
+    {
+      "id": "shy",
+      "mood": "shy",
+      "text": "아 진짜 [sighs] 그런 말 하면 부끄럽단 말이야"
+    }
+  ],
+  "pins": [],
+  "contentHash": "4af3b1144db61cc3a7e3964a7c523d8ef8700cc4a70eb2322bada78b57fdbff3"
+}

@@ -1,0 +1,46 @@
+{
+  "characterId": "baekhyun",
+  "version": "baekhyun-voice-1",
+  "contentHash": "4af3b1144db61cc3a7e3964a7c523d8ef8700cc4a70eb2322bada78b57fdbff3",
+  "requests": [
+    {
+      "id": "playful",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/zG6oPYFpVjyTj1zUmVTY?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] 에리 뭐야 [chuckles] 그렇게 말하면 나 웃기잖아",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "83a971451d62abbca3fb87db1fc50c71aa35dde39fd32271a6c4d02e8768ab06"
+    },
+    {
+      "id": "soft",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/zG6oPYFpVjyTj1zUmVTY?output_format=mp3_44100_128",
+      "body": {
+        "text": "[whispers] 오늘 수고했어 [laughs softly] 이제 좀 쉬어",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "68086da306cc244d4a905460738c7f6e90790a8cb23600312078d7e26a2b03b6"
+    },
+    {
+      "id": "shy",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/zG6oPYFpVjyTj1zUmVTY?output_format=mp3_44100_128",
+      "body": {
+        "text": "[shy] [whispers] 아 진짜 [sighs] 그런 말 하면 부끄럽단 말이야",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "622589040306c466aee6a605b007bd33563e3b9904bff56a054aa2dc805b6592"
+    }
+  ]
+}

@@ -43,8 +43,8 @@
     }
 
     function flag(label, item) {
-      if (!item || !item.set) return label + '：未设（线上用角色文件里的值）';
-      return label + '：已设，' + (item.matchesCharacter ? '和角色文件一致' : '和角色文件不一致');
+      if (!item || !item.set) return label + '：未设（锁定角色不会用它）';
+      return label + '：已设，' + (item.matchesCharacter ? '和锁定包一致，但仍以锁定包为准' : '和锁定包不一致，锁定包会忽略它');
     }
 
     function draw(lines) {
@@ -74,7 +74,7 @@
               method: 'POST',
               body: JSON.stringify({ sessionId, lineId: line.id, choice }),
             });
-            const names = { baseline: '基准版预处理', current: '当前线上预处理' };
+            const names = { baseline: '锁定版（标签保留）', current: '旧版（标签去掉）' };
             reveal.textContent = 'A 是' + names[data.versionA] + '，B 是' + names[data.versionB] + '。你选的是' + names[data.chosenVersion] + '。';
           };
         }
@@ -97,7 +97,7 @@
       try {
         const data = await api('/api/admin/voice-ab/session', { method: 'POST', body: '{}' });
         sessionId = data.sessionId;
-        note.textContent = '同一句的两种处理，随机标成 A 和 B。先听，再选。';
+        note.textContent = '同一句的两种处理，随机标成 A 和 B。锁定版保留标签，是现在的线上声音。';
         draw(data.lines || []);
       } catch (err) {
         note.textContent = err.status === 503 ? '声音还没配好，这次没法合成。' : '没能生成对比。';
@@ -109,7 +109,10 @@
     async function load() {
       try {
         const data = await api('/api/admin/voice-ab/status');
-        status.textContent = flag('VOICE_ID', data.voiceId) + '。' + flag('TTS_MODEL', data.ttsModel) + '。';
+        const locked = data.locked
+          ? '已锁定 ' + data.lockVersion + '，标签保留，和基准版同一条。'
+          : '这套声音没有可用的锁定包。';
+        status.textContent = locked + flag('VOICE_ID', data.voiceId) + '。' + flag('TTS_MODEL', data.ttsModel) + '。';
         note.textContent = '准备好就可以生成这一组。重复打开会用已经合成过的缓存。';
         start.hidden = false;
       } catch (err) {

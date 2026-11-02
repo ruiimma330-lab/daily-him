@@ -18,6 +18,8 @@ const { pickFallback } = require('./lib/fallbacks');
 const momentsRefresh = require('./lib/moments-refresh');
 const momentsDesk = require('./lib/moments-desk');
 const voiceAb = require('./lib/voice-ab');
+const voicePack = require('./lib/voice-pack');
+const voiceExec = require('./lib/voice-exec');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -1003,16 +1005,24 @@ function createApp() {
   }
 
   app.get('/api/admin/voice-ab/status', requireUser, requireAdmin, (req, res) => {
-    let file = {};
-    try { file = characters.loadMeta('baekhyun'); } catch (_) { file = {}; }
+    const pack = voicePack.load('baekhyun');
+    const locked = Boolean(pack && pack.ok);
     res.json({
       ok: true,
-      voiceId: voiceAb.envFlag('VOICE_ID', file.voiceId),
-      ttsModel: voiceAb.envFlag('TTS_MODEL', file.ttsModel),
+      locked,
+      lockVersion: locked ? pack.lock.version : null,
+      lockedTags: locked ? pack.lock.tags : null,
+      voiceId: voiceAb.envFlag('VOICE_ID', locked ? pack.lock.voiceId : ''),
+      ttsModel: voiceAb.envFlag('TTS_MODEL', locked ? pack.lock.model : ''),
     });
   });
 
   app.post('/api/admin/voice-ab/session', requireUser, requireAdmin, async (req, res) => {
+    const pack = voicePack.load('baekhyun');
+    if (!pack || !pack.ok) {
+      console.error(pack ? pack.error : 'no voice package');
+      return res.status(503).json({ error: 'Voice is not configured' });
+    }
     let keys;
     try {
       keys = requireKeys();
@@ -1020,10 +1030,7 @@ function createApp() {
       console.error('Voice comparison is not configured');
       return res.status(503).json({ error: 'Voice is not configured' });
     }
-    const config = resolveRuntimeConfig('baekhyun');
-    if (!voiceReady(config.voiceId)) {
-      return res.status(503).json({ error: 'Voice is not configured' });
-    }
+    voicePack.warnIfEnvDiffers(pack);
     const book = readVoiceAb();
     const sessionId = crypto.randomBytes(8).toString('hex');
     const lines = [];
@@ -1033,10 +1040,9 @@ function createApp() {
       const clips = {};
       for (const label of ['A', 'B']) {
         const version = versions[label];
-        const speech = version === 'baseline' ? voiceAb.baselineSpeech(line.text) : voiceAb.currentSpeech(line.text);
-        const ttsText = voiceAb.withPrefix(moodDelivery(config, line.mood).prefix, speech);
+        const spoken = version === 'baseline' ? line.text : voiceAb.currentSpeech(line.text);
         try {
-          clips[label] = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
+          clips[label] = await voiceExec.synthesize(voicePack.buildRequest(pack, spoken, line.mood), keys.voiceKey);
         } catch (err) {
           console.error('Voice comparison synthesis failed');
           return res.status(502).json({ error: 'TTS failed' });
@@ -1202,8 +1208,15 @@ function createApp() {
     });
   });
 
-  // On-demand TTS. Chat sends voice:false so unplayed replies do not spend credits.
+  // On-demand TTS. Chat sends voice:false and keeps its own synthesize() path.
+  // A locked character is spoken only from characters/<id>/voice/. A missing or
+  // broken package turns voice off for that character and leaves chat up.
   app.post('/api/tts', requireUser, requireCharacter, requireAvailable, async (req, res) => {
+    const pack = voicePack.load(req.characterId);
+    if (!pack || !pack.ok) {
+      console.error(pack ? pack.error : 'no voice package');
+      return res.status(503).json({ error: 'Voice is not configured', audioError: 'Voice is not configured' });
+    }
     let keys;
     try {
       keys = requireKeys();
@@ -1211,22 +1224,15 @@ function createApp() {
       console.error(`Missing required environment variable(s): ${(err.missing || []).join(', ')}`);
       return res.status(500).json({ error: 'Server is not configured' });
     }
-
-    const config = resolveRuntimeConfig(req.characterId);
-    if (!voiceReady(config.voiceId)) {
-      return res.status(503).json({ error: 'Voice is not configured', audioError: 'Voice is not configured' });
-    }
+    voicePack.warnIfEnvDiffers(pack);
 
     const rawText = req.body && typeof req.body.text === 'string' ? req.body.text : '';
-    const mood = req.body && typeof req.body.mood === 'string' ? req.body.mood.slice(0, 20) : '';
-    const speech = toSpeechText([stripAudioTags(rawText)]).slice(0, 1000);
-    if (!speech || !isSpeakable(speech)) {
+    const mood = req.body && typeof req.body.mood === 'string' ? req.body.mood : '';
+    if (!pack.canSpeak(rawText)) {
       return res.status(400).json({ error: 'nothing to speak' });
     }
-
-    const ttsText = `${moodDelivery(config, mood).prefix} ${speech}`.trim();
     try {
-      const audioUrl = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
+      const audioUrl = await voiceExec.synthesize(voicePack.buildRequest(pack, rawText, mood), keys.voiceKey);
       return res.json({ audioUrl });
     } catch (err) {
       const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
