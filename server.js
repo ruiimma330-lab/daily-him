@@ -17,6 +17,7 @@ const { requestChatCompletion } = require('./lib/llm-chat');
 const { pickFallback } = require('./lib/fallbacks');
 const momentsRefresh = require('./lib/moments-refresh');
 const momentsDesk = require('./lib/moments-desk');
+const voiceAb = require('./lib/voice-ab');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -926,7 +927,12 @@ function createApp() {
   });
 
   function adminNames() {
-    return String(process.env.MOMENTS_ADMINS || '').split(',').map((name) => name.trim().toLowerCase()).filter(Boolean);
+    return [process.env.ADMINS, process.env.MOMENTS_ADMINS]
+      .filter(Boolean)
+      .join(',')
+      .split(',')
+      .map((name) => name.trim().toLowerCase())
+      .filter(Boolean);
   }
 
   function requireAdmin(req, res, next) {
@@ -974,6 +980,104 @@ function createApp() {
     const draft = momentsDesk.discardDraft(req.characterId, req.params.id);
     if (!draft) return res.status(404).json({ error: 'Not found' });
     return res.json({ ok: true });
+  });
+
+  const VOICE_AB_KEY = 'voice.ab';
+
+  function readVoiceAb() {
+    const raw = store.getSetting(VOICE_AB_KEY);
+    if (!raw) return { sessions: {}, choices: [] };
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return { sessions: {}, choices: [] };
+      parsed.sessions = parsed.sessions || {};
+      parsed.choices = Array.isArray(parsed.choices) ? parsed.choices : [];
+      return parsed;
+    } catch (_) {
+      return { sessions: {}, choices: [] };
+    }
+  }
+
+  function writeVoiceAb(data) {
+    store.putSetting(VOICE_AB_KEY, JSON.stringify(data));
+  }
+
+  app.get('/api/admin/voice-ab/status', requireUser, requireAdmin, (req, res) => {
+    let file = {};
+    try { file = characters.loadMeta('baekhyun'); } catch (_) { file = {}; }
+    res.json({
+      ok: true,
+      voiceId: voiceAb.envFlag('VOICE_ID', file.voiceId),
+      ttsModel: voiceAb.envFlag('TTS_MODEL', file.ttsModel),
+    });
+  });
+
+  app.post('/api/admin/voice-ab/session', requireUser, requireAdmin, async (req, res) => {
+    let keys;
+    try {
+      keys = requireKeys();
+    } catch (err) {
+      console.error('Voice comparison is not configured');
+      return res.status(503).json({ error: 'Voice is not configured' });
+    }
+    const config = resolveRuntimeConfig('baekhyun');
+    if (!voiceReady(config.voiceId)) {
+      return res.status(503).json({ error: 'Voice is not configured' });
+    }
+    const book = readVoiceAb();
+    const sessionId = crypto.randomBytes(8).toString('hex');
+    const lines = [];
+    const hidden = [];
+    for (const line of voiceAb.LINES) {
+      const versions = voiceAb.assignVersions(Math.random);
+      const clips = {};
+      for (const label of ['A', 'B']) {
+        const version = versions[label];
+        const speech = version === 'baseline' ? voiceAb.baselineSpeech(line.text) : voiceAb.currentSpeech(line.text);
+        const ttsText = voiceAb.withPrefix(moodDelivery(config, line.mood).prefix, speech);
+        try {
+          clips[label] = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
+        } catch (err) {
+          console.error('Voice comparison synthesis failed');
+          return res.status(502).json({ error: 'TTS failed' });
+        }
+      }
+      lines.push({ id: line.id, mood: line.mood, text: line.text, A: clips.A, B: clips.B });
+      hidden.push({ id: line.id, A: versions.A, B: versions.B });
+    }
+    book.sessions[sessionId] = { id: sessionId, lines: hidden, createdAt: Date.now() };
+    writeVoiceAb(book);
+    return res.json({ ok: true, sessionId, lines });
+  });
+
+  app.post('/api/admin/voice-ab/choice', requireUser, requireAdmin, (req, res) => {
+    const sessionId = req.body && typeof req.body.sessionId === 'string' ? req.body.sessionId : '';
+    const lineId = req.body && typeof req.body.lineId === 'string' ? req.body.lineId : '';
+    const pick = req.body && req.body.choice === 'B' ? 'B' : req.body && req.body.choice === 'A' ? 'A' : '';
+    if (!sessionId || !lineId || !pick) return res.status(400).json({ error: 'choice required' });
+    const book = readVoiceAb();
+    const session = book.sessions[sessionId];
+    const line = session && (session.lines || []).find((item) => item.id === lineId);
+    if (!line) return res.status(404).json({ error: 'Not found' });
+    const chosenVersion = line[pick];
+    const user = store.findUserById(req.userId);
+    book.choices.push({
+      sessionId,
+      lineId,
+      choice: pick,
+      chosenVersion,
+      versionA: line.A,
+      versionB: line.B,
+      at: Date.now(),
+      username: user ? user.username : '',
+    });
+    writeVoiceAb(book);
+    return res.json({
+      ok: true,
+      versionA: line.A,
+      versionB: line.B,
+      chosenVersion,
+    });
   });
 
   app.post('/api/moments/:id/like', requireUser, requireCharacter, requireAvailable, (req, res) => {

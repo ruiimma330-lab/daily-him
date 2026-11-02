@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>声音盲听</title>
+  <style>
+    body { margin: 0; font: 15px/1.5 sans-serif; background: #f6f4f1; color: #222; }
+    main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 22px; font-weight: 500; }
+    .note, .status { color: #666; font-size: 14px; }
+    article { background: #fff; border-radius: 12px; padding: 14px; margin: 14px 0; }
+    .src { white-space: pre-wrap; }
+    button { margin: 8px 8px 0 0; }
+    audio { display: block; width: 100%; margin-top: 6px; }
+    .reveal { margin-top: 8px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>声音盲听</h1>
+    <p id="note" class="note">正在确认权限…</p>
+    <p id="status" class="status"></p>
+    <button id="start" type="button" hidden>生成这一组</button>
+    <div id="list"></div>
+  </main>
+  <script>
+    const note = document.getElementById('note');
+    const status = document.getElementById('status');
+    const start = document.getElementById('start');
+    const list = document.getElementById('list');
+    let sessionId = '';
+
+    async function api(path, options) {
+      const response = await fetch(path, {
+        credentials: 'same-origin',
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(options && options.headers) },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw Object.assign(new Error(data.error || 'error'), { status: response.status });
+      return data;
+    }
+
+    function flag(label, item) {
+      if (!item || !item.set) return label + '：未设（线上用角色文件里的值）';
+      return label + '：已设，' + (item.matchesCharacter ? '和角色文件一致' : '和角色文件不一致');
+    }
+
+    function draw(lines) {
+      list.innerHTML = '';
+      lines.forEach((line) => {
+        const card = document.createElement('article');
+        const title = document.createElement('p');
+        title.textContent = line.mood;
+        const src = document.createElement('p');
+        src.className = 'src';
+        src.textContent = line.text;
+        function player(label, url) {
+          const wrap = document.createElement('div');
+          const name = document.createElement('strong');
+          name.textContent = label;
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.src = url;
+          wrap.append(name, audio);
+          return wrap;
+        }
+        const reveal = document.createElement('p');
+        reveal.className = 'reveal';
+        function choose(choice) {
+          return async () => {
+            const data = await api('/api/admin/voice-ab/choice', {
+              method: 'POST',
+              body: JSON.stringify({ sessionId, lineId: line.id, choice }),
+            });
+            const names = { baseline: '基准版预处理', current: '当前线上预处理' };
+            reveal.textContent = 'A 是' + names[data.versionA] + '，B 是' + names[data.versionB] + '。你选的是' + names[data.chosenVersion] + '。';
+          };
+        }
+        const a = document.createElement('button');
+        a.type = 'button';
+        a.textContent = '更像 A';
+        a.addEventListener('click', choose('A'));
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = '更像 B';
+        b.addEventListener('click', choose('B'));
+        card.append(title, src, player('A', line.A), player('B', line.B), a, b, reveal);
+        list.append(card);
+      });
+    }
+
+    start.addEventListener('click', async () => {
+      start.disabled = true;
+      note.textContent = '正在准备声音…';
+      try {
+        const data = await api('/api/admin/voice-ab/session', { method: 'POST', body: '{}' });
+        sessionId = data.sessionId;
+        note.textContent = '同一句的两种处理，随机标成 A 和 B。先听，再选。';
+        draw(data.lines || []);
+      } catch (err) {
+        note.textContent = err.status === 503 ? '声音还没配好，这次没法合成。' : '没能生成对比。';
+      } finally {
+        start.disabled = false;
+      }
+    });
+
+    async function load() {
+      try {
+        const data = await api('/api/admin/voice-ab/status');
+        status.textContent = flag('VOICE_ID', data.voiceId) + '。' + flag('TTS_MODEL', data.ttsModel) + '。';
+        note.textContent = '准备好就可以生成这一组。重复打开会用已经合成过的缓存。';
+        start.hidden = false;
+      } catch (err) {
+        note.textContent = err.status === 401 ? '请先登录。' : err.status === 403 ? '这个账号不能做盲听。' : '盲听页没有打开。';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>
