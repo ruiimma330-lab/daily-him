@@ -1315,6 +1315,7 @@ function createApp() {
       },
       accept: (content) => parseReply(content, config).length > 0,
     });
+    let usedFallback = false;
     let items = completion.ok ? parseReply(completion.content, config) : [];
     if (!items.length) {
       console.error(`LLM chat failed (${completion.reason || 'empty'})`);
@@ -1322,7 +1323,8 @@ function createApp() {
         req.characterId,
         priorHistory.filter((item) => item.role === 'assistant').slice(-5).map((item) => item.text),
       );
-      items = [{ raw: line.ko, ko: line.ko, zh: line.zh, mood: 'soft' }];
+      usedFallback = true;
+      items = [{ raw: line.ko, ko: line.ko, zh: line.zh, mood: 'soft', fallback: true }];
     }
 
     const voiceOff = Boolean(req.body && req.body.voice === false);
@@ -1366,12 +1368,12 @@ function createApp() {
     } catch (err) {
       console.error('Relationship update failed');
     }
-    memory.noteOpening(req.userId, req.characterId, displayBubbles[0]);
+    if (!usedFallback) memory.noteOpening(req.userId, req.characterId, displayBubbles[0]);
     const memTask = memory.afterTurn({
       userId: req.userId,
       characterId: req.characterId,
       userText: lastUserText,
-      replyText: displayBubbles.join('\n'),
+      replyText: usedFallback ? '' : displayBubbles.join('\n'),
       llm: makeLlm(keys.chatKey, config.llmModel),
       userName,
       getHistory: () => store.getHistory(req.userId, req.characterId),
