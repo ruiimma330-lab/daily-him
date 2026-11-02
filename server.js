@@ -15,6 +15,8 @@ const { readAccountDoc, writeAccountDoc, deleteAccountDoc } = require('./lib/acc
 const chatContext = require('./lib/chat-context');
 const { requestChatCompletion } = require('./lib/llm-chat');
 const { pickFallback } = require('./lib/fallbacks');
+const momentsRefresh = require('./lib/moments-refresh');
+const momentsDesk = require('./lib/moments-desk');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -502,7 +504,8 @@ function isPublicPath(p) {
     || p === '/shell/cover.html'
     || p === '/shell/shell.css'
     || p === '/shell/shell.js'
-    || p === '/shell/copy.json';
+    || p === '/shell/copy.json'
+    || p === '/api/moments/refresh';
 }
 
 function isGatePublicPath(p) {
@@ -516,6 +519,7 @@ function isGatePublicPath(p) {
     || isBrandPath(p)
     || isPwaAsset(p)
     || isLegalPath(p)
+    || p === '/api/moments/refresh'
   );
 }
 
@@ -917,7 +921,59 @@ function createApp() {
   });
 
   app.get('/api/moments', requireUser, requireCharacter, requireAvailable, (req, res) => {
+    momentsRefresh.maybeRefresh(req.characterId, { fetchImpl: fetch });
     res.json({ ok: true, posts: moments.list(req.userId, req.characterId) });
+  });
+
+  function adminNames() {
+    return String(process.env.MOMENTS_ADMINS || '').split(',').map((name) => name.trim().toLowerCase()).filter(Boolean);
+  }
+
+  function requireAdmin(req, res, next) {
+    if (!adminNames().length) return res.status(404).json({ error: 'Not found' });
+    const user = store.findUserById(req.userId);
+    if (!user || !adminNames().includes(String(user.username || '').toLowerCase())) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    return next();
+  }
+
+  app.post('/api/moments/refresh', async (req, res) => {
+    const secret = String(process.env.MOMENTS_REFRESH_SECRET || '').trim();
+    if (!secret) return res.json({ ok: true, enabled: false });
+    const header = String(req.get('authorization') || '');
+    const token = header.replace(/^Bearer\s+/i, '').trim();
+    if (token !== secret) return res.status(401).json({ error: 'Unauthorized' });
+    try {
+      const characterId = req.body && req.body.characterId ? req.body.characterId : 'baekhyun';
+      const result = await momentsRefresh.refreshCharacter(characterId, { fetchImpl: fetch });
+      return res.json({ ok: true, ...result });
+    } catch (err) {
+      console.error('Moments refresh failed');
+      return res.json({ ok: true, enabled: true, drafted: 0 });
+    }
+  });
+
+  app.get('/api/admin/moments', requireUser, requireCharacter, requireAdmin, (req, res) => {
+    res.json({ ok: true, drafts: momentsDesk.draftsFor(req.characterId) });
+  });
+
+  app.put('/api/admin/moments/:id', requireUser, requireCharacter, requireAdmin, (req, res) => {
+    const draft = momentsDesk.updateDraft(req.characterId, req.params.id, req.body || {});
+    if (!draft) return res.status(404).json({ error: 'Not found' });
+    return res.json({ ok: true, draft });
+  });
+
+  app.post('/api/admin/moments/:id/publish', requireUser, requireCharacter, requireAdmin, (req, res) => {
+    const post = momentsDesk.publishDraft(req.characterId, req.params.id, Date.now());
+    if (!post) return res.status(404).json({ error: 'Not found' });
+    return res.json({ ok: true, post: { id: post.id, ko: post.ko, zh: post.zh, publishedAt: post.publishedAt } });
+  });
+
+  app.post('/api/admin/moments/:id/discard', requireUser, requireCharacter, requireAdmin, (req, res) => {
+    const draft = momentsDesk.discardDraft(req.characterId, req.params.id);
+    if (!draft) return res.status(404).json({ error: 'Not found' });
+    return res.json({ ok: true });
   });
 
   app.post('/api/moments/:id/like', requireUser, requireCharacter, requireAvailable, (req, res) => {
@@ -927,7 +983,7 @@ function createApp() {
   });
 
   app.get('/api/moments/:id/comments', requireUser, requireCharacter, requireAvailable, (req, res) => {
-    if (!moments.loadPosts(req.characterId).some((p) => p.id === req.params.id)) {
+    if (!moments.list(req.userId, req.characterId).some((p) => p.id === req.params.id)) {
       return res.status(404).json({ error: 'not found' });
     }
     res.json({ ok: true, comments: moments.commentsFor(req.userId, req.characterId, req.params.id) });

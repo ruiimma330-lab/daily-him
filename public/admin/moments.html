@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>朋友圈草稿</title>
+  <style>
+    body { margin: 0; font: 15px/1.5 sans-serif; background: #f6f4f1; color: #222; }
+    main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 22px; font-weight: 500; }
+    article { background: #fff; border-radius: 12px; padding: 14px; margin: 12px 0; }
+    textarea { width: 100%; min-height: 72px; box-sizing: border-box; }
+    button { margin-right: 8px; }
+    .src { font-size: 12px; color: #666; word-break: break-all; }
+    .note { color: #666; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>朋友圈草稿</h1>
+    <p id="note" class="note">正在确认权限…</p>
+    <div id="list"></div>
+  </main>
+  <script>
+    const note = document.getElementById('note');
+    const list = document.getElementById('list');
+    const characterId = new URLSearchParams(location.search).get('c') || 'baekhyun';
+
+    async function api(path, options) {
+      const response = await fetch(path + (path.includes('?') ? '&' : '?') + 'characterId=' + encodeURIComponent(characterId), {
+        credentials: 'same-origin',
+        ...options,
+        headers: { 'Content-Type': 'application/json', ...(options && options.headers) },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw Object.assign(new Error(data.error || 'error'), { status: response.status });
+      return data;
+    }
+
+    function draw(drafts) {
+      list.innerHTML = '';
+      if (!drafts.length) {
+        note.textContent = '没有待审的草稿。';
+        return;
+      }
+      note.textContent = '这些草稿普通用户看不到。';
+      drafts.forEach((draft) => {
+        const card = document.createElement('article');
+        const ko = document.createElement('textarea');
+        ko.value = draft.ko || '';
+        const zh = document.createElement('textarea');
+        zh.value = draft.zh || '';
+        const src = document.createElement('p');
+        src.className = 'src';
+        src.textContent = draft.sourceUrl || '';
+        const save = document.createElement('button');
+        save.type = 'button';
+        save.textContent = '保存修改';
+        save.addEventListener('click', async () => {
+          await api('/api/admin/moments/' + encodeURIComponent(draft.id), {
+            method: 'PUT',
+            body: JSON.stringify({ ko: ko.value, zh: zh.value }),
+          });
+          note.textContent = '已保存';
+        });
+        const publish = document.createElement('button');
+        publish.type = 'button';
+        publish.textContent = '发布';
+        publish.addEventListener('click', async () => {
+          await api('/api/admin/moments/' + encodeURIComponent(draft.id) + '/publish', { method: 'POST' });
+          load();
+        });
+        const discard = document.createElement('button');
+        discard.type = 'button';
+        discard.textContent = '丢弃';
+        discard.addEventListener('click', async () => {
+          await api('/api/admin/moments/' + encodeURIComponent(draft.id) + '/discard', { method: 'POST' });
+          load();
+        });
+        card.append(ko, zh, src, save, publish, discard);
+        list.append(card);
+      });
+    }
+
+    async function load() {
+      try {
+        const data = await api('/api/admin/moments');
+        draw(data.drafts || []);
+      } catch (err) {
+        list.innerHTML = '';
+        note.textContent = err.status === 401 ? '请先登录。' : err.status === 403 ? '这个账号不能看草稿。' : '草稿箱没有打开。';
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

@@ -7,6 +7,7 @@
     "catchphrases.md",
     "scenes.json",
     "moments.json",
-    "fallbacks.json"
+    "fallbacks.json",
+    "sources.json"
   ]
 }
