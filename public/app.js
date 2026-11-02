@@ -160,6 +160,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         text: item.text,
         time: typeof item.time === 'number' ? item.time : Date.now(),
         audioUrl: safeAudioUrl(item.audioUrl),
+        turnId: typeof item.turnId === 'string' ? item.turnId : '',
         voice: item.voice === true,
         zh: typeof item.zh === 'string' ? item.zh : '',
         mood: typeof item.mood === 'string' ? item.mood : '',
@@ -198,6 +199,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       text: item.text,
       time: item.time,
       audioUrl: item.audioUrl,
+      turnId: item.turnId || undefined,
       voice: item.voice || undefined,
       zh: item.zh || undefined,
       mood: item.mood || undefined,
@@ -1119,7 +1121,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const response = await fetch(withChar('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: currentUserText(), voice: false, sceneId: pendingSceneId || undefined }),
+        body: JSON.stringify({ text: currentUserText(), voice: false, sceneId: pendingSceneId || undefined, turnId: activeTurnId || undefined }),
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -1193,6 +1195,11 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   let pendingSceneId = null;
+  let activeTurnId = '';
+
+  function newTurnId() {
+    return `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  }
 
   async function sendScene(scene) {
     if (!scene || !scene.messageKo) return;
@@ -1201,7 +1208,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       return;
     }
     pendingSceneId = scene.id || null;
-    messages.push({ role: 'user', text: scene.messageKo, time: Date.now(), audioUrl: null });
+    activeTurnId = newTurnId();
+    messages.push({ role: 'user', text: scene.messageKo, time: Date.now(), audioUrl: null, turnId: activeTurnId });
     saveHistory();
     showRetry = false;
     voiceNote = '';
@@ -1245,7 +1253,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       showToast('답장을 기다리는 중이에요');
       return;
     }
-    messages.push({ role: 'user', text, time: Date.now(), audioUrl: null });
+    activeTurnId = newTurnId();
+    messages.push({ role: 'user', text, time: Date.now(), audioUrl: null, turnId: activeTurnId });
     saveHistory();
     input.value = '';
     updateSendButton();
@@ -1257,8 +1266,16 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function retryLast() {
     if (busy) return;
-    const lastUser = messages.some((item) => item.role === 'user' && item.text && item.text.trim());
+    let lastUser = null;
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].role === 'user' && messages[i].text && messages[i].text.trim()) {
+        lastUser = messages[i];
+        break;
+      }
+    }
     if (!lastUser) return;
+    activeTurnId = lastUser.turnId || newTurnId();
+    lastUser.turnId = activeTurnId;
     requestReply();
   }
 

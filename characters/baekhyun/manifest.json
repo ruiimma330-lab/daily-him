@@ -6,6 +6,7 @@
     "facts.md",
     "catchphrases.md",
     "scenes.json",
-    "moments.json"
+    "moments.json",
+    "fallbacks.json"
   ]
 }

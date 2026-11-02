@@ -13,6 +13,8 @@ const wallet = require('./lib/wallet');
 const prefs = require('./lib/prefs');
 const { readAccountDoc, writeAccountDoc, deleteAccountDoc } = require('./lib/account-scope');
 const chatContext = require('./lib/chat-context');
+const { requestChatCompletion } = require('./lib/llm-chat');
+const { pickFallback } = require('./lib/fallbacks');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -90,16 +92,23 @@ function makeLlm(chatKey, model) {
   return async (messages, opts = {}) => {
     const body = { model, temperature: opts.temperature ?? 0.3, messages };
     if (opts.json) body.response_format = { type: 'json_object' };
-    const r = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${chatKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(llmTimeoutMs()),
-    });
-    console.log(`Memory LLM call (${opts.json ? 'extract' : 'summary'}) status ${r.status}`);
-    if (!r.ok) throw new Error(`llm ${r.status}`);
-    const d = await r.json();
-    return d && d.choices && d.choices[0] && d.choices[0].message ? d.choices[0].message.content : '';
+    try {
+      const result = await requestChatCompletion({
+        fetchImpl: fetch,
+        url: 'https://api.deepseek.com/chat/completions',
+        headers: { Authorization: `Bearer ${chatKey}`, 'Content-Type': 'application/json' },
+        body,
+      });
+      if (!result.ok) {
+        console.error(`Memory LLM failed (${result.reason})`);
+        return '';
+      }
+      console.log(`Memory LLM call (${opts.json ? 'extract' : 'summary'}) ok`);
+      return result.content;
+    } catch (err) {
+      console.error(`Memory LLM failed (${err && err.name ? err.name : 'error'})`);
+      return '';
+    }
   };
 }
 
@@ -1070,7 +1079,22 @@ function createApp() {
 
   app.post('/api/chat', requireUser, requireCharacter, requireAvailable, async (req, res) => {
     const text = req.body && typeof req.body.text === 'string' ? req.body.text.trim() : '';
-    const recent = chatContext.fromHistory(store.getHistory(req.userId, req.characterId), text);
+    const turnId = req.body && typeof req.body.turnId === 'string' ? req.body.turnId.trim().slice(0, 64) : '';
+    const priorHistory = store.getHistory(req.userId, req.characterId);
+    const already = chatContext.savedTurn(priorHistory, turnId);
+    if (already) {
+      const messages = already.map((item) => ({
+        ko: item.text, zh: item.zh || '', mood: item.mood || '', audioUrl: item.audioUrl || null, ttsFailed: Boolean(item.ttsFailed),
+      }));
+      return res.json({
+        messages,
+        bubbles: already.map((item) => item.text),
+        audioUrl: messages[0] && messages[0].audioUrl ? messages[0].audioUrl : null,
+        mood: messages[0] ? messages[0].mood : '',
+        ttsChars: 0,
+      });
+    }
+    const recent = chatContext.fromHistory(priorHistory, text);
     if (!recent) {
       return res.status(400).json({ error: 'text required' });
     }
@@ -1109,66 +1133,30 @@ function createApp() {
         habits: prof.habits,
       },
     }) + memoryPrompt + sceneHint + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
-    let replyText = '';
-
-    for (let attempt = 0; attempt < 2 && !replyText.trim(); attempt += 1) {
-    try {
-      const response = await fetch('https://api.deepseek.com/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${keys.chatKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: config.llmModel,
-          temperature: 1.0,
-          reasoning_effort: process.env.LLM_EFFORT || 'low',
-          response_format: { type: 'json_object' },
-          messages: [{ role: 'system', content: systemPrompt }, ...toLlmMessages(recent)],
-        }),
-        signal: AbortSignal.timeout(llmTimeoutMs()),
-      });
-
-      if (!response.ok) {
-        console.error(`LLM request failed (${response.status})`);
-        return res.status(502).json({ error: GENERIC_LLM_ERROR });
-      }
-
-      let data;
-      try {
-        data = await response.json();
-      } catch (err) {
-        if (isLlmTimeout(err)) throw err;
-        console.error('LLM request failed');
-        return res.status(502).json({ error: GENERIC_LLM_ERROR });
-      }
-
-      const content = data && data.choices && data.choices[0] && data.choices[0].message
-        ? data.choices[0].message.content
-        : '';
-      if (typeof content !== 'string') {
-        console.error('LLM request failed (no content in response)');
-        return res.status(502).json({ error: GENERIC_LLM_ERROR });
-      }
-      replyText = content;
-    } catch (err) {
-      if (isLlmTimeout(err)) {
-        console.error('LLM request timed out');
-        return res.status(504).json({ error: 'timeout' });
-      }
-      const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
-      const keyOk = /^[\x21-\x7e]+$/.test(keys.chatKey) ? 'ascii' : 'has-invalid-chars';
-      console.error(`LLM request failed (fetch error ${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${keys.chatKey.length})`);
-      return res.status(502).json({ error: GENERIC_LLM_ERROR });
-    }
-      if (!replyText.trim()) console.error('LLM returned a blank reply');
-    }
-
-    const items = parseReply(replyText, config);
+    const completion = await requestChatCompletion({
+      fetchImpl: fetch,
+      url: 'https://api.deepseek.com/chat/completions',
+      headers: {
+        Authorization: `Bearer ${keys.chatKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: {
+        model: config.llmModel,
+        temperature: 1.0,
+        reasoning_effort: process.env.LLM_EFFORT || 'low',
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'system', content: systemPrompt }, ...toLlmMessages(recent)],
+      },
+      accept: (content) => parseReply(content, config).length > 0,
+    });
+    let items = completion.ok ? parseReply(completion.content, config) : [];
     if (!items.length) {
-      console.error('LLM request failed (empty reply after parsing)');
-      if (process.env.DEBUG_REPLY === '1') console.error(`raw reply: ${String(replyText).slice(0, 500)}`);
-      return res.status(502).json({ error: GENERIC_LLM_ERROR });
+      console.error(`LLM chat failed (${completion.reason || 'empty'})`);
+      const line = pickFallback(
+        req.characterId,
+        priorHistory.filter((item) => item.role === 'assistant').slice(-5).map((item) => item.text),
+      );
+      items = [{ raw: line.ko, ko: line.ko, zh: line.zh, mood: 'soft' }];
     }
 
     const voiceOff = Boolean(req.body && req.body.voice === false);
@@ -1200,11 +1188,8 @@ function createApp() {
     const audioUrl = outMessages.length && outMessages[0].audioUrl ? outMessages[0].audioUrl : null;
 
     try {
-      store.putHistory(
-        req.userId,
-        req.characterId,
-        chatContext.appendTurn(store.getHistory(req.userId, req.characterId), lastUserText, items),
-      );
+      const committed = chatContext.commitTurn(store.getHistory(req.userId, req.characterId), lastUserText, items, turnId);
+      if (!committed.duplicate) store.putHistory(req.userId, req.characterId, committed.messages);
     } catch (err) {
       console.error('History update failed');
     }
@@ -1284,7 +1269,7 @@ async function main() {
 
 if (require.main === module) {
   main();
-  const shutdown = () => { store.flush().finally(() => process.exit(0)); };
+  const shutdown = () => { store.flush({ shutdown: true }).finally(() => process.exit(0)); };
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 }
