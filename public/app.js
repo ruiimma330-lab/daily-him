@@ -487,6 +487,16 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           }
           const data = await response.json().catch(() => ({}));
           const url = safeAudioUrl(data && data.audioUrl);
+          if (response.status === 402 && data && data.error === 'starlight') {
+            showToast(`${data.notice || '这条语音需要 15 星光'} · 去领取`);
+            const bar = document.getElementById('star-bar');
+            if (bar) {
+              bar.hidden = false;
+              bar.textContent = '先看文字';
+              bar.onclick = () => { bar.hidden = true; };
+            }
+            return;
+          }
           if (!response.ok || !url) {
             showToast(data && data.audioError === 'Voice is not configured'
               ? '음성은 아직 준비되지 않았어요'
@@ -1130,9 +1140,35 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         location.href = '/login';
         return;
       }
+      if (response.status === 402) {
+        const denied = await response.json().catch(() => ({}));
+        const bar = document.getElementById('star-bar');
+        if (bar) {
+          bar.hidden = false;
+          bar.textContent = '星光不够啦 · 去领取';
+          bar.onclick = () => { location.href = '/shell/starlight.html'; };
+        }
+        input.value = currentUserText();
+        for (let i = messages.length - 1; i >= 0; i -= 1) {
+          if (messages[i].role === 'user') { messages.splice(i, 1); break; }
+        }
+        saveLocalHistory();
+        typing = false;
+        busy = false;
+        render();
+        return;
+      }
       if (!response.ok) throw new Error('chat failed');
       clearSendFailures();
       const data = await response.json();
+      if (data.starlight && data.starlight.notice) {
+        const bar = document.getElementById('star-bar');
+        if (bar) {
+          bar.hidden = false;
+          bar.textContent = data.starlight.notice;
+          bar.onclick = () => { location.href = '/shell/starlight.html'; };
+        }
+      }
       if (data.relationship) applyRelationship(data.relationship, true);
       const bubbles = Array.isArray(data.bubbles)
         ? data.bubbles.map((bubble) => String(bubble).trim()).filter(Boolean).slice(0, 4)

@@ -1,0 +1,22 @@
+{
+  "text": 1,
+  "textLong": 2,
+  "textLongUser": 800,
+  "textLongReply": 400,
+  "voice": 15,
+  "voiceMaxChars": 100,
+  "signupGrant": 100,
+  "dailyGrant": 50,
+  "streak3": 5,
+  "streak7": 15,
+  "chatStreakReward": 5,
+  "dailyVoiceCap": 30,
+  "siteDailyCostCap": 500000,
+  "adminGrantMax": 10000,
+  "packages": [
+    { "id": "s6", "priceYuan": 6, "amount": 300 },
+    { "id": "s30", "priceYuan": 30, "amount": 1680 },
+    { "id": "s68", "priceYuan": 68, "amount": 4000 },
+    { "id": "s128", "priceYuan": 128, "amount": 8000 }
+  ]
+}
