@@ -220,7 +220,7 @@
 .screen-me .me-card p { margin: 0; font-size: 15px; line-height: 1.5; font-weight: 300; }
 .screen-me .me-card time { display: block; margin-top: 6px; font-size: 12px; color: var(--me-muted); }
 .me-card-actions { display: flex; gap: 16px; margin-top: 8px; }
-.me-card-actions button { border: 0; background: none; padding: 0; font: inherit; font-size: 13px; font-weight: 300; color: #6f6a64; cursor: pointer; }
+.me-card-actions button, .me-starlight-actions a { border: 0; background: none; padding: 0; font: inherit; font-size: 13px; font-weight: 300; color: #6f6a64; cursor: pointer; }
 .me-card-actions .is-delete { color: #8a3a32; }
 .me-version { padding: 14px 22px 22px; font-size: 12px; color: var(--me-muted); font-weight: 300; letter-spacing: 0.06em; }
 
@@ -279,11 +279,8 @@
   cursor: pointer;
 }
 
-.me-starlight { margin: 0 22px; padding: 16px; border: 1px solid #f1e5ae; border-radius: 16px; background: #fffceb; }
-.me-starlight h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 400; }
-.me-starlight-balance { margin: 12px 0 4px; font-size: 26px; font-weight: 600; overflow-wrap: anywhere; }
-.me-starlight-status { margin: 0; color: #746642; font-size: 12px; line-height: 1.5; }
-.me-starlight-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
-.me-starlight-actions a { display: grid; place-items: center; min-height: 44px; border-radius: 10px; background: #fff; color: var(--me-ink); text-decoration: none; font-size: 14px; }
-.me-starlight-actions a:first-child { background: #fee500; }
-.me-starlight-actions a:focus-visible { outline: 2px solid #8a6500; outline-offset: 3px; }
+.me-starlight .me-line span { display: flex; align-items: center; gap: 8px; }
+.me-starlight .me-line img { flex-shrink: 0; }
+.me-starlight .me-label { color: var(--me-muted); letter-spacing: 0; }
+.me-starlight-actions { margin-top: 0; cursor: default; }
+.me-starlight-actions a { text-decoration: none; }

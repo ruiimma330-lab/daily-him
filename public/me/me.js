@@ -277,33 +277,30 @@
 
   function starlightCard() {
     const card = document.createElement('section');
-    card.className = 'me-starlight';
+    card.className = 'me-group me-starlight';
     card.setAttribute('aria-label', '星光');
-    const heading = document.createElement('h2');
+    const data = state.starlight;
+    const balance = data ? `${data.balance ?? 0} 星光` : '余额暂不可用';
+    const status = data
+      ? (data.claimedToday ? `今日已领取 · 连续 ${data.streak || 0} 天` : '今日可领取')
+      : '领取状态暂不可用';
+    const row = line(balance, status, () => { location.href = '/shell/starlight.html#claim'; });
+    row.querySelector('b').className = 'me-label';
     const icon = document.createElement('img');
     icon.src = '/icons/starlight.svg';
-    icon.width = 24;
-    icon.height = 24;
+    icon.width = 18;
+    icon.height = 18;
     icon.alt = '';
-    heading.append(icon, '星光');
-    const balance = document.createElement('p');
-    balance.className = 'me-starlight-balance';
-    const data = state.starlight;
-    balance.textContent = data ? `${data.balance ?? 0} 星光` : '余额暂不可用';
-    const status = document.createElement('p');
-    status.className = 'me-starlight-status';
-    status.textContent = data
-      ? `${data.claimedToday ? '今日已领取' : '今日未领取'} · 连续签到 ${data.streak || 0} 天`
-      : '领取状态暂不可用，请前往补给站查看';
+    row.querySelector('span').prepend(icon);
     const actions = document.createElement('div');
-    actions.className = 'me-starlight-actions';
-    [['去领取', 'claim'], ['充值', 'recharge'], ['明细', 'ledger']].forEach(([label, anchor]) => {
+    actions.className = 'me-line me-card-actions me-starlight-actions';
+    [['领取', 'claim'], ['充值', 'recharge'], ['明细', 'ledger']].forEach(([label, anchor]) => {
       const link = document.createElement('a');
       link.href = `/shell/starlight.html#${anchor}`;
       link.textContent = label;
       actions.append(link);
     });
-    card.append(heading, balance, status, actions);
+    card.append(row, actions);
     return card;
   }
 
@@ -374,10 +371,10 @@
       top,
       kicker('个人资料'),
       profile,
-      kicker('星光'),
-      starlightCard(),
       kicker('我的爱豆'),
       idols,
+      kicker('星光'),
+      starlightCard(),
       kicker('聊天'),
       group([
         labeled('语音', voice),
