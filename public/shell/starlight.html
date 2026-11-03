@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>星光补给站</title>
+  <link rel="stylesheet" href="/shell/shell.css" />
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <button type="button" id="back" aria-label="返回">‹</button>
+      <h1>星光补给站</h1>
+    </div>
+    <div class="balance">
+      <div class="l">星光 · 별빛</div>
+      <div class="n" id="balance">0</div>
+    </div>
+    <button type="button" class="btn" id="claim" style="margin-top:16px">领取今日星光</button>
+    <p class="lead" id="streak">连续领取</p>
+    <div class="field">
+      <label for="code">兑换码</label>
+      <input id="code" autocomplete="off" />
+    </div>
+    <button type="button" class="btn btn-ghost" id="redeem">兑换</button>
+    <div class="pkg-list" id="packages"></div>
+    <p class="lead" id="notice"></p>
+    <div id="ledger"></div>
+    <form id="admin" hidden>
+      <h2 style="font-size:16px;font-weight:500">管理员</h2>
+      <div class="field"><label for="grant-user">用户名</label><input id="grant-user" /></div>
+      <div class="field"><label for="grant-amount">星光</label><input id="grant-amount" inputmode="numeric" /></div>
+      <button type="button" class="btn" id="grant">发放</button>
+      <div class="field"><label for="code-amount">兑换码面额</label><input id="code-amount" inputmode="numeric" value="100" /></div>
+      <div class="field"><label for="code-uses">可用次数</label><input id="code-uses" inputmode="numeric" value="1" /></div>
+      <button type="button" class="btn btn-ghost" id="make-code">生成兑换码</button>
+      <p id="new-code"></p>
+    </form>
+  </div>
+  <script src="/shell/shell.js"></script>
+  <script>
+    const balanceEl = document.getElementById('balance');
+    const streakEl = document.getElementById('streak');
+    const noticeEl = document.getElementById('notice');
+    const packagesEl = document.getElementById('packages');
+    const ledgerEl = document.getElementById('ledger');
+    document.getElementById('back').onclick = () => history.back();
+
+    function paint(data) {
+      balanceEl.textContent = String(data.balance || 0);
+      streakEl.textContent = data.claimedToday
+        ? `今日已领取 · 连续 ${data.streak || 0} 天`
+        : `今日可领取 · 连续 ${data.streak || 0} 天`;
+      noticeEl.textContent = data.notice || '';
+      packagesEl.innerHTML = '';
+      (data.packages || []).forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'pkg';
+        button.innerHTML = `<span><span class="name">${item.amount} 星光</span><span class="coins">${item.priceYuan} 元</span></span><span class="price">¥${item.priceYuan}</span>`;
+        button.addEventListener('click', async () => {
+          const result = await Shell.api('/api/starlight/purchase', {
+            method: 'POST',
+            body: JSON.stringify({ packageId: item.id }),
+          });
+          alert(result.message || '充值即将开放');
+          document.getElementById('code').focus();
+        });
+        packagesEl.append(button);
+      });
+      ledgerEl.innerHTML = '';
+      (data.ledger || []).forEach((row) => {
+        const line = document.createElement('p');
+        line.className = 'lead';
+        const when = new Date(row.createdAt).toLocaleString('zh-CN', { hour12: false });
+        line.textContent = `${when} · ${row.source} · ${row.delta > 0 ? '+' : ''}${row.delta} · 余额 ${row.balanceAfter}`;
+        ledgerEl.append(line);
+      });
+    }
+
+    async function load() {
+      const data = await Shell.api('/api/starlight');
+      paint(data);
+      try {
+        await Shell.api('/api/admin/starlight/status');
+        document.getElementById('admin').hidden = false;
+      } catch (_) {
+        document.getElementById('admin').hidden = true;
+      }
+    }
+
+    document.getElementById('claim').onclick = async () => {
+      try {
+        await Shell.api('/api/starlight/claim', { method: 'POST', body: '{}' });
+      } catch (err) {
+        if (err.status !== 409) Shell.toast('今天先领过了');
+      }
+      load();
+    };
+    document.getElementById('redeem').onclick = async () => {
+      try {
+        await Shell.api('/api/starlight/redeem', {
+          method: 'POST',
+          body: JSON.stringify({ code: document.getElementById('code').value.trim() }),
+        });
+        document.getElementById('code').value = '';
+      } catch (_) { Shell.toast('兑换码不能用'); }
+      load();
+    };
+    document.getElementById('grant').onclick = async () => {
+      try {
+        await Shell.api('/api/admin/starlight/grant', {
+          method: 'POST',
+          body: JSON.stringify({
+            username: document.getElementById('grant-user').value.trim(),
+            amount: Number(document.getElementById('grant-amount').value),
+          }),
+        });
+      } catch (_) { Shell.toast('没有发出去'); }
+    };
+    document.getElementById('make-code').onclick = async () => {
+      try {
+        const created = await Shell.api('/api/admin/starlight/codes', {
+          method: 'POST',
+          body: JSON.stringify({
+            amount: Number(document.getElementById('code-amount').value),
+            maxUses: Number(document.getElementById('code-uses').value),
+          }),
+        });
+        document.getElementById('new-code').textContent = created.code || '';
+      } catch (_) { Shell.toast('没有生成'); }
+    };
+    load();
+  </script>
+</body>
+</html>
