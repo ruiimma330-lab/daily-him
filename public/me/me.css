@@ -278,3 +278,12 @@
   letter-spacing: 0.14em;
   cursor: pointer;
 }
+
+.me-starlight { margin: 0 22px; padding: 16px; border: 1px solid #f1e5ae; border-radius: 16px; background: #fffceb; }
+.me-starlight h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 400; }
+.me-starlight-balance { margin: 12px 0 4px; font-size: 26px; font-weight: 600; overflow-wrap: anywhere; }
+.me-starlight-status { margin: 0; color: #746642; font-size: 12px; line-height: 1.5; }
+.me-starlight-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.me-starlight-actions a { display: grid; place-items: center; min-height: 44px; border-radius: 10px; background: #fff; color: var(--me-ink); text-decoration: none; font-size: 14px; }
+.me-starlight-actions a:first-child { background: #fee500; }
+.me-starlight-actions a:focus-visible { outline: 2px solid #8a6500; outline-offset: 3px; }

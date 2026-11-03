@@ -10,14 +10,15 @@
   <div class="shell">
     <div class="topbar">
       <button type="button" id="back" aria-label="返回">‹</button>
-      <h1>星光补给站</h1>
+      <h1><img src="/icons/starlight.svg" width="24" height="24" alt="" /> 星光补给站</h1>
     </div>
     <div class="balance">
       <div class="l">星光 · 별빛</div>
-      <div class="n" id="balance">0</div>
+      <div class="n"><img src="/icons/starlight.svg" width="24" height="24" alt="" /> <span id="balance">0</span></div>
     </div>
     <button type="button" class="btn" id="claim" style="margin-top:16px">领取今日星光</button>
     <p class="lead" id="streak">连续领取</p>
+    <section id="recharge" aria-label="充值与兑换">
     <div class="field">
       <label for="code">兑换码</label>
       <input id="code" autocomplete="off" />
@@ -25,7 +26,8 @@
     <button type="button" class="btn btn-ghost" id="redeem">兑换</button>
     <div class="pkg-list" id="packages"></div>
     <p class="lead" id="notice"></p>
-    <div id="ledger"></div>
+    </section>
+    <section id="ledger" aria-label="星光明细"></section>
     <form id="admin" hidden>
       <h2 style="font-size:16px;font-weight:500">管理员</h2>
       <div class="field"><label for="grant-user">用户名</label><input id="grant-user" /></div>
@@ -130,7 +132,10 @@
         document.getElementById('new-code').textContent = created.code || '';
       } catch (_) { Shell.toast('没有生成'); }
     };
-    load();
+    load().then(() => {
+      const target = { '#claim': 'claim', '#recharge': 'recharge', '#ledger': 'ledger' }[location.hash];
+      if (target) document.getElementById(target).scrollIntoView();
+    });
   </script>
 </body>
 </html>

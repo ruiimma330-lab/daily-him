@@ -1357,3 +1357,14 @@ button.me-row:hover { background: #fafafa; }
   font-size: 14px;
 }
 
+
+.star-link img { display: block; }
+.star-bar::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: -3px;
+  background: url('/icons/starlight.svg') center / contain no-repeat;
+}

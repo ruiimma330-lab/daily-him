@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <defs><radialGradient id="glow"><stop stop-color="#FEE500" stop-opacity=".5"/><stop offset="1" stop-color="#FEE500" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="12" cy="12" r="12" fill="url(#glow)"/>
+  <path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9Z" fill="#FEE500" stroke="#BD8800" stroke-width="1.2" stroke-linejoin="round"/>
+  <path d="m5 2 .4 1.6L7 4l-1.6.4L5 6l-.4-1.6L3 4l1.6-.4ZM20 16l.4 1.6L22 18l-1.6.4L20 20l-.4-1.6L18 18l1.6-.4Z" fill="#E7AC00"/>
+  <path d="m9 9 2-4" stroke="#FFFAC6" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M10 12v1m4-1v1" stroke="#664819" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M11 14.5q1 1 2 0" stroke="#664819" stroke-width=".9" stroke-linecap="round"/>
+</svg>
