@@ -148,11 +148,7 @@
         Shell.go('/', { c: current.id });
         return;
       }
-      await Shell.api('/api/profile?characterId=' + encodeURIComponent(current.id), {
-        method: 'PUT',
-        body: JSON.stringify({ onboarded: true }),
-      });
-      Shell.go('/', { c: current.id, welcome: '1' });
+      Shell.go('/shell/onboard.html', { c: current.id });
     } catch (_) {
       Shell.toast('暂时进不去，请重试');
       goBtn.disabled = current.available === false;

@@ -7,6 +7,8 @@
   "company": "SM",
   "group": "EXO",
   "available": false,
+  "askNameKo": "안녕, 반가워. 내가 뭐라고 부르면 편할까? 천천히 알려줘도 돼.",
+  "askNameZh": "嗨，很高兴见到你。我叫你什么你会觉得自在？慢慢告诉我也行。",
   "avatar": "avatar.jpg",
   "portrait": "/characters/kai/portrait.jpg"
 }

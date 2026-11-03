@@ -441,6 +441,23 @@
         toast('备注已更新');
       } catch (_) { toast('备注没保存上'); }
     });
+    const call = document.createElement('input');
+    call.maxLength = 12;
+    call.value = (state.profiles[ch.id] && state.profiles[ch.id].callName) || '';
+    call.placeholder = '他怎么叫你';
+    call.setAttribute('aria-label', '他怎么叫你');
+    call.addEventListener('change', async () => {
+      const nextName = call.value.trim();
+      if (!nextName) { toast('称呼不能是空的'); call.value = (state.profiles[ch.id] && state.profiles[ch.id].callName) || ''; return; }
+      try {
+        const saved = await api(`/api/profile?characterId=${encodeURIComponent(ch.id)}`, {
+          method: 'PUT',
+          body: JSON.stringify({ callName: nextName, callNameStatus: 'done', callNameSource: 'user' }),
+        });
+        state.profiles[ch.id] = (saved && saved.profile) || state.profiles[ch.id];
+        toast('称呼已更新');
+      } catch (_) { toast('称呼没保存上'); }
+    });
 
     const rel = state.rel[ch.id] || {};
     const stats = document.createElement('div');
@@ -472,7 +489,12 @@
     const fieldLabel = document.createElement('span');
     fieldLabel.textContent = '备注名';
     field.append(fieldLabel, remark);
-    card.append(head, field, stats, memory, clear);
+    const callField = document.createElement('label');
+    callField.className = 'me-field';
+    const callLabel = document.createElement('span');
+    callLabel.textContent = '他怎么叫你';
+    callField.append(callLabel, call);
+    card.append(head, field, callField, stats, memory, clear);
     return card;
   }
 

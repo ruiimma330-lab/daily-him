@@ -20,6 +20,7 @@ const momentsDesk = require('./lib/moments-desk');
 const voiceAb = require('./lib/voice-ab');
 const voicePack = require('./lib/voice-pack');
 const voiceExec = require('./lib/voice-exec');
+const callName = require('./lib/call-name');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -1265,6 +1266,29 @@ function createApp() {
       return res.status(400).json({ error: 'text required' });
     }
 
+    const profEarly = profile.load(req.userId, req.characterId);
+    const namingPlan = callName.plan(profEarly, text);
+    if (namingPlan.mode === 'fixed') {
+      profile.save(req.userId, req.characterId, namingPlan.patch);
+      const fixedItems = [{ raw: namingPlan.ko, ko: namingPlan.ko, zh: namingPlan.zh, mood: namingPlan.mood }];
+      try {
+        const committed = chatContext.commitTurn(store.getHistory(req.userId, req.characterId), text, fixedItems, turnId);
+        if (!committed.duplicate) store.putHistory(req.userId, req.characterId, committed.messages);
+      } catch (err) {
+        console.error('History update failed');
+      }
+      let rel = null;
+      try { rel = relationship.recordTurn(req.userId, req.characterId); } catch (err) { console.error('Relationship update failed'); }
+      return res.json({
+        messages: [{ ko: namingPlan.ko, zh: namingPlan.zh, mood: namingPlan.mood, audioUrl: null, ttsFailed: false }],
+        bubbles: [namingPlan.ko],
+        audioUrl: null,
+        mood: namingPlan.mood,
+        ttsChars: 0,
+        relationship: rel,
+      });
+    }
+
     let keys;
     try {
       keys = requireKeys();
@@ -1282,8 +1306,9 @@ function createApp() {
     const sceneHint = scene && scene.promptHint
       ? `\n\n## 지금 상황\n사용자가 장면 버튼「${scene.label}」을 눌렀어. ${scene.promptHint} 시스템·설정 이야기는 하지 마.`
       : '';
-    const userName = profile.callNameFor(req.userId, req.characterId);
     const prof = profile.load(req.userId, req.characterId);
+    const namingPending = callName.statusOf(prof) === 'pending' || callName.statusOf(prof) === 'confirming';
+    const userName = namingPending ? '' : profile.callNameFor(req.userId, req.characterId);
     const accountPrefs = prefs.load(req.userId);
     const memBlock = memory.promptBlock(req.userId, req.characterId, lastUserText, userName);
     const openings = [...new Set([...memory.recentOpenings(req.userId, req.characterId), ...recentOpenings(recent)])].slice(-6);
@@ -1298,7 +1323,8 @@ function createApp() {
         characterNickname: prof.characterNickname,
         habits: prof.habits,
       },
-    }) + memoryPrompt + sceneHint + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+      namingPending,
+    }) + memoryPrompt + sceneHint + (namingPending ? `\n\n${callName.promptHint(prof.callNameAsks)}` : '') + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     const completion = await requestChatCompletion({
       fetchImpl: fetch,
       url: 'https://api.deepseek.com/chat/completions',
@@ -1325,6 +1351,15 @@ function createApp() {
       );
       usedFallback = true;
       items = [{ raw: line.ko, ko: line.ko, zh: line.zh, mood: 'soft', fallback: true }];
+    }
+    if (!usedFallback && namingPending && completion && completion.content) {
+      const settled = callName.settle(prof, completion.content);
+      if (settled) {
+        profile.save(req.userId, req.characterId, settled.patch);
+        if (settled.replace) {
+          items = [{ raw: settled.ko, ko: settled.ko, zh: settled.zh, mood: settled.mood }];
+        }
+      }
     }
 
     const voiceOff = Boolean(req.body && req.body.voice === false);
