@@ -11,6 +11,8 @@
   "portrait": "/characters/baekhyun/portrait.jpg",
   "welcomeKo": "왔구나. 오늘 뭐 하고 있었어?",
   "welcomeZh": "来了呀。今天在做什么？",
+  "askNameKo": "왔네, 왔어~ 반가워! 내가 뭐라고 불러주면 좋을까?",
+  "askNameZh": "来啦来啦～见到你好开心！想让我怎么叫你呀？",
   "defaultUserName": "에리",
   "voiceId": "zG6oPYFpVjyTj1zUmVTY",
   "ttsModel": "eleven_v3",
