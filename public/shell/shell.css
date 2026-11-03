@@ -53,3 +53,6 @@ h1 { margin: 0 0 8px; font-size: 22px; font-weight: 400; letter-spacing: 0.18em;
 .topbar { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
 .topbar button { border: 0; background: none; font-size: 28px; line-height: 1; cursor: pointer; width: 36px; }
 .topbar h1 { flex: 1; font-size: 18px; margin: 0; text-align: center; padding-right: 36px; letter-spacing: 0; }
+
+.topbar h1 img, .balance .n img { vertical-align: -4px; }
+#claim, #recharge, #ledger { scroll-margin-top: 20px; }

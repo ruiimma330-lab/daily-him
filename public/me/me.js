@@ -6,6 +6,7 @@
 
   const state = {
     me: null,
+    starlight: null,
     settings: blankSettings(),
     characters: [],
     profiles: {},
@@ -274,6 +275,38 @@
     return nick || ch.nameZh || ch.displayName || ch.name;
   }
 
+  function starlightCard() {
+    const card = document.createElement('section');
+    card.className = 'me-starlight';
+    card.setAttribute('aria-label', '星光');
+    const heading = document.createElement('h2');
+    const icon = document.createElement('img');
+    icon.src = '/icons/starlight.svg';
+    icon.width = 24;
+    icon.height = 24;
+    icon.alt = '';
+    heading.append(icon, '星光');
+    const balance = document.createElement('p');
+    balance.className = 'me-starlight-balance';
+    const data = state.starlight;
+    balance.textContent = data ? `${data.balance ?? 0} 星光` : '余额暂不可用';
+    const status = document.createElement('p');
+    status.className = 'me-starlight-status';
+    status.textContent = data
+      ? `${data.claimedToday ? '今日已领取' : '今日未领取'} · 连续签到 ${data.streak || 0} 天`
+      : '领取状态暂不可用，请前往补给站查看';
+    const actions = document.createElement('div');
+    actions.className = 'me-starlight-actions';
+    [['去领取', 'claim'], ['充值', 'recharge'], ['明细', 'ledger']].forEach(([label, anchor]) => {
+      const link = document.createElement('a');
+      link.href = `/shell/starlight.html#${anchor}`;
+      link.textContent = label;
+      actions.append(link);
+    });
+    card.append(heading, balance, status, actions);
+    return card;
+  }
+
   function paintMain() {
     main.replaceChildren();
     const top = document.createElement('header');
@@ -341,6 +374,8 @@
       top,
       kicker('个人资料'),
       profile,
+      kicker('星光'),
+      starlightCard(),
       kicker('我的爱豆'),
       idols,
       kicker('聊天'),
@@ -741,13 +776,15 @@
 
   async function refresh() {
     try {
-      const [me, settings, chars, about] = await Promise.all([
+      const [me, settings, chars, about, starlight] = await Promise.all([
         api('/api/me'),
         api('/api/me/settings'),
         api('/api/characters'),
         api('/api/about'),
+        api('/api/starlight').catch(() => null),
       ]);
       state.me = me;
+      state.starlight = starlight;
       if (window.AccountCache && me.user && me.user.id) {
         const characterId = new URLSearchParams(location.search).get('c') || 'baekhyun';
         window.AccountCache.adopt(localStorage, me.user.id, characterId);
