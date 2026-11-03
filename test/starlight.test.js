@@ -94,16 +94,27 @@ async function request(pathname, { method = 'GET', body, cookie } = {}) {
 test.before(async () => {
   await store.init();
   calls = 0;
+  global.voiceCalls = 0;
   const realFetch = global.fetch;
   global.fetch = async (url, opts) => {
     const target = String(url);
+    const body = String(opts && opts.body || '');
     if (target.startsWith('http://127.0.0.1') || target.startsWith('http://localhost')) return realFetch(url, opts);
     calls += 1;
-    if (String(opts && opts.body || '').includes('失败')) {
+    if (target.includes('api.elevenlabs.io')) {
+      global.voiceCalls += 1;
+      if (body.includes('깨져')) return new Response('no', { status: 500, headers: { 'content-type': 'text/plain' } });
+      return new Response(Buffer.alloc(80, 4), { status: 200, headers: { 'content-type': 'audio/mpeg' } });
+    }
+    if (body.includes('失败')) {
       return new Response('nope', { status: 500, headers: { 'content-type': 'text/plain' } });
     }
+    const tag = (body.match(/tag([a-z0-9]+)/) || [])[1] || '';
+    let ko = tag ? `응${tag}` : '응';
+    if (body.includes('깨져')) ko = `깨져${tag}`;
+    else if (body.includes('다른말')) ko = `다른${tag}`;
     return new Response(JSON.stringify({
-      choices: [{ message: { content: '{"messages":[{"mood":"soft","ko":"응","zh":"嗯"}]}' } }],
+      choices: [{ message: { content: `{"messages":[{"mood":"soft","ko":"${ko}","zh":"嗯"}]}` } }],
     }), { status: 200, headers: { 'content-type': 'application/json' } });
   };
   serverApp = createApp().listen(0, '127.0.0.1');
@@ -124,7 +135,7 @@ test('a reply spends one star, a failed reply is returned, and an empty balance 
   assert.equal(opened.status, 200);
   assert.equal(opened.json.balance, 100);
   const chat = await request('/api/chat?characterId=baekhyun', {
-    method: 'POST', cookie: fan.cookie, body: { text: '안녕', turnId: 'turnstar01' },
+    method: 'POST', cookie: fan.cookie, body: { text: '안녕', turnId: 'turnstar01', voice: false },
   });
   assert.equal(chat.status, 200);
   assert.equal(calls > 0, true);
@@ -132,7 +143,7 @@ test('a reply spends one star, a failed reply is returned, and an empty balance 
   assert.equal(after.json.balance, 99);
   const beforeFail = calls;
   const failed = await request('/api/chat?characterId=baekhyun', {
-    method: 'POST', cookie: fan.cookie, body: { text: '这次失败', turnId: 'turnstar02' },
+    method: 'POST', cookie: fan.cookie, body: { text: '这次失败', turnId: 'turnstar02', voice: false },
   });
   assert.equal(failed.status, 200);
   assert.equal(calls > beforeFail, true);
@@ -144,7 +155,7 @@ test('a reply spends one star, a failed reply is returned, and an empty balance 
   await starlight.settle('drain');
   const drained = calls;
   const blocked = await request('/api/chat?characterId=baekhyun', {
-    method: 'POST', cookie: fan.cookie, body: { text: '더 말해', turnId: 'turnstar03' },
+    method: 'POST', cookie: fan.cookie, body: { text: '더 말해', turnId: 'turnstar03', voice: false },
   });
   assert.equal(blocked.status, 402);
   assert.equal(blocked.json.notice, '星光不够啦');
@@ -155,4 +166,60 @@ test('a reply spends one star, a failed reply is returned, and an empty balance 
   assert.equal(quoted.json.payable, false);
   assert.equal(quoted.json.message, '充值即将开放');
   assert.equal(quoted.json.amount, 300);
+});
+
+test('chat voice uses the same charge, and Turso never falls back to the file ledger', async () => {
+  assert.equal(starlight.chooseLedger({}), 'file');
+  process.env.TURSO_DATABASE_URL = 'libsql://example.turso.io';
+  assert.throws(() => starlight.chooseLedger({}), /Turso/);
+  assert.equal(starlight.chooseLedger({ db: {} }), 'sql');
+  delete process.env.TURSO_DATABASE_URL;
+
+  const src = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  assert.equal(src.includes('await voiceExec.synthesize'), false);
+  assert.equal(src.includes('await synthesize('), false);
+  assert.equal((src.match(/speak: \(\) => synthesize\(/g) || []).length, 1);
+  assert.equal((src.match(/speak: \(\) => voiceExec\.synthesize/g) || []).length, 2);
+
+  const stamp = Date.now().toString(36);
+  const speaker = await request('/api/register', { method: 'POST', body: { username: `spk${stamp}`, password: 'password1', age14: true } });
+  const start = (await request('/api/starlight', { cookie: speaker.cookie })).json.balance;
+  const before = global.voiceCalls;
+  const first = await request('/api/chat?characterId=baekhyun', {
+    method: 'POST', cookie: speaker.cookie, body: { text: `tag${stamp}`, turnId: 'turnvoice01' },
+  });
+  assert.equal(first.status, 200);
+  assert.ok(first.json.messages[0].audioUrl);
+  assert.equal(global.voiceCalls, before + 1);
+  const charged = (await request('/api/starlight', { cookie: speaker.cookie })).json.balance;
+  assert.equal(charged, start - 16);
+
+  const replay = await request('/api/chat?characterId=baekhyun', {
+    method: 'POST', cookie: speaker.cookie, body: { text: `tag${stamp} 다시`, turnId: 'turnvoice02' },
+  });
+  assert.equal(replay.status, 200);
+  assert.ok(replay.json.messages[0].audioUrl);
+  assert.equal(global.voiceCalls, before + 1);
+  assert.equal((await request('/api/starlight', { cookie: speaker.cookie })).json.balance, charged - 1);
+
+  const brokenBefore = (await request('/api/starlight', { cookie: speaker.cookie })).json.balance;
+  const broken = await request('/api/chat?characterId=baekhyun', {
+    method: 'POST', cookie: speaker.cookie, body: { text: `깨져tag${stamp}`, turnId: 'turnvoice03' },
+  });
+  assert.equal(broken.status, 200);
+  assert.equal(broken.json.messages[0].audioUrl, null);
+  assert.equal((await request('/api/starlight', { cookie: speaker.cookie })).json.balance, brokenBefore - 1);
+
+  const poor = await request('/api/register', { method: 'POST', body: { username: `poor${stamp}`, password: 'password1', age14: true } });
+  await starlight.reserve({ userId: poor.json.user.id, requestId: 'leave-one', action: 'text', amount: 99 });
+  await starlight.settle('leave-one');
+  const voices = global.voiceCalls;
+  const short = await request('/api/chat?characterId=baekhyun', {
+    method: 'POST', cookie: poor.cookie, body: { text: `다른말tag${stamp}`, turnId: 'turnvoice04' },
+  });
+  assert.equal(short.status, 200);
+  assert.equal(short.json.bubbles[0], `다른${stamp}`);
+  assert.equal(short.json.messages[0].audioUrl, null);
+  assert.match(short.json.starlight.notice, /15 星光/);
+  assert.equal(global.voiceCalls, voices);
 });

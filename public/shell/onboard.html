@@ -13,18 +13,24 @@
       <button type="button" id="back" aria-label="返回">‹</button>
       <h1 id="title">认识一下</h1>
     </div>
-    <form id="form">
+    <p class="lead" id="question">他该怎么叫你？</p>
+    <button type="button" class="btn" id="pick-self">我自己填</button>
+    <button type="button" class="btn btn-ghost" id="pick-ask">让他来问我</button>
+    <form id="self" hidden>
       <div class="field">
-        <label id="l1" for="charNick"></label>
-        <input id="charNick" maxlength="20" autocomplete="off" />
+        <label id="l2" for="callName">他怎么叫你</label>
+        <input id="callName" maxlength="12" autocomplete="off" placeholder="에리" />
       </div>
-      <div class="field">
-        <label id="l2" for="callName"></label>
-        <input id="callName" maxlength="20" required autocomplete="off" />
-      </div>
-      <div class="field">
-        <label id="l3" for="displayName"></label>
-        <input id="displayName" maxlength="20" autocomplete="off" />
+      <button type="button" class="link" id="more">选填</button>
+      <div id="extra" hidden>
+        <div class="field">
+          <label id="l1" for="charNick">你怎么叫他</label>
+          <input id="charNick" maxlength="20" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label id="l3" for="displayName">你的昵称（可选）</label>
+          <input id="displayName" maxlength="20" autocomplete="off" />
+        </div>
       </div>
       <button type="submit" class="btn" id="next">进入聊天</button>
     </form>
@@ -37,43 +43,55 @@
       const copy = await Shell.loadCopy();
       const c = Shell.qs('c') || Shell.selectedCharacter();
       document.getElementById('title').textContent = copy.onboard.title;
-      document.getElementById('l1').textContent = copy.onboard.charNickLabel;
+      document.getElementById('question').textContent = copy.onboard.question;
+      document.getElementById('pick-self').textContent = copy.onboard.fillSelf;
+      document.getElementById('pick-ask').textContent = copy.onboard.letAsk;
       document.getElementById('l2').textContent = copy.onboard.callNameLabel;
+      document.getElementById('l1').textContent = copy.onboard.charNickLabel;
       document.getElementById('l3').textContent = copy.onboard.displayNameLabel;
-      document.getElementById('charNick').placeholder = copy.onboard.charNickPlaceholder;
       document.getElementById('callName').placeholder = copy.onboard.callNamePlaceholder;
+      document.getElementById('charNick').placeholder = copy.onboard.charNickPlaceholder;
       document.getElementById('displayName').placeholder = copy.onboard.displayNamePlaceholder;
+      document.getElementById('more').textContent = copy.onboard.more;
       document.getElementById('next').textContent = copy.onboard.next;
       document.getElementById('disclaimer').textContent = copy.disclaimer;
       document.getElementById('back').onclick = () => Shell.go('/shell/pick.html', { c });
-
-      try {
-        const chars = await Shell.api('/api/characters');
-        const ch = (chars.characters || []).find((x) => x.id === c);
-        if (ch) document.getElementById('charNick').placeholder = ch.displayName || ch.name;
-        const p = await Shell.api('/api/profile?characterId=' + encodeURIComponent(c));
-        if (p.profile) {
-          if (p.profile.characterNickname) document.getElementById('charNick').value = p.profile.characterNickname;
-          if (p.profile.callName) document.getElementById('callName').value = p.profile.callName;
-          if (p.profile.displayName) document.getElementById('displayName').value = p.profile.displayName;
+      document.getElementById('pick-self').onclick = () => {
+        document.getElementById('self').hidden = false;
+        document.getElementById('callName').focus();
+      };
+      document.getElementById('more').onclick = () => {
+        document.getElementById('extra').hidden = false;
+      };
+      document.getElementById('pick-ask').onclick = async () => {
+        const btn = document.getElementById('pick-ask');
+        btn.disabled = true;
+        try {
+          await Shell.api('/api/profile?characterId=' + encodeURIComponent(c), {
+            method: 'PUT',
+            body: JSON.stringify({ callName: '', callNameStatus: 'pending', callNameSource: '', onboarded: true }),
+          });
+          Shell.setSelectedCharacter(c);
+          Shell.go('/', { c, welcome: '1' });
+        } catch (_) {
+          Shell.toast('保存失败，请重试');
+          btn.disabled = false;
         }
-        if (!document.getElementById('callName').value && ch && ch.defaultCallName) {
-          document.getElementById('callName').value = ch.defaultCallName;
-        }
-      } catch (_) {}
-
-      document.getElementById('form').addEventListener('submit', async (e) => {
+      };
+      document.getElementById('self').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const callName = document.getElementById('callName').value.trim();
-        if (!callName) { Shell.toast('请填写他怎么叫你'); return; }
+        const name = document.getElementById('callName').value.trim();
+        if (!name) { Shell.toast('请填写他怎么叫你'); return; }
         const btn = document.getElementById('next');
         btn.disabled = true;
         try {
           await Shell.api('/api/profile?characterId=' + encodeURIComponent(c), {
             method: 'PUT',
             body: JSON.stringify({
+              callName: name,
+              callNameStatus: 'done',
+              callNameSource: 'user',
               characterNickname: document.getElementById('charNick').value.trim(),
-              callName,
               displayName: document.getElementById('displayName').value.trim(),
               onboarded: true,
             }),

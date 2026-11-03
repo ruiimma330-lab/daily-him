@@ -21,6 +21,7 @@ const voiceAb = require('./lib/voice-ab');
 const voicePack = require('./lib/voice-pack');
 const voiceExec = require('./lib/voice-exec');
 const starlight = require('./lib/starlight');
+const callName = require('./lib/call-name');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -612,6 +613,28 @@ function normalizeMessages(input) {
 
 const synthInflight = new Map();
 
+function clipReady(hash) {
+  const filePath = path.join(AUDIO_DIR, `${hash}.mp3`);
+  return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
+}
+
+async function billVoice({ userId, requestId, cached, speak }) {
+  if (cached) return { audioUrl: await speak() };
+  const voiceCost = starlight.loadConfig().voice;
+  const hold = await starlight.reserve({
+    userId, requestId, action: 'voice', amount: voiceCost,
+  });
+  if (!hold.ok) return { audioUrl: null, denied: hold, need: voiceCost };
+  try {
+    const audioUrl = await speak();
+    if (hold.status === 'reserved') await starlight.settle(requestId);
+    return { audioUrl };
+  } catch (err) {
+    await starlight.release(requestId);
+    throw err;
+  }
+}
+
 async function synthesize(voiceId, model, text, apiKey, voiceSettings) {
   const hash = audioFileHash(voiceId, model, text);
   const filename = `${hash}.mp3`;
@@ -1053,8 +1076,23 @@ function createApp() {
       for (const label of ['A', 'B']) {
         const version = versions[label];
         const spoken = version === 'baseline' ? line.text : voiceAb.currentSpeech(line.text);
+        const request = voicePack.buildRequest(pack, spoken, line.mood);
         try {
-          clips[label] = await voiceExec.synthesize(voicePack.buildRequest(pack, spoken, line.mood), keys.voiceKey);
+          const voiced = await billVoice({
+            userId: req.userId,
+            requestId: `ab:${req.userId}:${request.cacheKey}`,
+            cached: voiceExec.hasClip(request.cacheKey),
+            speak: () => voiceExec.synthesize(request, keys.voiceKey),
+          });
+          if (voiced.denied) {
+            return res.status(402).json({
+              error: 'starlight',
+              notice: `这条语音需要 ${voiced.need} 星光，剩余 ${voiced.denied.balance}`,
+              balance: voiced.denied.balance,
+              need: voiced.need,
+            });
+          }
+          clips[label] = voiced.audioUrl;
         } catch (err) {
           console.error('Voice comparison synthesis failed');
           return res.status(502).json({ error: 'TTS failed' });
@@ -1291,31 +1329,23 @@ function createApp() {
     }
     const spokenText = [...rawText].slice(0, starlight.loadConfig().voiceMaxChars).join('');
     const request = voicePack.buildRequest(pack, spokenText, mood);
-    if (voiceExec.hasClip(request.cacheKey)) {
-      const audioUrl = await voiceExec.synthesize(request, keys.voiceKey);
-      return res.json({ audioUrl, cached: true });
-    }
-    const voiceCost = starlight.loadConfig().voice;
-    const voiceHold = await starlight.reserve({
-      userId: req.userId,
-      requestId: `voice:${req.userId}:${request.cacheKey}`,
-      action: 'voice',
-      amount: voiceCost,
-    });
-    if (!voiceHold.ok) {
-      return res.status(402).json({
-        error: 'starlight',
-        notice: `这条语音需要 ${voiceCost} 星光，剩余 ${voiceHold.balance}`,
-        balance: voiceHold.balance,
-        need: voiceCost,
-      });
-    }
     try {
-      const audioUrl = await voiceExec.synthesize(request, keys.voiceKey);
-      if (voiceHold.status === 'reserved') await starlight.settle(voiceHold.requestId);
-      return res.json({ audioUrl });
+      const voiced = await billVoice({
+        userId: req.userId,
+        requestId: `voice:${req.userId}:${request.cacheKey}`,
+        cached: voiceExec.hasClip(request.cacheKey),
+        speak: () => voiceExec.synthesize(request, keys.voiceKey),
+      });
+      if (voiced.denied) {
+        return res.status(402).json({
+          error: 'starlight',
+          notice: `这条语音需要 ${voiced.need} 星光，剩余 ${voiced.denied.balance}`,
+          balance: voiced.denied.balance,
+          need: voiced.need,
+        });
+      }
+      return res.json({ audioUrl: voiced.audioUrl, cached: voiceExec.hasClip(request.cacheKey) });
     } catch (err) {
-      await starlight.release(voiceHold.requestId);
       const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
       const vk = keys.voiceKey || '';
       const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
@@ -1346,6 +1376,29 @@ function createApp() {
       return res.status(400).json({ error: 'text required' });
     }
 
+    const profEarly = profile.load(req.userId, req.characterId);
+    const namingPlan = callName.plan(profEarly, text);
+    if (namingPlan.mode === 'fixed') {
+      profile.save(req.userId, req.characterId, namingPlan.patch);
+      const fixedItems = [{ raw: namingPlan.ko, ko: namingPlan.ko, zh: namingPlan.zh, mood: namingPlan.mood }];
+      try {
+        const committed = chatContext.commitTurn(store.getHistory(req.userId, req.characterId), text, fixedItems, turnId);
+        if (!committed.duplicate) store.putHistory(req.userId, req.characterId, committed.messages);
+      } catch (err) {
+        console.error('History update failed');
+      }
+      let rel = null;
+      try { rel = relationship.recordTurn(req.userId, req.characterId); } catch (err) { console.error('Relationship update failed'); }
+      return res.json({
+        messages: [{ ko: namingPlan.ko, zh: namingPlan.zh, mood: namingPlan.mood, audioUrl: null, ttsFailed: false }],
+        bubbles: [namingPlan.ko],
+        audioUrl: null,
+        mood: namingPlan.mood,
+        ttsChars: 0,
+        relationship: rel,
+      });
+    }
+
     let keys;
     try {
       keys = requireKeys();
@@ -1363,8 +1416,9 @@ function createApp() {
     const sceneHint = scene && scene.promptHint
       ? `\n\n## 지금 상황\n사용자가 장면 버튼「${scene.label}」을 눌렀어. ${scene.promptHint} 시스템·설정 이야기는 하지 마.`
       : '';
-    const userName = profile.callNameFor(req.userId, req.characterId);
     const prof = profile.load(req.userId, req.characterId);
+    const namingPending = callName.statusOf(prof) === 'pending' || callName.statusOf(prof) === 'confirming';
+    const userName = namingPending ? '' : profile.callNameFor(req.userId, req.characterId);
     const accountPrefs = prefs.load(req.userId);
     const memBlock = memory.promptBlock(req.userId, req.characterId, lastUserText, userName);
     const openings = [...new Set([...memory.recentOpenings(req.userId, req.characterId), ...recentOpenings(recent)])].slice(-6);
@@ -1379,7 +1433,8 @@ function createApp() {
         characterNickname: prof.characterNickname,
         habits: prof.habits,
       },
-    }) + memoryPrompt + sceneHint + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+      namingPending,
+    }) + memoryPrompt + sceneHint + (namingPending ? `\n\n${callName.promptHint(prof.callNameAsks)}` : '') + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     const textCost = starlight.priceText(lastUserText, '');
     const textRequestId = `text:${req.userId}:${turnId || crypto.randomBytes(8).toString('hex')}`;
     const textHold = await starlight.reserve({
@@ -1423,6 +1478,15 @@ function createApp() {
       usedFallback = true;
       items = [{ raw: line.ko, ko: line.ko, zh: line.zh, mood: 'soft', fallback: true }];
     }
+    if (!usedFallback && namingPending && completion && completion.content) {
+      const settled = callName.settle(prof, completion.content);
+      if (settled) {
+        profile.save(req.userId, req.characterId, settled.patch);
+        if (settled.replace) {
+          items = [{ raw: settled.ko, ko: settled.ko, zh: settled.zh, mood: settled.mood }];
+        }
+      }
+    }
     if (usedFallback) {
       await starlight.release(textRequestId);
     } else {
@@ -1439,6 +1503,7 @@ function createApp() {
 
     const voiceOff = Boolean(req.body && req.body.voice === false);
     let audioError;
+    let voiceDenied = null;
     let ttsChars = 0;
     const voiceOk = voiceReady(config.voiceId);
     if (!voiceOff && !voiceOk) audioError = 'Voice is not configured';
@@ -1447,10 +1512,23 @@ function createApp() {
       item.audioUrl = null;
       const speech = toSpeechText([item.raw]);
       if (voiceOff || !voiceOk || !isSpeakable(speech)) return;
-      const ttsText = `${moodDelivery(config, item.mood).prefix} ${speech}`.trim();
+      const capped = [...speech].slice(0, starlight.loadConfig().voiceMaxChars).join('');
+      const ttsText = `${moodDelivery(config, item.mood).prefix} ${capped}`.trim();
       ttsChars += ttsText.length;
+      const hash = audioFileHash(config.voiceId, config.ttsModel, ttsText);
       try {
-        item.audioUrl = await synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings);
+        const voiced = await billVoice({
+          userId: req.userId,
+          requestId: `chat-voice:${req.userId}:${hash}`,
+          cached: clipReady(hash),
+          speak: () => synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings),
+        });
+        if (voiced.denied) {
+          voiceDenied = voiced;
+          item.ttsFailed = true;
+          return;
+        }
+        item.audioUrl = voiced.audioUrl;
       } catch (err) {
         const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
         const vk = keys.voiceKey || '';
@@ -1490,7 +1568,14 @@ function createApp() {
     });
     if (process.env.MEMORY_SYNC === '1') await memTask; // tests only
     const payload = { messages: outMessages, bubbles: displayBubbles, audioUrl, mood: items[0].mood, ttsChars, relationship: rel };
-    if (audioError) payload.audioError = audioError;
+    if (voiceDenied) {
+      payload.starlight = {
+        notice: `这条语音需要 ${voiceDenied.need} 星光，剩余 ${voiceDenied.denied.balance}`,
+        balance: voiceDenied.denied.balance,
+        need: voiceDenied.need,
+      };
+      payload.audioError = payload.starlight.notice;
+    } else if (audioError) payload.audioError = audioError;
     return res.json(payload);
   });
 

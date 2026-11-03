@@ -1161,6 +1161,14 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       if (!response.ok) throw new Error('chat failed');
       clearSendFailures();
       const data = await response.json();
+      if (data.starlight && data.starlight.notice) {
+        const bar = document.getElementById('star-bar');
+        if (bar) {
+          bar.hidden = false;
+          bar.textContent = data.starlight.notice;
+          bar.onclick = () => { location.href = '/shell/starlight.html'; };
+        }
+      }
       if (data.relationship) applyRelationship(data.relationship, true);
       const bubbles = Array.isArray(data.bubbles)
         ? data.bubbles.map((bubble) => String(bubble).trim()).filter(Boolean).slice(0, 4)
@@ -1674,6 +1682,30 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       if (!response.ok) return remote;
       const data = await response.json();
       const ch = (data.characters || []).find((item) => item.id === CHARACTER_ID);
+      let named = null;
+      try {
+        const profileResponse = await fetch(withChar('/api/profile'));
+        if (profileResponse.ok) named = await profileResponse.json();
+      } catch (_) { named = null; }
+      const saved = named && named.profile ? named.profile : {};
+      if (saved.callNameStatus === 'pending' && ch && ch.askNameKo) {
+        return [{
+          role: 'assistant',
+          text: ch.askNameKo,
+          time: Date.now(),
+          audioUrl: null,
+          zh: ch.askNameZh || '',
+        }];
+      }
+      if (saved.callName && saved.callNameSource === 'user') {
+        return [{
+          role: 'assistant',
+          text: `${saved.callName} 왔구나. 오늘 뭐 하고 있었어?`,
+          time: Date.now(),
+          audioUrl: null,
+          zh: `${saved.callName}，来了呀。今天在做什么？`,
+        }];
+      }
       const text = ch && typeof ch.welcomeKo === 'string' ? ch.welcomeKo.trim() : '';
       if (!text) return remote;
       return [{
