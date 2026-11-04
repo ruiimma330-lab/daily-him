@@ -13,6 +13,7 @@
 
   const state = { all: [], company: '全部', group: '全部', query: '', index: 0 };
 
+  const COMPANY_LABELS = { sm: 'SM', hybe: 'HYBE', jyp: 'JYP', yg: 'YG', inb100: 'INB100', cube: 'CUBE', teamwang: 'TEAM WANG', laystudio: '张艺兴工作室' };
   const COMPANY_ORDER = ['SM', 'HYBE', 'JYP', 'YG'];
   function unique(list) {
     return [...new Set(list.filter(Boolean))].sort((a, b) => {
@@ -25,7 +26,7 @@
   function filtered() {
     const q = state.query.trim().toLowerCase();
     return state.all.filter((ch) => {
-      if (state.company !== '全部' && ch.company !== state.company) return false;
+      if (state.company !== '全部' && !(ch.companyIds || []).includes(state.company)) return false;
       if (state.group !== '全部' && ch.group !== state.group) return false;
       if (!q) return true;
       const hay = [ch.name, ch.displayName, ch.nameZh, ch.nameRoman, ch.group, ch.company, ch.id]
@@ -41,7 +42,7 @@
       btn.type = 'button';
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', value === current ? 'true' : 'false');
-      btn.textContent = value;
+      btn.textContent = label === '公司' ? (COMPANY_LABELS[value] || value) : value;
       btn.addEventListener('click', () => onPick(value));
       el.append(btn);
     });
@@ -49,9 +50,9 @@
   }
 
   function paintTabs() {
-    const companies = ['全部', ...unique(state.all.map((ch) => ch.company))];
+    const companies = ['全部', ...unique(state.all.flatMap((ch) => ch.companyIds || []))];
     if (!companies.includes(state.company)) state.company = '全部';
-    const pool = state.company === '全部' ? state.all : state.all.filter((ch) => ch.company === state.company);
+    const pool = state.company === '全部' ? state.all : state.all.filter((ch) => (ch.companyIds || []).includes(state.company));
     const groups = ['全部', ...unique(pool.map((ch) => ch.group))];
     if (!groups.includes(state.group)) state.group = '全部';
     tabRow(companiesEl, '公司', companies, state.company, (value) => {
@@ -94,6 +95,9 @@
     const sub = document.createElement('span');
     sub.textContent = current.group || current.company || '';
     metaEl.append(name, sub);
+    const notice = document.createElement('p');
+    notice.textContent = current.disclaimer + (current.voiceAvailable ? '' : ' 语音暂不可用');
+    metaEl.append(notice);
   }
 
   function paint() {

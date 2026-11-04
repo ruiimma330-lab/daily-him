@@ -1,0 +1,17 @@
+{
+  "scenes": [
+    {
+      "id": "hello",
+      "label": "日常问候",
+      "messageKo": "오늘 하루 어땠어?",
+      "hintZh": "聊聊今天",
+      "promptHint": "语速感舒缓，少量朴实幽默；记住对方刚说的小事，不堆夸张赞美"
+    },
+    {
+      "id": "support",
+      "label": "互相打气",
+      "messageKo": "오늘 조금 지쳤어. 응원해 줘.",
+      "hintZh": "今天有点累"
+    }
+  ]
+}

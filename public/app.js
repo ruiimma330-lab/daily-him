@@ -78,6 +78,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let showRetry = false;
   let retryFresh = false;
   let retryAt = 0;
+  let characterVoiceUnavailable = false;
   let voiceNote = '';
   let charRemark = '';
   let userNickname = '';
@@ -644,6 +645,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
     if (typing) messagesEl.append(renderTyping());
     else if (showRetry) messagesEl.append(renderRetry());
+    if (characterVoiceUnavailable) voiceNote = '语音暂不可用';
     if (voiceNote && !typing) messagesEl.append(renderVoiceNote());
     animateLast = false;
     applyRoomSearch();
@@ -1449,6 +1451,25 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         const chars = await charsRes.json();
         const ch = (chars.characters || []).find((item) => item.id === CHARACTER_ID);
         if (ch) {
+          characterVoiceUnavailable = !ch.voiceAvailable;
+          if (characterVoiceUnavailable) { voiceNote = '语音暂不可用'; render(); }
+          const noticeKey = 'idol-disclaimer-v2-' + CHARACTER_ID;
+          let notice = document.getElementById('character-disclaimer');
+          if (!notice) {
+            notice = document.createElement('div');
+            notice.id = 'character-disclaimer';
+            notice.className = 'ai-notice';
+            notice.hidden = true;
+            notice.innerHTML = '<div class="ai-notice-card" role="dialog" aria-modal="true" aria-label="角色免责声明"><h2>开始之前</h2><p></p><button type="button">知道了</button></div>';
+            document.body.append(notice);
+          }
+          if (notice) {
+            notice.querySelector('p').textContent = ch.disclaimer;
+            if (!localStorage.getItem(noticeKey)) {
+              notice.hidden = false;
+              notice.querySelector('button').addEventListener('click', () => { localStorage.setItem(noticeKey, '1'); notice.hidden = true; }, { once: true });
+            }
+          }
           if (ch.displayName || ch.name) charDefault.name = ch.displayName || ch.name;
           if (typeof ch.displayEmoji === 'string') charDefault.emoji = ch.displayEmoji;
         }

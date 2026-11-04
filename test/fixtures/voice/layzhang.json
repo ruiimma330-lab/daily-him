@@ -1,0 +1,13 @@
+{
+  "characterId": "layzhang",
+  "version": "layzhang-placeholder-voice-1",
+  "contentHash": "f73b810a0f207d88361dec1a0dde6ca9d286f5f40e2b43885e9a71abdaa63295",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

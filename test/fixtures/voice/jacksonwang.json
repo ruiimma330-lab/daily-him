@@ -1,0 +1,13 @@
+{
+  "characterId": "jacksonwang",
+  "version": "jacksonwang-placeholder-voice-1",
+  "contentHash": "e1a625ce0bbe3cdeb2f1cf0efab513c81b6477240ba72e5e5219793335e824af",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

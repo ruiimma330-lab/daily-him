@@ -8,5 +8,17 @@
   "group": "BIGBANG",
   "available": false,
   "avatar": "avatar.jpg",
-  "portrait": "/characters/gdragon/portrait.jpg"
+  "portrait": "/characters/gdragon/portrait.jpg",
+  "companyIds": [
+    "yg"
+  ],
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": false,
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "ageVerificationBasis": "年龄待人工核验"
 }

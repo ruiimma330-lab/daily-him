@@ -1,0 +1,31 @@
+{
+  "id": "yuqi",
+  "name": "우기",
+  "displayName": "Yuqi",
+  "nameZh": "宋雨琦",
+  "nameRoman": "Yuqi",
+  "company": "CUBE（归属待人工核验）",
+  "companyIds": [
+    "cube"
+  ],
+  "group": "i-dle",
+  "available": true,
+  "birthDate": "1999-09-23",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "用户明确确认本批均已成年；出生日期来自模型常识，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "female",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/yuqi/portrait.svg",
+  "welcomeKo": "왔구나. 오늘은 어땠어?",
+  "welcomeZh": "来啦，今天过得怎么样？",
+  "askNameKo": "반가워. 뭐라고 불러 주면 좋을까?",
+  "askNameZh": "很高兴见到你，怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

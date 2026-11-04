@@ -1,0 +1,13 @@
+{
+  "characterId": "ningning",
+  "version": "ningning-placeholder-voice-1",
+  "contentHash": "46a07bf9cb206cbb358297912dce3386c66cffc37ba83d2accc52d32d1001c48",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

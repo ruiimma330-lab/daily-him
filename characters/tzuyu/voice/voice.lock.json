@@ -1,0 +1,24 @@
+{
+  "version": "tzuyu-placeholder-voice-1",
+  "placeholderVoice": "female",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "32b13b5527fa9348c1f56a794c9bc5f62542c7a12fc26615f236014d64efdbe7"
+}

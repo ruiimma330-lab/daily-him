@@ -1,0 +1,13 @@
+{
+  "characterId": "sehun",
+  "version": "sehun-placeholder-voice-1",
+  "contentHash": "4b2ad2e39605ab8c87834519288b2c8e4e4b00c6b55757b1cc64738c86234344",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

@@ -8,5 +8,17 @@
   "group": "BTS",
   "available": false,
   "avatar": "avatar.jpg",
-  "portrait": "/characters/jimin/portrait.jpg"
+  "portrait": "/characters/jimin/portrait.jpg",
+  "companyIds": [
+    "hybe"
+  ],
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": false,
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "ageVerificationBasis": "年龄待人工核验"
 }

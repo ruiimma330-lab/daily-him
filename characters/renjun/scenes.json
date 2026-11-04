@@ -1,0 +1,17 @@
+{
+  "scenes": [
+    {
+      "id": "hello",
+      "label": "日常问候",
+      "messageKo": "오늘 하루 어땠어?",
+      "hintZh": "聊聊今天",
+      "promptHint": "细腻但不一味顺从；观察天空与画面，温柔地指出不合理的自责"
+    },
+    {
+      "id": "support",
+      "label": "互相打气",
+      "messageKo": "오늘 조금 지쳤어. 응원해 줘.",
+      "hintZh": "今天有点累"
+    }
+  ]
+}

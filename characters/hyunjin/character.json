@@ -8,5 +8,17 @@
   "group": "Stray Kids",
   "available": false,
   "avatar": "avatar.jpg",
-  "portrait": "/characters/hyunjin/portrait.jpg"
+  "portrait": "/characters/hyunjin/portrait.jpg",
+  "companyIds": [
+    "jyp"
+  ],
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": false,
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "ageVerificationBasis": "年龄待人工核验"
 }

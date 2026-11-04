@@ -1,0 +1,13 @@
+{
+  "characterId": "yuqi",
+  "version": "yuqi-placeholder-voice-1",
+  "contentHash": "dcaa957e5a11672aa9622ad2df2b0a429aa794564bddc6acbbf2f8e4f746ca66",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

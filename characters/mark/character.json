@@ -10,5 +10,17 @@
   "askNameKo": "왔구나! 근데 네 이름은 아직 모르겠어ㅎㅎ 뭐라고 부르면 돼? 별명도 좋아!",
   "askNameZh": "来啦！可我还不知道你叫什么哈哈，我该叫你什么？昵称也可以！",
   "avatar": "avatar.jpg",
-  "portrait": "/characters/mark/portrait.jpg"
+  "portrait": "/characters/mark/portrait.jpg",
+  "companyIds": [
+    "sm"
+  ],
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": false,
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "ageVerificationBasis": "年龄待人工核验"
 }
