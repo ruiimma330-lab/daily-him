@@ -1,0 +1,13 @@
+{
+  "characterId": "taesan",
+  "version": "taesan-placeholder-voice-1",
+  "contentHash": "c17668739df9b0da5392b1154db9bd0e4c115163a4850feec0887901bc95d372",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 기분은 어떤 소리야. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "id": "moka",
+  "name": "모카",
+  "displayName": "Moka",
+  "nameZh": "境萌花",
+  "nameRoman": "Moka",
+  "company": "BELIFT LAB / HYBE（待人工核验）",
+  "companyIds": [
+    "beliftlab",
+    "hybe"
+  ],
+  "group": "ILLIT",
+  "gender": "female",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2004-10-08",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "按模型常识出生日期判断，截至 2026-11 已满18周岁；非证件核验，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "female",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/moka/portrait.svg",
+  "welcomeKo": "작은 장식 하나로 기분 바꿔 보자.",
+  "welcomeZh": "用一个小装饰换换心情吧。",
+  "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",
+  "askNameZh": "很高兴见到你，想让我怎么称呼你？",
+  "defaultUserName": "친구"
+}

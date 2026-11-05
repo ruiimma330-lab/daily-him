@@ -42,7 +42,7 @@ const OPEN_LATER = ['kai', 'gdragon', 'hyunjin', 'mark'];
 
 test('every voice package matches its lock hash and golden ElevenLabs request', () => {
   const ids = voicePack.listPacks();
-  assert.equal(ids.length, 28);
+  assert.equal(ids.length, 43);
   for (const id of ids.filter(id => id === 'baekhyun')) {
     const pack = voicePack.load(id);
     assert.equal(pack.ok, true, pack && pack.error);

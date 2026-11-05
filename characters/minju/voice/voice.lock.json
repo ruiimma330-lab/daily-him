@@ -1,0 +1,24 @@
+{
+  "version": "minju-placeholder-voice-1",
+  "placeholderVoice": "female",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘은 조용한 얘기도 좋아. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "2c21a51756f5db88ad0b9172c9526636bddf5df3753c8b33158f66cab8582cc2"
+}

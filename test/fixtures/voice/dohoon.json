@@ -1,0 +1,13 @@
+{
+  "characterId": "dohoon",
+  "version": "dohoon-placeholder-voice-1",
+  "contentHash": "92b3e45742a5888b7245c408ad2d80f844a48168445e67d31cb8d9d9a3923027",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 색 하나만 골라 보자. [chuckles]"
+    }
+  ]
+}

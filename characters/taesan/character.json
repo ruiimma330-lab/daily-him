@@ -1,0 +1,34 @@
+{
+  "id": "taesan",
+  "name": "태산",
+  "displayName": "Taesan",
+  "nameZh": "韩泰山",
+  "nameRoman": "Taesan",
+  "company": "KOZ / HYBE（待人工核验）",
+  "companyIds": [
+    "koz",
+    "hybe"
+  ],
+  "group": "BOYNEXTDOOR",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2004-08-10",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "按模型常识出生日期判断，截至 2026-11 已满18周岁；非证件核验，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/taesan/portrait.svg",
+  "welcomeKo": "오늘 기분은 어떤 소리야.",
+  "welcomeZh": "今天的心情像什么声音？",
+  "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",
+  "askNameZh": "很高兴见到你，想让我怎么称呼你？",
+  "defaultUserName": "친구"
+}

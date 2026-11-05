@@ -1,0 +1,13 @@
+{
+  "characterId": "sakura",
+  "version": "sakura-placeholder-voice-1",
+  "contentHash": "a5b130d2a19d6abd935f0e765b9b041f10c144b473219a9571ac9a6a408b4fda",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "막히면 저장하고 쉬어 가자. [chuckles]"
+    }
+  ]
+}

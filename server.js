@@ -915,7 +915,13 @@ function createApp() {
 
   app.delete('/api/histories', requireUser, async (req, res) => {
     if (!req.body || req.body.confirm !== 'CLEAR') return res.status(400).json({ error: 'confirm required' });
-    const ids = characters.list().map((item) => item.id);
+    // Prefer raw pack ids so a broken pack cannot prevent clearing histories.
+    let ids = [];
+    try {
+      ids = require('fs').readdirSync(characters.CHAR_DIR).filter((id) => characters.resolveId(id));
+    } catch (_) {
+      ids = characters.list().map((item) => item.id);
+    }
     for (const id of ids) {
       store.deleteHistory(req.userId, id);
       await memory.clearSummary(req.userId, id);

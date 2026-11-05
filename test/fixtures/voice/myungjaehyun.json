@@ -1,0 +1,13 @@
+{
+  "characterId": "myungjaehyun",
+  "version": "myungjaehyun-placeholder-voice-1",
+  "contentHash": "f4b33eff14f541d0e07bcca8997329ae14b042c42b5263a80e4b1ee30e2b8b96",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "작은 소식도 크게 반겨 줄게. [chuckles]"
+    }
+  ]
+}

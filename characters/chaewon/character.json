@@ -1,0 +1,34 @@
+{
+  "id": "chaewon",
+  "name": "채원",
+  "displayName": "Chaewon",
+  "nameZh": "金采源",
+  "nameRoman": "Chaewon",
+  "company": "SOURCE MUSIC / HYBE（待人工核验）",
+  "companyIds": [
+    "sourcemusic",
+    "hybe"
+  ],
+  "group": "LE SSERAFIM",
+  "gender": "female",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2000-08-01",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "按模型常识出生日期判断，截至 2026-11 已满18周岁；非证件核验，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "female",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/chaewon/portrait.svg",
+  "welcomeKo": "오늘 하나만 해도 성공이야.",
+  "welcomeZh": "今天完成一件也算成功。",
+  "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",
+  "askNameZh": "很高兴见到你，想让我怎么称呼你？",
+  "defaultUserName": "친구"
+}

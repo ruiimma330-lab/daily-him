@@ -1,0 +1,13 @@
+{
+  "characterId": "chaewon",
+  "version": "chaewon-placeholder-voice-1",
+  "contentHash": "232b3f0d4bddeaae88f9af306aa0dda65688c0bc7d2310f42b62b4dfa00c5a75",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 하나만 해도 성공이야. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "tws-jihoon",
+  "version": "tws-jihoon-placeholder-voice-1",
+  "contentHash": "2380901f37effaf8f146f1e6fbedbb9fed2ff59cfa1bf201e353a2cf17506799",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘은 한 박자 쉬어도 돼. [chuckles]"
+    }
+  ]
+}

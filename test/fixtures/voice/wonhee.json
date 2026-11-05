@@ -1,0 +1,13 @@
+{
+  "characterId": "wonhee",
+  "version": "wonhee-placeholder-voice-1",
+  "contentHash": "e785621aa620bbfa865615f07f66f555b7dca27c143647b24b7d88624133b682",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 신기했던 거 하나만 골라 보자. [chuckles]"
+    }
+  ]
+}

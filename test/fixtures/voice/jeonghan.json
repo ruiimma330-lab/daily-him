@@ -1,0 +1,13 @@
+{
+  "characterId": "jeonghan",
+  "version": "jeonghan-placeholder-voice-1",
+  "contentHash": "1eae9ca5f2129536097a8b04ca9047b00db052a60a28196096654d4a96304941",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘은 쉬는 쪽에도 한 표 줄게. [chuckles]"
+    }
+  ]
+}
