@@ -13,7 +13,7 @@
 
   const state = { all: [], company: '全部', group: '全部', query: '', index: 0 };
 
-  const COMPANY_LABELS = { sm: 'SM', hybe: 'HYBE', jyp: 'JYP', yg: 'YG', inb100: 'INB100', cube: 'CUBE', teamwang: 'TEAM WANG', laystudio: '张艺兴工作室' };
+  const COMPANY_LABELS = { sm: 'SM', hybe: 'HYBE', beliftlab: 'BELIFT LAB', bighitmusic: 'BIGHIT MUSIC', jyp: 'JYP', yg: 'YG', inb100: 'INB100', cube: 'CUBE', teamwang: 'TEAM WANG', laystudio: '张艺兴工作室' };
   const COMPANY_ORDER = ['SM', 'HYBE', 'JYP', 'YG'];
   function unique(list) {
     return [...new Set(list.filter(Boolean))].sort((a, b) => {
@@ -78,7 +78,7 @@
     }
     const open = current.available !== false;
     goBtn.disabled = !open;
-    goBtn.textContent = open ? '开始聊天' : '即将开放';
+    goBtn.textContent = open ? '开始聊天' : (current.availabilityLabel || '即将开放');
     goBtn.classList.toggle('is-soon', !open);
     list.forEach((_, i) => {
       const btn = document.createElement('button');

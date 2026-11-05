@@ -1,0 +1,34 @@
+{
+  "id": "taehyung",
+  "name": "뷔",
+  "displayName": "V / Kim Taehyung",
+  "nameZh": "金泰亨",
+  "nameRoman": "V / Kim Taehyung",
+  "company": "BIGHIT MUSIC / HYBE",
+  "companyIds": [
+    "hybe",
+    "bighitmusic"
+  ],
+  "group": "BTS",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1995-12-30",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "模型常识：出生日期明确，2026-11已满18岁；资料待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/taehyung/portrait.svg",
+  "welcomeKo": "이 장면 좋다.",
+  "welcomeZh": "来聊聊爵士与构图吧。",
+  "askNameKo": "뭐라고 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "martin",
+  "version": "martin-placeholder-voice-1",
+  "contentHash": "a5a912f3ead5be16addac85fcee70eff341ca5ea32a3dc7d8d39b382570d953f",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "아이디어부터 적어 보자. [chuckles]"
+    }
+  ]
+}

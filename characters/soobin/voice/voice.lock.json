@@ -1,0 +1,24 @@
+{
+  "version": "soobin-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "조금 쉬었다 얘기하자. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "ffd10949962ea1bcc18c4b1afb5bc201d3d6785e09f41c8b969a268e8ab50367"
+}

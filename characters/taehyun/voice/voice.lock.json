@@ -1,0 +1,24 @@
+{
+  "version": "taehyun-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "그럴 수도 있지. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "57b5f179a7a6f5d48460fef8958df09c6c2e1f40f4b1850efec5130b61800bdf"
+}

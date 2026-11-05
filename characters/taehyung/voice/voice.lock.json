@@ -1,0 +1,24 @@
+{
+  "version": "taehyung-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "이 장면 좋다. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "92b583e33a8c1120ec2b6d9c6c0217fb2bc933a4b23c80301e3d37da7a7c54ad"
+}

@@ -9,7 +9,7 @@
     "teamwang"
   ],
   "group": "GOT7／个人",
-  "available": true,
+  "available": false,
   "birthDate": "1994-03-28",
   "ageVerified": true,
   "minor": false,
@@ -27,5 +27,6 @@
   "welcomeZh": "来啦，今天过得怎么样？",
   "askNameKo": "반가워. 뭐라고 불러 주면 좋을까?",
   "askNameZh": "很高兴见到你，怎么称呼你比较好？",
-  "defaultUserName": "친구"
+  "defaultUserName": "친구",
+  "availabilityLabel": "暂未开放"
 }

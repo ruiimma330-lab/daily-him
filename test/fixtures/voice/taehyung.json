@@ -1,0 +1,13 @@
+{
+  "characterId": "taehyung",
+  "version": "taehyung-placeholder-voice-1",
+  "contentHash": "92b583e33a8c1120ec2b6d9c6c0217fb2bc933a4b23c80301e3d37da7a7c54ad",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "이 장면 좋다. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "james",
+  "version": "james-placeholder-voice-1",
+  "contentHash": "a3252b2168d5b036d08600b3210a4c0f36833b591f96bd88a5fe7fcf0b5436cb",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "방향을 바꿔 볼까? [chuckles]"
+    }
+  ]
+}

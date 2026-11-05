@@ -24,6 +24,7 @@ test.before(async () => {
   fs.writeFileSync(path.join(fixtureDir, 'character.json'), JSON.stringify({ id: fixtureId, name: '年龄测试', ageVerified: true, minor: true, allowedTiers: ['stranger','friend','close','flirty'] }));
   fs.writeFileSync(path.join(fixtureDir, 'manifest.json'), JSON.stringify({ version: 1, files: ['character.json', 'persona.md'] }));
   fs.writeFileSync(path.join(fixtureDir, 'persona.md'), '测试角色');
+  require('./helpers/complete-pack')(fixtureDir);
   await store.init();
   server = require('../server').createApp().listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
@@ -39,7 +40,7 @@ test.after(async () => {
   fs.rmSync(data, { recursive: true, force: true });
   fs.rmSync(fixtureDir, { recursive: true, force: true });
 });
-test('HTTP denies tier escalation, serves SVGs, disables TTS while keeping text endpoints open', async () => {
+test('HTTP denies tier escalation, serves SVGs and rejects unavailable characters', async () => {
   for (const route of ['/api/chat','/api/tts']) {
     const r = await fetch(base + route + '?characterId=' + fixtureId, { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ tierId: 'flirty', text: 'hello' }) });
     assert.equal(r.status, 403);
@@ -50,7 +51,30 @@ test('HTTP denies tier escalation, serves SVGs, disables TTS while keeping text 
     assert.match(r.headers.get('content-type'), /svg/);
   }
   const tts = await fetch(base + '/api/tts?characterId=sehun', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'hello' }) });
-  assert.equal(tts.status, 503);
+  assert.equal(tts.status, 404);
   const scenes = await fetch(base + '/api/scenes?characterId=sehun', { headers: { Cookie: cookie } });
-  assert.equal(scenes.status, 200);
+  assert.equal(scenes.status, 404);
+});
+
+test('picker lists every deferred character and chat/TTS reject them while Baekhyun passes availability', async () => {
+  const batch2 = ['sunghoon','niki','sunoo','jungwon','jimin','jungkook','taehyung','yeonjun','soobin','beomgyu','taehyun','hueningkai','martin','james','juhoon','seonghyeon','keonho'];
+  const listing = await fetch(base + '/api/characters', { headers: { Cookie: cookie } });
+  assert.equal(listing.status, 200);
+  const data = await listing.json();
+  for (const id of [...ids, ...batch2]) {
+    const info = data.characters.find(c => c.id === id);
+    assert.ok(info, id);
+    assert.equal(info.available, false);
+    assert.equal(info.availabilityLabel, '暂未开放');
+    for (const route of ['/api/chat', '/api/tts']) {
+      const r = await fetch(base + route, { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: id, text: 'hello', voice: false }) });
+      assert.equal(r.status, 404, id + route);
+      assert.equal((await r.json()).error, 'character unavailable');
+    }
+  }
+  assert.equal(data.characters.find(c => c.id === 'baekhyun').available, true);
+  // Empty input reaches chat validation after the availability middleware, without calling any provider.
+  const r = await fetch(base + '/api/chat', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: 'baekhyun', messages: [] }) });
+  assert.equal(r.status, 400);
+  assert.notEqual((await r.json()).error, 'character unavailable');
 });

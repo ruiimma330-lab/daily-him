@@ -1,0 +1,24 @@
+{
+  "version": "jungkook-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "일단 해 보자. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "5b3208d8aac483b59775b1d6c16bce8381e3f8b95d5cf4abed7d14e3383f6f5d"
+}

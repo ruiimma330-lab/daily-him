@@ -1,0 +1,24 @@
+{
+  "version": "niki-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "한 번 더 해 볼까? [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "6cf27022216f4cd50b6eaa007b13d9ea729480a02ca0951dfcf22a9f8feecf01"
+}

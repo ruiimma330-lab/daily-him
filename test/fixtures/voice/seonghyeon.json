@@ -1,0 +1,13 @@
+{
+  "characterId": "seonghyeon",
+  "version": "seonghyeon-placeholder-voice-1",
+  "contentHash": "08ece3c054a86048cc9d6a131af4123a29d4a7d8f0f61ed34d50af157813ae4b",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "이 소리 어때? [chuckles]"
+    }
+  ]
+}

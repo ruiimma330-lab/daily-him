@@ -1,0 +1,24 @@
+{
+  "version": "keonho-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘 새로 본 거 있어? [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "15d2b96fd52d776e1fc96fb932c9d66f238ec1e0f8074365281f71936acc5889"
+}

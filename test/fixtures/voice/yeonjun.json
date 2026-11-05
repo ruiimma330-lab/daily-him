@@ -1,0 +1,13 @@
+{
+  "characterId": "yeonjun",
+  "version": "yeonjun-placeholder-voice-1",
+  "contentHash": "1949d03a20ace4cad7b72b3036d5c0814e6dd1679552da4f8c383564175c1f98",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 느낌 좋은데? [chuckles]"
+    }
+  ]
+}

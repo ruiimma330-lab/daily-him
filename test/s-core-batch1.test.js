@@ -24,6 +24,7 @@ test.before(async () => {
   fs.writeFileSync(path.join(fixtureDir, 'character.json'), JSON.stringify({ id: fixtureId, name: '年龄测试', ageVerified: true, minor: true, allowedTiers: ['stranger','friend','close','flirty'] }));
   fs.writeFileSync(path.join(fixtureDir, 'manifest.json'), JSON.stringify({ version: 1, files: ['character.json', 'persona.md'] }));
   fs.writeFileSync(path.join(fixtureDir, 'persona.md'), '测试角色');
+  require('./helpers/complete-pack')(fixtureDir);
   await store.init();
 
 });
@@ -33,10 +34,12 @@ test.after(async () => {
   fs.rmSync(data, { recursive: true, force: true });
   fs.rmSync(fixtureDir, { recursive: true, force: true });
 });
-test('ten complete adult packs open independently of unconfigured placeholder voices', () => {
+test('ten complete adult packs stay visible but unavailable', () => {
   for (const id of ids) {
     const report = require('../lib/character-pack').inspect(id);
-    assert.equal(report.online, true, report.error);
+    assert.equal(report.ok, true, report.error);
+    assert.equal(report.online, false);
+    assert.equal(chars.publicInfo(id).availabilityLabel, '暂未开放');
     const info = chars.publicInfo(id);
     assert.ok(info.allowedTiers.includes('flirty'));
     assert.ok(info.companyIds.length);
@@ -61,7 +64,7 @@ test('ten complete adult packs open independently of unconfigured placeholder vo
     const original = fs.readFileSync(p);
     try { fs.appendFileSync(p, '\n'); assert.equal(voice.load(id).ok, false); }
     finally { fs.writeFileSync(p, original); }
-    assert.equal(chars.isAvailable(id), true);
+    assert.equal(chars.isAvailable(id), false);
   }
   assert.deepEqual(chars.publicInfo('baekhyun').companyIds, ['inb100','sm']);
   assert.equal(chars.list().filter(c => c.companyIds.includes('inb100')).some(c => c.id === 'baekhyun'), true);

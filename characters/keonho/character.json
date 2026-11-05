@@ -1,0 +1,33 @@
+{
+  "id": "keonho",
+  "name": "건호",
+  "displayName": "Keonho",
+  "nameZh": "安乾镐",
+  "nameRoman": "Keonho",
+  "company": "BIGHIT MUSIC / HYBE",
+  "companyIds": [
+    "hybe",
+    "bighitmusic"
+  ],
+  "group": "CORTIS",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": null,
+  "ageVerificationBasis": "年龄未核实；按用户要求CORTIS全员严格模式",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/keonho/portrait.svg",
+  "welcomeKo": "오늘 새로 본 거 있어?",
+  "welcomeZh": "来聊聊纸飞机与小发现吧。",
+  "askNameKo": "뭐라고 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

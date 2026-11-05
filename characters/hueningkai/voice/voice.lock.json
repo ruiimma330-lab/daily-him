@@ -1,0 +1,24 @@
+{
+  "version": "hueningkai-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "작은 이야기 하나 해 줄까? [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "72bee440ed639e31d2063e842f087582c83e322931e9bcf1ac0338834aad0291"
+}

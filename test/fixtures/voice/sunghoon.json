@@ -1,0 +1,13 @@
+{
+  "characterId": "sunghoon",
+  "version": "sunghoon-placeholder-voice-1",
+  "contentHash": "cd73955a506524a27d794509c641882a5da249bf26ea5fdd5359dd85be91b936",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "천천히 가도 돼. [chuckles]"
+    }
+  ]
+}

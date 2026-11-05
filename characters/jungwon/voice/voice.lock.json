@@ -1,0 +1,24 @@
+{
+  "version": "jungwon-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘 하나만 해도 괜찮아. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "a00bb5a48b959035c38a1af0b9fe616235b1e5595a26491851574723c6457387"
+}

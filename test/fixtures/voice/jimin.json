@@ -1,0 +1,13 @@
+{
+  "characterId": "jimin",
+  "version": "jimin-placeholder-voice-1",
+  "contentHash": "c60020ea168f92f31a63024220b4c8e3278c73bce146feed075967cdd7ffb651",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘도 잘 왔어. [chuckles]"
+    }
+  ]
+}

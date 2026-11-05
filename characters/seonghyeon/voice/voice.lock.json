@@ -1,0 +1,24 @@
+{
+  "version": "seonghyeon-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "이 소리 어때? [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "08ece3c054a86048cc9d6a131af4123a29d4a7d8f0f61ed34d50af157813ae4b"
+}

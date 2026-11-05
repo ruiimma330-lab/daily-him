@@ -1,0 +1,33 @@
+{
+  "id": "martin",
+  "name": "마틴",
+  "displayName": "Martin",
+  "nameZh": "马丁",
+  "nameRoman": "Martin",
+  "company": "BIGHIT MUSIC / HYBE",
+  "companyIds": [
+    "hybe",
+    "bighitmusic"
+  ],
+  "group": "CORTIS",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": null,
+  "ageVerificationBasis": "年龄未核实；按用户要求CORTIS全员严格模式",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/martin/portrait.svg",
+  "welcomeKo": "아이디어부터 적어 보자.",
+  "welcomeZh": "来聊聊节奏拼贴吧。",
+  "askNameKo": "뭐라고 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

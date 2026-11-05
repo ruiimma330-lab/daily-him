@@ -38,11 +38,11 @@ const SPOKEN = {
   shy: '[shy] [whispers] 아 진짜 [sighs] 그런 말 하면 부끄럽단 말이야',
 };
 
-const OPEN_LATER = ['kai', 'gdragon', 'hyunjin', 'jimin', 'jungkook', 'mark'];
+const OPEN_LATER = ['kai', 'gdragon', 'hyunjin', 'mark'];
 
 test('every voice package matches its lock hash and golden ElevenLabs request', () => {
   const ids = voicePack.listPacks();
-  assert.equal(ids.length, 11);
+  assert.equal(ids.length, 28);
   for (const id of ids.filter(id => id === 'baekhyun')) {
     const pack = voicePack.load(id);
     assert.equal(pack.ok, true, pack && pack.error);

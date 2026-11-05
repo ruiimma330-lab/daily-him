@@ -1,0 +1,24 @@
+{
+  "version": "yeonjun-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘 느낌 좋은데? [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "1949d03a20ace4cad7b72b3036d5c0814e6dd1679552da4f8c383564175c1f98"
+}
