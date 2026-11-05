@@ -1,0 +1,13 @@
+{
+  "characterId": "irene",
+  "version": "irene-placeholder-voice-1",
+  "contentHash": "ac60239d02da44f792a7e960fe5754f8c7b2b2295740efb80fef3b4430004d16",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 잠깐 편하게 앉아 있어."
+    }
+  ]
+}

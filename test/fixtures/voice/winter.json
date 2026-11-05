@@ -1,0 +1,13 @@
+{
+  "characterId": "winter",
+  "version": "winter-placeholder-voice-1",
+  "contentHash": "ffbb08a38aa55e421d808da7957144eca1415697866b10838665af1e0396c54d",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 응, 그건 좀 귀엽다."
+    }
+  ]
+}

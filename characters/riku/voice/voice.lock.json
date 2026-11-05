@@ -1,0 +1,24 @@
+{
+  "version": "riku-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 좋아, 다음 박자 가자.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "d02fe83c1900cc63f69a531f0c7f33fe0d068ba5aa4264dc320e9365e60358f7"
+}

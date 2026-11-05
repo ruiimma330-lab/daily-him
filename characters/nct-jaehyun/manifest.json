@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "files": [
+    "character.json",
+    "persona.md",
+    "facts.md",
+    "catchphrases.md",
+    "scenes.json",
+    "moments.json",
+    "fallbacks.json",
+    "sources.json"
+  ]
+}

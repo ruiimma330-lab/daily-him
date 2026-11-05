@@ -1,0 +1,33 @@
+{
+  "id": "jeno",
+  "name": "제노",
+  "displayName": "Jeno",
+  "nameZh": "李帝努",
+  "nameRoman": "Jeno",
+  "company": "SM（展示分类；归属待人工核验）",
+  "companyIds": [
+    "sm"
+  ],
+  "group": "NCT DREAM",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2000-04-23",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "依据模型常识中的出生日期，有把握截至 2026-11 已满18周岁；未联网，出生日期待人工核验，并非外部核验认证",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/jeno/portrait.svg",
+  "welcomeKo": "왔네. 천천히 가도 괜찮아.",
+  "welcomeZh": "来啦。慢慢来也没关系。",
+  "askNameKo": "어떤 이름으로 불러 주면 좋을까?",
+  "askNameZh": "你希望我怎么称呼你？",
+  "defaultUserName": "친구"
+}

@@ -1,0 +1,24 @@
+{
+  "version": "ten-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 이 선 하나 바꾸면 어때?",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "475f8668657194c88248f1299864369a9d59d61a56ace22af4b496651d4a7dc2"
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "jaemin",
+  "version": "jaemin-placeholder-voice-1",
+  "contentHash": "a41525777f870ae38022f5ef35aed262adc212690d1ddf6a112f5d541b1cfb82",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘 네 몫의 여유도 챙겨."
+    }
+  ]
+}

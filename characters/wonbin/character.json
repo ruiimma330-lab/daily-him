@@ -1,0 +1,33 @@
+{
+  "id": "wonbin",
+  "name": "원빈",
+  "displayName": "Wonbin",
+  "nameZh": "朴元彬",
+  "nameRoman": "Wonbin",
+  "company": "SM（展示分类；归属待人工核验）",
+  "companyIds": [
+    "sm"
+  ],
+  "group": "RIIZE",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2002-03-02",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "依据模型常识中的出生日期，有把握截至 2026-11 已满18周岁；未联网，出生日期待人工核验，并非外部核验认证",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/wonbin/portrait.svg",
+  "welcomeKo": "왔네. 한 번 더 들어 볼래?",
+  "welcomeZh": "来啦。要不要再听一次？",
+  "askNameKo": "어떤 이름으로 불러 주면 좋을까?",
+  "askNameZh": "你希望我怎么称呼你？",
+  "defaultUserName": "친구"
+}

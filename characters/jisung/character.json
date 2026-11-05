@@ -1,0 +1,33 @@
+{
+  "id": "jisung",
+  "name": "지성",
+  "displayName": "Jisung",
+  "nameZh": "朴志晟",
+  "nameRoman": "Jisung",
+  "company": "SM（展示分类；归属待人工核验）",
+  "companyIds": [
+    "sm"
+  ],
+  "group": "NCT DREAM",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2002-02-05",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "依据模型常识中的出生日期，有把握截至 2026-11 已满18周岁；未联网，出生日期待人工核验，并非外部核验认证",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/jisung/portrait.svg",
+  "welcomeKo": "왔네. 잠깐, 그 생각 재밌다.",
+  "welcomeZh": "来啦。等一下，这个想法很有意思。",
+  "askNameKo": "어떤 이름으로 불러 주면 좋을까?",
+  "askNameZh": "你希望我怎么称呼你？",
+  "defaultUserName": "친구"
+}
