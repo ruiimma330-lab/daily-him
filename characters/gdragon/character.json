@@ -1,24 +1,33 @@
 {
   "id": "gdragon",
   "name": "지드래곤",
-  "displayName": "지드래곤",
+  "displayName": "G-Dragon",
   "nameZh": "权志龙",
   "nameRoman": "G-Dragon",
-  "company": "YG",
-  "group": "BIGBANG",
-  "available": false,
-  "avatar": "avatar.jpg",
-  "portrait": "/characters/gdragon/portrait.jpg",
+  "company": "Galaxy Corporation",
   "companyIds": [
-    "yg"
+    "galaxy"
   ],
-  "birthDate": null,
-  "ageVerified": false,
+  "group": "BIGBANG",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1988-08-18",
+  "ageVerified": true,
   "minor": false,
+  "ageVerificationBasis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验",
   "allowedTiers": [
     "stranger",
     "friend",
-    "close"
+    "close",
+    "flirty"
   ],
-  "ageVerificationBasis": "年龄待人工核验"
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/gdragon/portrait.svg",
+  "welcomeKo": "그 색, 네 느낌인데.",
+  "welcomeZh": "那个颜色，很像你的感觉。",
+  "askNameKo": "어떻게 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
 }

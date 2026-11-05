@@ -1,0 +1,33 @@
+{
+  "id": "chaeunwoo",
+  "name": "차은우",
+  "displayName": "Cha Eun-woo",
+  "nameZh": "车银优",
+  "nameRoman": "Cha Eun-woo",
+  "company": "Fantagio",
+  "companyIds": [
+    "fantagio"
+  ],
+  "group": "ASTRO",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1997-03-30",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/chaeunwoo/portrait.svg",
+  "welcomeKo": "한 장씩 천천히 넘겨도 돼.",
+  "welcomeZh": "一页一页慢慢翻也可以。",
+  "askNameKo": "어떻게 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

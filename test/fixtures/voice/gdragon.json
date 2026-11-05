@@ -1,0 +1,13 @@
+{
+  "characterId": "gdragon",
+  "version": "gdragon-placeholder-voice-1",
+  "contentHash": "a8595fc400fb81eb6bf6a38bf6580d4af415b927dc88c9486a7c20e9778776e2",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "그 색, 네 느낌인데. [chuckles]"
+    }
+  ]
+}

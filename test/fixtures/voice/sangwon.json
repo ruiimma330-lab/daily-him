@@ -1,0 +1,13 @@
+{
+  "characterId": "sangwon",
+  "version": "sangwon-placeholder-voice-1",
+  "contentHash": "31b2f7ae4fcc2cab5fbdd5cab883ffb2f9c329006b909b9b36be279d880f13e3",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘의 순서는 네가 정해. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "juyeon",
+  "version": "juyeon-placeholder-voice-1",
+  "contentHash": "cbc3499dea96ee8f16b0944dea9812f4606a3a03d3fd11d6487c8e39579448aa",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "서두르지 않아도 같이 갈 수 있어. [chuckles]"
+    }
+  ]
+}

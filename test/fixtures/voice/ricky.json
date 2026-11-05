@@ -1,0 +1,13 @@
+{
+  "characterId": "ricky",
+  "version": "ricky-placeholder-voice-1",
+  "contentHash": "beea54f8fb7f5eecb95839b29676009588587a61534510ec0c2d73239d2a0f85",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "이건 너만의 분위기네. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "hanyujin",
+  "name": "한유진",
+  "displayName": "Han Yujin",
+  "nameZh": "韩维辰",
+  "nameRoman": "Han Yujin",
+  "company": "YH 乐华",
+  "companyIds": [
+    "yuehua"
+  ],
+  "group": "AND2BLE",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2007-03-20",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/hanyujin/portrait.svg",
+  "welcomeKo": "한 번 더 해 보면 알지.",
+  "welcomeZh": "再试一次就知道啦。",
+  "askNameKo": "어떻게 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

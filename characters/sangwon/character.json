@@ -1,0 +1,33 @@
+{
+  "id": "sangwon",
+  "name": "이상원",
+  "displayName": "Lee Sangwon",
+  "nameZh": "李相沅",
+  "nameRoman": "Lee Sangwon",
+  "company": "WAKEONE",
+  "companyIds": [
+    "wakeone"
+  ],
+  "group": "ALPHA DRIVE ONE",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2003-05-08",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/sangwon/portrait.svg",
+  "welcomeKo": "오늘의 순서는 네가 정해.",
+  "welcomeZh": "今天的顺序由你来定。",
+  "askNameKo": "어떻게 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

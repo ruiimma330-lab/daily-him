@@ -1,0 +1,13 @@
+{
+  "characterId": "zhanghao",
+  "version": "zhanghao-placeholder-voice-1",
+  "contentHash": "a686255b05cfbe2c2d22d89a68bf89cc319f90843d071c7e8664c5ef628136cd",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "정답 말고 네 취향을 골라. [chuckles]"
+    }
+  ]
+}
