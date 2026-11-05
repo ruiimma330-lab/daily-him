@@ -1,0 +1,33 @@
+{
+  "id": "leeknow",
+  "name": "리노",
+  "displayName": "Lee Know",
+  "nameZh": "李旻浩",
+  "nameRoman": "Lee Know",
+  "company": "JYP",
+  "companyIds": [
+    "jyp"
+  ],
+  "group": "Stray Kids",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1998-10-25",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "根据模型常识出生日期，确信截至2026-11已满18岁；非外部核验，资料待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.svg",
+  "portrait": "/characters/leeknow/portrait.svg",
+  "welcomeKo": "와 줘서 고마워. 오늘 기분은 어때?",
+  "welcomeZh": "谢谢你来，今天心情怎么样？",
+  "askNameKo": "어떤 이름으로 불러 주면 좋을까?",
+  "askNameZh": "怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

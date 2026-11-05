@@ -1,0 +1,24 @@
+{
+  "version": "iu-placeholder-voice-1",
+  "placeholderVoice": "female",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "7998c928fa80c29f0f7c5fb9c2b1feb8fa1a5bfc5808daca3e2efd6444caf0de"
+}

@@ -1,0 +1,155 @@
+[
+  {
+    "id": "leeknow",
+    "nameZh": "李旻浩",
+    "birthDate": "1998-10-25",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "felix",
+    "nameZh": "李龙馥",
+    "birthDate": "2000-09-15",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "hyunjin",
+    "nameZh": "黄铉辰",
+    "birthDate": "2000-03-20",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "bangchan",
+    "nameZh": "方灿",
+    "birthDate": "1997-10-03",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "han",
+    "nameZh": "韩知城",
+    "birthDate": "2000-09-14",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "sana",
+    "nameZh": "凑崎纱夏",
+    "birthDate": "1996-12-29",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "nayeon",
+    "nameZh": "林娜琏",
+    "birthDate": "1995-09-22",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "jennie",
+    "nameZh": "金智妮",
+    "birthDate": "1996-01-16",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "lisa",
+    "nameZh": "莉莎",
+    "birthDate": "1997-03-27",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "jisoo",
+    "nameZh": "金智秀",
+    "birthDate": "1995-01-03",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "rose",
+    "nameZh": "朴彩英",
+    "birthDate": "1997-02-11",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "ahyeon",
+    "nameZh": "郑雅贤",
+    "birthDate": "2007-04-11",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "iu",
+    "nameZh": "李知恩",
+    "birthDate": "1993-05-16",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "yujin",
+    "nameZh": "安宥真",
+    "birthDate": "2003-09-01",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "wonyoung",
+    "nameZh": "张元英",
+    "birthDate": "2004-08-31",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "rei",
+    "nameZh": "直井怜",
+    "birthDate": "2004-02-03",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "liz",
+    "nameZh": "金志垣",
+    "birthDate": "2004-11-21",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  }
+]

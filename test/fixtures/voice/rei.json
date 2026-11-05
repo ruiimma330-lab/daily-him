@@ -1,0 +1,13 @@
+{
+  "characterId": "rei",
+  "version": "rei-placeholder-voice-1",
+  "contentHash": "4c0989520f7f6e1427c54a48bc03930830c697d6e515e008300130c788bdd788",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

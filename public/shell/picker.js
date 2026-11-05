@@ -13,7 +13,7 @@
 
   const state = { all: [], company: '全部', group: '全部', query: '', index: 0 };
 
-  const COMPANY_LABELS = { sm: 'SM', hybe: 'HYBE', pledis: 'PLEDIS', koz: 'KOZ', sourcemusic: 'SOURCE MUSIC', beliftlab: 'BELIFT LAB', bighitmusic: 'BIGHIT MUSIC', jyp: 'JYP', yg: 'YG', inb100: 'INB100', cube: 'CUBE', teamwang: 'TEAM WANG', laystudio: '张艺兴工作室' };
+  const COMPANY_LABELS = { sm: 'SM', hybe: 'HYBE', pledis: 'PLEDIS', koz: 'KOZ', sourcemusic: 'SOURCE MUSIC', beliftlab: 'BELIFT LAB', bighitmusic: 'BIGHIT MUSIC', jyp: 'JYP', yg: 'YG', starship: 'STARSHIP', edam: 'EDAM', inb100: 'INB100', cube: 'CUBE', teamwang: 'TEAM WANG', laystudio: '张艺兴工作室' };
   const COMPANY_ORDER = ['SM', 'HYBE', 'JYP', 'YG'];
   function unique(list) {
     return [...new Set(list.filter(Boolean))].sort((a, b) => {

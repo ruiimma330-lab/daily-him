@@ -1,0 +1,13 @@
+{
+  "characterId": "sana",
+  "version": "sana-placeholder-voice-1",
+  "contentHash": "3b62bcff7e155b6a365f0eaefda43774c6234a3dc0715a4946760c5fd87c59c7",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}
