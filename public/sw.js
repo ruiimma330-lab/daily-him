@@ -1,5 +1,5 @@
 /* Daily Him shell. Bump VERSION when the precache list changes. */
-const VERSION = 'dh-pwa-2';
+const VERSION = 'dh-pwa-3';
 const SHELL = `dh-shell-${VERSION}`;
 const MEDIA = `dh-media-${VERSION}`;
 
@@ -26,6 +26,10 @@ const PRECACHE = [
   '/icons/apple-touch-icon.png',
   '/login',
   '/shell/cover.html',
+  '/shell/install.html',
+  '/shell/install.css',
+  '/shell/install.js',
+  '/shell/install-qr.svg',
   '/shell/shell.css',
   '/shell/shell.js',
   '/shell/copy.json',
@@ -79,6 +83,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Large signed binaries and release metadata must always come from the network.
+  if (url.pathname.startsWith('/downloads/') || url.pathname === '/.well-known/assetlinks.json') return;
 
   // Account data (/api/history, /api/me, /api/profile, and the rest) is never cached.
   // Only the public character list is.

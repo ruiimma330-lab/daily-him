@@ -1,0 +1,40 @@
+plugins { id 'com.android.application' }
+
+def requiredEnv = { name ->
+    def value = System.getenv(name)
+    if (!value) throw new GradleException("Missing signing environment variable: ${name}")
+    return value
+}
+android {
+    namespace 'com.dailyhim.app'
+    compileSdk 36
+    buildToolsVersion '35.0.0'
+    defaultConfig {
+        applicationId 'com.dailyhim.app'
+        minSdk 23
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+    signingConfigs {
+        release {
+            storeFile file(requiredEnv('ANDROID_KEYSTORE_PATH'))
+            storePassword requiredEnv('ANDROID_KEYSTORE_PASSWORD')
+            keyAlias requiredEnv('ANDROID_KEY_ALIAS')
+            keyPassword requiredEnv('ANDROID_KEY_PASSWORD')
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.6.2'
+}
