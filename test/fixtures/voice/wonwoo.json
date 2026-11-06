@@ -1,0 +1,13 @@
+{
+  "characterId": "wonwoo",
+  "version": "wonwoo-placeholder-voice-1",
+  "contentHash": "f6565d6968897be3239cec7615c409582161abd31966f182cb65f20e34f77a86",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘은 한 페이지씩 가자. [chuckles]"
+    }
+  ]
+}

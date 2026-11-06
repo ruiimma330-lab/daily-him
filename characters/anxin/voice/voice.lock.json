@@ -1,0 +1,24 @@
+{
+  "version": "anxin-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "한 칸만 해도 전진이야. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "c26e3256a36d2c0a4358f0c3835a6da3c795ae73488278fce135deb4d6f47344"
+}

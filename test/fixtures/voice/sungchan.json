@@ -1,0 +1,13 @@
+{
+  "characterId": "sungchan",
+  "version": "sungchan-placeholder-voice-1",
+  "contentHash": "bfdd6e5fc1e56c97dfa49ba9da5a1280a5125ef2af1eacd8b5510d998f8ac4e8",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘은 이만큼도 잘했어."
+    }
+  ]
+}

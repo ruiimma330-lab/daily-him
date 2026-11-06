@@ -1,0 +1,101 @@
+[
+  {
+    "id": "chaeunwoo",
+    "nameZh": "车银优",
+    "birthDate": "1997-03-30",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "gdragon",
+    "nameZh": "权志龙",
+    "birthDate": "1988-08-18",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "taemin",
+    "nameZh": "李泰民",
+    "birthDate": "1993-07-18",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "juyeon",
+    "nameZh": "李柱延",
+    "birthDate": "1998-01-15",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "anxin",
+    "nameZh": "周安信",
+    "birthDate": null,
+    "asOf": "2026-11",
+    "decision": "年龄未核实，严格模式",
+    "strict": true,
+    "basis": "年龄未核实；离线模型常识不足以确认截至2026-11已满18岁，保守采用严格模式"
+  },
+  {
+    "id": "xinlong",
+    "nameZh": "贺鑫隆",
+    "birthDate": null,
+    "asOf": "2026-11",
+    "decision": "年龄未核实，严格模式",
+    "strict": true,
+    "basis": "年龄未核实；离线模型常识不足以确认截至2026-11已满18岁，保守采用严格模式"
+  },
+  {
+    "id": "sangwon",
+    "nameZh": "李相沅",
+    "birthDate": "2003-05-08",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "ricky",
+    "nameZh": "沈泉锐",
+    "birthDate": "2004-05-20",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "zhanghao",
+    "nameZh": "章昊",
+    "birthDate": "2000-07-25",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "gyuvin",
+    "nameZh": "金奎彬",
+    "birthDate": "2004-08-30",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  },
+  {
+    "id": "hanyujin",
+    "nameZh": "韩维辰",
+    "birthDate": "2007-03-20",
+    "asOf": "2026-11",
+    "decision": "成年",
+    "strict": false,
+    "basis": "模型常识出生日期；确信截至2026-11已满18岁，待人工核验"
+  }
+]

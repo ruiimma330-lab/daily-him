@@ -1,0 +1,24 @@
+{
+  "version": "dohoon-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘 색 하나만 골라 보자. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "92b3e45742a5888b7245c408ad2d80f844a48168445e67d31cb8d9d9a3923027"
+}

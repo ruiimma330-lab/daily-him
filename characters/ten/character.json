@@ -1,0 +1,33 @@
+{
+  "id": "ten",
+  "name": "텐",
+  "displayName": "Ten",
+  "nameZh": "李永钦",
+  "nameRoman": "Ten",
+  "company": "SM（展示分类；归属待人工核验）",
+  "companyIds": [
+    "sm"
+  ],
+  "group": "WayV",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1996-02-27",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "依据模型常识中的出生日期，有把握截至 2026-11 已满18周岁；未联网，出生日期待人工核验，并非外部核验认证",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/ten/portrait.jpg",
+  "welcomeKo": "왔네. 이 선 하나 바꾸면 어때?",
+  "welcomeZh": "来啦。把这条线改一下怎么样？",
+  "askNameKo": "어떤 이름으로 불러 주면 좋을까?",
+  "askNameZh": "你希望我怎么称呼你？",
+  "defaultUserName": "친구"
+}

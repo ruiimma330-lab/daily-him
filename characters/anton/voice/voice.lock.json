@@ -1,0 +1,24 @@
+{
+  "version": "anton-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 조용히 들으면 다르네.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "b2e7e92b2e2a2e96d7af4c3083bffe42db4e6da294d620067af7ca0a6b160f19"
+}

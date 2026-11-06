@@ -1,0 +1,13 @@
+{
+  "characterId": "nct-jaehyun",
+  "version": "nct-jaehyun-placeholder-voice-1",
+  "contentHash": "a478e9fd5441277af297412bf0e06b8a3a61feb945e6ddeea70f3c39bb2e2345",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 이 부분은 오래 듣고 싶네."
+    }
+  ]
+}

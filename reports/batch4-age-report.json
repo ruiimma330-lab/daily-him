@@ -1,0 +1,173 @@
+[
+  {
+    "id": "jeno",
+    "nameZh": "李帝努",
+    "birthDate": "2000-04-23",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "jaemin",
+    "nameZh": "罗渽民",
+    "birthDate": "2000-08-13",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "jisung",
+    "nameZh": "朴志晟",
+    "birthDate": "2002-02-05",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "haechan",
+    "nameZh": "李楷灿",
+    "birthDate": "2000-06-06",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "chenle",
+    "nameZh": "钟辰乐",
+    "birthDate": "2001-11-22",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "yushi",
+    "nameZh": "得能勇志",
+    "birthDate": "2004-04-05",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "sakuya",
+    "nameZh": "藤永咲哉",
+    "birthDate": "2007-11-18",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "riku",
+    "nameZh": "前田陆",
+    "birthDate": "2003-06-28",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "sion",
+    "nameZh": "吴是温",
+    "birthDate": "2002-05-11",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "wonbin",
+    "nameZh": "朴元彬",
+    "birthDate": "2002-03-02",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "anton",
+    "nameZh": "李灿荣",
+    "birthDate": "2004-03-21",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "sungchan",
+    "nameZh": "郑成灿",
+    "birthDate": "2001-09-13",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "karina",
+    "nameZh": "柳智敏",
+    "birthDate": "2000-04-11",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "winter",
+    "nameZh": "金玟庭",
+    "birthDate": "2001-01-01",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "giselle",
+    "nameZh": "内永枝利",
+    "birthDate": "2000-10-30",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "nct-jaehyun",
+    "nameZh": "郑在玹",
+    "birthDate": "1997-02-14",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "ten",
+    "nameZh": "李永钦",
+    "birthDate": "1996-02-27",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "chanyeol",
+    "nameZh": "朴灿烈",
+    "birthDate": "1992-11-27",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  },
+  {
+    "id": "irene",
+    "nameZh": "裴珠泫",
+    "birthDate": "1991-03-29",
+    "status": "成年",
+    "strict": false,
+    "asOf": "2026-11-06",
+    "basis": "模型常识出生日期；有把握已满18周岁，日期待人工核验"
+  }
+]

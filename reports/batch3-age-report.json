@@ -1,0 +1,107 @@
+[
+  {
+    "id": "wonwoo",
+    "birthDate": "1996-07-17",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "mingyu",
+    "birthDate": "1997-04-06",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "jeonghan",
+    "birthDate": "1995-10-04",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "scoups",
+    "birthDate": "1995-08-08",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "shinyu",
+    "birthDate": "2003-11-07",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "dohoon",
+    "birthDate": "2005-01-30",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "hanjin",
+    "birthDate": "2006-01-05",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "tws-jihoon",
+    "birthDate": "2006-03-28",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "myungjaehyun",
+    "birthDate": "2003-12-04",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "taesan",
+    "birthDate": "2004-08-10",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "wonhee",
+    "birthDate": "2007-06-26",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "moka",
+    "birthDate": "2004-10-08",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "minju",
+    "birthDate": "2004-05-11",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "sakura",
+    "birthDate": "1998-03-19",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  },
+  {
+    "id": "chaewon",
+    "birthDate": "2000-08-01",
+    "status": "adult",
+    "strict": false,
+    "basis": "模型常识出生日期，截至2026-11已满18周岁；待人工核验"
+  }
+]

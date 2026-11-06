@@ -1,0 +1,24 @@
+{
+  "version": "chaeunwoo-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "한 장씩 천천히 넘겨도 돼. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "967cce47336ba6ace8f85e17f36913e1a63739ecb3c6ed795abde5d2b45c54d1"
+}

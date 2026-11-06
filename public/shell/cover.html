@@ -48,6 +48,9 @@
       if (loggedIn) {
         try {
           const c = Shell.selectedCharacter();
+          const chars = await Shell.api('/api/characters');
+          const selected = (chars.characters || []).find(ch => ch.id === c);
+          if (selected) document.getElementById('disclaimer').textContent = selected.disclaimer;
           const p = await Shell.api('/api/profile?characterId=' + encodeURIComponent(c));
           onboarded = Boolean(p && p.profile && p.profile.onboardedAt);
         } catch (_) { onboarded = false; }

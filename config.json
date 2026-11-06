@@ -37,5 +37,9 @@
       }
     ]
   },
-  "_note": "角色相关（voiceId/ttsModel/voiceSettings/moodTags 等）已移到 characters/<id>/character.json；这里只放全局配置"
+  "_note": "角色相关（voiceId/ttsModel/voiceSettings/moodTags 等）已移到 characters/<id>/character.json；这里只放全局配置",
+  "placeholderVoices": {
+    "male": "",
+    "female": ""
+  }
 }

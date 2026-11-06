@@ -1,0 +1,24 @@
+{
+  "version": "juhoon-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "여기 빛이 예쁘다. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "67f99dc1f879f330761f80d380e40f2c513eccfc03b6df8a259e8258ea2f37f2"
+}

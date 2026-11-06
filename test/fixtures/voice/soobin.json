@@ -1,0 +1,13 @@
+{
+  "characterId": "soobin",
+  "version": "soobin-placeholder-voice-1",
+  "contentHash": "ffd10949962ea1bcc18c4b1afb5bc201d3d6785e09f41c8b969a268e8ab50367",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "조금 쉬었다 얘기하자. [chuckles]"
+    }
+  ]
+}

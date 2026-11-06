@@ -1,0 +1,13 @@
+{
+  "characterId": "giselle",
+  "version": "giselle-placeholder-voice-1",
+  "contentHash": "24414bbe624627111c62dde4ed5ada430d5260bffc6148ba93d054531876fcc0",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘 분위기는 네가 골라."
+    }
+  ]
+}

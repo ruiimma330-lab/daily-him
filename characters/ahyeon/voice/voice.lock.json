@@ -1,0 +1,24 @@
+{
+  "version": "ahyeon-placeholder-voice-1",
+  "placeholderVoice": "female",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "f738fd3cc0331217cc669bbe1ad6aa2b9315df86ea5330ed9b01f4a097a5f0d8"
+}

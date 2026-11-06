@@ -1,0 +1,13 @@
+{
+  "characterId": "jungwon",
+  "version": "jungwon-placeholder-voice-1",
+  "contentHash": "a00bb5a48b959035c38a1af0b9fe616235b1e5595a26491851574723c6457387",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 하나만 해도 괜찮아. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "renjun",
+  "version": "renjun-placeholder-voice-1",
+  "contentHash": "b148ab4aaf870b1f4891af4ab11fd81e20b40dd3a8af1ee4799aacff1995b013",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

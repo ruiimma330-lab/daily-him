@@ -1,0 +1,24 @@
+{
+  "version": "sehun-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "4b2ad2e39605ab8c87834519288b2c8e4e4b00c6b55757b1cc64738c86234344"
+}

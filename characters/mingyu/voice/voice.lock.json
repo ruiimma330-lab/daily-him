@@ -1,0 +1,24 @@
+{
+  "version": "mingyu-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘은 간단하게라도 잘 챙겨 먹자. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "0b3590d2ac0468c1a7bbabea7917d9a6a37b23f3c680945b426b86d61c7cc9bb"
+}

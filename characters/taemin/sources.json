@@ -1,0 +1,18 @@
+{
+  "status": "模型常识，待人工核验",
+  "sources": [
+    {
+      "id": "model-general",
+      "kind": "model",
+      "label": "模型常识，待人工核验",
+      "verified": false,
+      "supports": [
+        "facts",
+        "birthDate",
+        "companyIds"
+      ],
+      "note": "团体及公司采用用户本批指定分组；其余只保留有把握的常识，未经联网核查。"
+    }
+  ],
+  "artwork": "原创姓名首字与独立配色 SVG，无真人照片"
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "hueningkai",
+  "version": "hueningkai-placeholder-voice-1",
+  "contentHash": "72bee440ed639e31d2063e842f087582c83e322931e9bcf1ac0338834aad0291",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "작은 이야기 하나 해 줄까? [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "gyuvin",
+  "version": "gyuvin-placeholder-voice-1",
+  "contentHash": "ffaf5904c9e77456d7cf80aa681429788185fa3ede7b0f32b94a88d26f79dba4",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "그건 응원 두 배 받아야 해. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "irene-placeholder-voice-1",
+  "placeholderVoice": "female",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 잠깐 편하게 앉아 있어.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "ac60239d02da44f792a7e960fe5754f8c7b2b2295740efb80fef3b4430004d16"
+}

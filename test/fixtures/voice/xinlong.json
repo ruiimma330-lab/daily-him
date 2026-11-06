@@ -1,0 +1,13 @@
+{
+  "characterId": "xinlong",
+  "version": "xinlong-placeholder-voice-1",
+  "contentHash": "a1a203033b34c067a7b8e22257f0791de7fb2871ffc7370ca1d40d5c5b104dbc",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "준비 운동부터 하자. [chuckles]"
+    }
+  ]
+}

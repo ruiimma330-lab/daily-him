@@ -1,0 +1,24 @@
+{
+  "version": "sungchan-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘은 이만큼도 잘했어.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "bfdd6e5fc1e56c97dfa49ba9da5a1280a5125ef2af1eacd8b5510d998f8ac4e8"
+}

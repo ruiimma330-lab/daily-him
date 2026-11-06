@@ -1,0 +1,34 @@
+{
+  "id": "shinyu",
+  "name": "신유",
+  "displayName": "Shinyu",
+  "nameZh": "申惟",
+  "nameRoman": "Shinyu",
+  "company": "PLEDIS / HYBE（待人工核验）",
+  "companyIds": [
+    "pledis",
+    "hybe"
+  ],
+  "group": "TWS",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2003-11-07",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "按模型常识出生日期判断，截至 2026-11 已满18周岁；非证件核验，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/shinyu/portrait.jpg",
+  "welcomeKo": "오늘 하늘에 제목을 붙여 볼까.",
+  "welcomeZh": "给今天的天空起个名字吧。",
+  "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",
+  "askNameZh": "很高兴见到你，想让我怎么称呼你？",
+  "defaultUserName": "친구"
+}

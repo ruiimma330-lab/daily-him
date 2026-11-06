@@ -16,7 +16,10 @@
   "defaultUserName": "에리",
   "voiceId": "zG6oPYFpVjyTj1zUmVTY",
   "ttsModel": "eleven_v3",
-  "voiceSettings": { "stability": 0.0, "similarity_boost": 0.85 },
+  "voiceSettings": {
+    "stability": 0.0,
+    "similarity_boost": 0.85
+  },
   "speechPrefix": "[playful] ",
   "moodTags": {
     "playful": "[playful]",
@@ -28,6 +31,28 @@
     "laughing": "[chuckles]"
   },
   "defaultMood": "playful",
-  "addressByTier": { "stranger": "", "friend": "{{userName}}야", "close": "{{userName}}야", "flirty": "{{userName}}" },
-  "_junho_backup": { "voiceId": "HrAPO433QYkPmU4F4CHw", "ttsModel": "eleven_multilingual_v2" }
+  "addressByTier": {
+    "stranger": "",
+    "friend": "{{userName}}야",
+    "close": "{{userName}}야",
+    "flirty": "{{userName}}"
+  },
+  "_junho_backup": {
+    "voiceId": "HrAPO433QYkPmU4F4CHw",
+    "ttsModel": "eleven_multilingual_v2"
+  },
+  "companyIds": [
+    "inb100",
+    "sm"
+  ],
+  "birthDate": null,
+  "ageVerified": true,
+  "minor": false,
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "ageVerificationBasis": "模型常识：成年，待人工核验"
 }

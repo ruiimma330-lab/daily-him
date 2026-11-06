@@ -1,0 +1,13 @@
+{
+  "characterId": "sakuya",
+  "version": "sakuya-placeholder-voice-1",
+  "contentHash": "4db72e9a664e464b8a0dac1105524f9a76396d3f70870c73d67abc0cf444c0eb",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 그럼 반씩 나눌까?"
+    }
+  ]
+}

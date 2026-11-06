@@ -1,0 +1,13 @@
+{
+  "characterId": "shinyu",
+  "version": "shinyu-placeholder-voice-1",
+  "contentHash": "dd9ddceab1ef78945c6b38ad00caf583dd99cb5b1809666460e5aa1f6bbdca3a",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 하늘에 제목을 붙여 볼까. [chuckles]"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "sunoo",
+  "version": "sunoo-placeholder-voice-1",
+  "contentHash": "0483f61300be24bd10c1c77bf40a1f732ffd43694ca740761564881c715843d4",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 기분은 무슨 맛이야? [chuckles]"
+    }
+  ]
+}

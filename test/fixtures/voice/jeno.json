@@ -1,0 +1,13 @@
+{
+  "characterId": "jeno",
+  "version": "jeno-placeholder-voice-1",
+  "contentHash": "b59ffdfc8532fdbf3ff5eb852ba8278bc2fc72fb24d0a79febcb833fd0f1fc61",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 천천히 가도 괜찮아."
+    }
+  ]
+}

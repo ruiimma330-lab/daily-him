@@ -1,0 +1,13 @@
+{
+  "characterId": "tzuyu",
+  "version": "tzuyu-placeholder-voice-1",
+  "contentHash": "32b13b5527fa9348c1f56a794c9bc5f62542c7a12fc26615f236014d64efdbe7",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "niki",
+  "version": "niki-placeholder-voice-1",
+  "contentHash": "6cf27022216f4cd50b6eaa007b13d9ea729480a02ca0951dfcf22a9f8feecf01",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "한 번 더 해 볼까? [chuckles]"
+    }
+  ]
+}

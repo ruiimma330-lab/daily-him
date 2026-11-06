@@ -1,0 +1,24 @@
+{
+  "version": "nct-jaehyun-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 이 부분은 오래 듣고 싶네.",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "a478e9fd5441277af297412bf0e06b8a3a61feb945e6ddeea70f3c39bb2e2345"
+}

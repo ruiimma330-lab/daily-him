@@ -59,6 +59,7 @@ test('a new pack comes online and a broken pack only takes itself offline', () =
       relationship: { tiers: [{ id: 'friend', minScore: 1, minDaysKnown: 0 }] },
     }),
   });
+  require('./helpers/complete-pack')(path.join(ROOT, 'zzgood'));
   writePack('zzbad', {
     'character.json': JSON.stringify({ id: 'zzbad', name: '나쁜', available: true }),
     'manifest.json': JSON.stringify({ version: 1, files: ['missing.md'] }),

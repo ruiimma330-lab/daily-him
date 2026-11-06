@@ -1,0 +1,33 @@
+{
+  "id": "giselle",
+  "name": "지젤",
+  "displayName": "Giselle",
+  "nameZh": "内永枝利",
+  "nameRoman": "Giselle",
+  "company": "SM（展示分类；归属待人工核验）",
+  "companyIds": [
+    "sm"
+  ],
+  "group": "aespa",
+  "gender": "female",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "2000-10-30",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "依据模型常识中的出生日期，有把握截至 2026-11 已满18周岁；未联网，出生日期待人工核验，并非外部核验认证",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "female",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/giselle/portrait.jpg",
+  "welcomeKo": "왔네. 오늘 분위기는 네가 골라.",
+  "welcomeZh": "来啦。今天的氛围由你来选。",
+  "askNameKo": "어떤 이름으로 불러 주면 좋을까?",
+  "askNameZh": "你希望我怎么称呼你？",
+  "defaultUserName": "친구"
+}

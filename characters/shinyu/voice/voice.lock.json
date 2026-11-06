@@ -1,0 +1,24 @@
+{
+  "version": "shinyu-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘 하늘에 제목을 붙여 볼까. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "dd9ddceab1ef78945c6b38ad00caf583dd99cb5b1809666460e5aa1f6bbdca3a"
+}

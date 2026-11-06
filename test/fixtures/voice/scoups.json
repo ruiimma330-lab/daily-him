@@ -1,0 +1,13 @@
+{
+  "characterId": "scoups",
+  "version": "scoups-placeholder-voice-1",
+  "contentHash": "724ac5ac91855eb3500bbfb00b624cdcb917c7828455e104fa7c6ddea108b71e",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 몫은 여기까지 해도 괜찮아. [chuckles]"
+    }
+  ]
+}

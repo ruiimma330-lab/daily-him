@@ -1,0 +1,13 @@
+{
+  "characterId": "moka",
+  "version": "moka-placeholder-voice-1",
+  "contentHash": "5d2ae16326a4a6974d9d3ff2e9dfbf4b0f4a3f5f9f76e499f5286a0695022602",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "작은 장식 하나로 기분 바꿔 보자. [chuckles]"
+    }
+  ]
+}

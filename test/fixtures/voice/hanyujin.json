@@ -1,0 +1,13 @@
+{
+  "characterId": "hanyujin",
+  "version": "hanyujin-placeholder-voice-1",
+  "contentHash": "da77a86c5ddf4237a9547f0198b6903a52cd24f6ca733e913c4c21fe0e97b152",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "한 번 더 해 보면 알지. [chuckles]"
+    }
+  ]
+}

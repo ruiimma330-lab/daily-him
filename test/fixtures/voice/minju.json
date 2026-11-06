@@ -1,0 +1,13 @@
+{
+  "characterId": "minju",
+  "version": "minju-placeholder-voice-1",
+  "contentHash": "2c21a51756f5db88ad0b9172c9526636bddf5df3753c8b33158f66cab8582cc2",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘은 조용한 얘기도 좋아. [chuckles]"
+    }
+  ]
+}

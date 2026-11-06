@@ -1,0 +1,13 @@
+{
+  "characterId": "taemin",
+  "version": "taemin-placeholder-voice-1",
+  "contentHash": "5932ed4005b79d26a85a23477516f4dd4aac5665d902b47f86de31c79455861b",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "한 박자 쉬면 더 잘 들려. [chuckles]"
+    }
+  ]
+}

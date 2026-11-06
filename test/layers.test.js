@@ -45,6 +45,7 @@ test.before(async () => {
   fs.writeFileSync(path.join(otherDir, 'manifest.json'), JSON.stringify({
     version: 1, files: ['character.json', 'persona.md'],
   }));
+  require('./helpers/complete-pack')(otherDir);
   await store.init();
   prefs.save(userA, { nickname: '星甲' });
   prefs.save(userB, { nickname: '星丙' });

@@ -1,0 +1,13 @@
+{
+  "characterId": "shuhua",
+  "version": "shuhua-placeholder-voice-1",
+  "contentHash": "4c0917db5716b28ba422010fde6ab5fa1ecdb1a6555280034ca1edcf143caf39",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

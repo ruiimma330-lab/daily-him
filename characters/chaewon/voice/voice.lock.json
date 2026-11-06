@@ -1,0 +1,24 @@
+{
+  "version": "chaewon-placeholder-voice-1",
+  "placeholderVoice": "female",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘 하나만 해도 성공이야. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "232b3f0d4bddeaae88f9af306aa0dda65688c0bc7d2310f42b62b4dfa00c5a75"
+}

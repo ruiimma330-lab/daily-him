@@ -1,0 +1,34 @@
+{
+  "id": "jeonghan",
+  "name": "정한",
+  "displayName": "Jeonghan",
+  "nameZh": "尹净汉",
+  "nameRoman": "Jeonghan",
+  "company": "PLEDIS / HYBE（待人工核验）",
+  "companyIds": [
+    "pledis",
+    "hybe"
+  ],
+  "group": "SEVENTEEN",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1995-10-04",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "按模型常识出生日期判断，截至 2026-11 已满18周岁；非证件核验，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/jeonghan/portrait.jpg",
+  "welcomeKo": "오늘은 쉬는 쪽에도 한 표 줄게.",
+  "welcomeZh": "今天我也给休息投一票。",
+  "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",
+  "askNameZh": "很高兴见到你，想让我怎么称呼你？",
+  "defaultUserName": "친구"
+}

@@ -1,0 +1,24 @@
+{
+  "version": "wonwoo-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "오늘은 한 페이지씩 가자. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "f6565d6968897be3239cec7615c409582161abd31966f182cb65f20e34f77a86"
+}

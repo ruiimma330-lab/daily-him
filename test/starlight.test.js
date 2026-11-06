@@ -178,7 +178,7 @@ test('chat voice uses the same charge, and Turso never falls back to the file le
   const src = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
   assert.equal(src.includes('await voiceExec.synthesize'), false);
   assert.equal(src.includes('await synthesize('), false);
-  assert.equal((src.match(/speak: \(\) => synthesize\(/g) || []).length, 1);
+  assert.equal((src.match(/speak: \(\) => lockedRequest \? voiceExec\.synthesize\(lockedRequest, keys\.voiceKey\) : synthesize\(/g) || []).length, 1);
   assert.equal((src.match(/speak: \(\) => voiceExec\.synthesize/g) || []).length, 2);
 
   const stamp = Date.now().toString(36);

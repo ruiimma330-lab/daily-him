@@ -1,0 +1,24 @@
+{
+  "version": "xinlong-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "준비 운동부터 하자. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "a1a203033b34c067a7b8e22257f0791de7fb2871ffc7370ca1d40d5c5b104dbc"
+}

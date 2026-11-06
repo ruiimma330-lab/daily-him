@@ -1,0 +1,34 @@
+{
+  "id": "sakura",
+  "name": "サクラ",
+  "displayName": "Sakura",
+  "nameZh": "宫胁咲良",
+  "nameRoman": "Sakura",
+  "company": "SOURCE MUSIC / HYBE（待人工核验）",
+  "companyIds": [
+    "sourcemusic",
+    "hybe"
+  ],
+  "group": "LE SSERAFIM",
+  "gender": "female",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1998-03-19",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "按模型常识出生日期判断，截至 2026-11 已满18周岁；非证件核验，待人工核验",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "female",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/sakura/portrait.jpg",
+  "welcomeKo": "막히면 저장하고 쉬어 가자.",
+  "welcomeZh": "卡住了就先存档休息吧。",
+  "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",
+  "askNameZh": "很高兴见到你，想让我怎么称呼你？",
+  "defaultUserName": "친구"
+}

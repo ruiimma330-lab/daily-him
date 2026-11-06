@@ -581,6 +581,8 @@ function requireAvailable(req, res, next) {
   if (!characters.isAvailable(req.characterId)) {
     return res.status(404).json({ error: 'character unavailable' });
   }
+  const requestedTier = req.body && (req.body.tierId || req.body.tier);
+  if (requestedTier && !require('./lib/age-policy').policy(req.characterId).allowedTiers.includes(requestedTier)) return res.status(403).json({ error: 'relationship tier forbidden' });
   return next();
 }
 
@@ -913,7 +915,13 @@ function createApp() {
 
   app.delete('/api/histories', requireUser, async (req, res) => {
     if (!req.body || req.body.confirm !== 'CLEAR') return res.status(400).json({ error: 'confirm required' });
-    const ids = characters.list().map((item) => item.id);
+    // Prefer raw pack ids so a broken pack cannot prevent clearing histories.
+    let ids = [];
+    try {
+      ids = require('fs').readdirSync(characters.CHAR_DIR).filter((id) => characters.resolveId(id));
+    } catch (_) {
+      ids = characters.list().map((item) => item.id);
+    }
     for (const id of ids) {
       store.deleteHistory(req.userId, id);
       await memory.clearSummary(req.userId, id);
@@ -1054,7 +1062,7 @@ function createApp() {
 
   app.post('/api/admin/voice-ab/session', requireUser, requireAdmin, async (req, res) => {
     const pack = voicePack.load('baekhyun');
-    if (!pack || !pack.ok) {
+    if (!pack || !pack.ok || pack.enabled === false) {
       console.error(pack ? pack.error : 'no voice package');
       return res.status(503).json({ error: 'Voice is not configured' });
     }
@@ -1286,6 +1294,17 @@ function createApp() {
     return res.sendFile(file);
   });
 
+  app.get(['/characters/:id/portrait.svg', '/characters/:id/portrait.jpg'], requireUser, (req, res) => {
+    const id = characters.resolveId(req.params.id);
+    if (!id) return res.status(404).end();
+    const meta = characters.loadMeta(id);
+    const name = path.basename(String(meta.portrait || 'portrait.svg'));
+    if (!name || name === '.' || name === '..') return res.status(404).end();
+    const file = path.join(characters.CHAR_DIR, id, name);
+    if (!fs.existsSync(file)) return res.status(404).end();
+    return res.sendFile(file);
+  });
+
   app.get('/api/health', (req, res) => {
     if (!getSession(req)) return res.json({ ok: true, storage: store.storageName() });
     const raw = req.query && req.query.characterId;
@@ -1309,7 +1328,7 @@ function createApp() {
   // broken package turns voice off for that character and leaves chat up.
   app.post('/api/tts', requireUser, requireCharacter, requireAvailable, async (req, res) => {
     const pack = voicePack.load(req.characterId);
-    if (!pack || !pack.ok) {
+    if (!pack || !pack.ok || pack.enabled === false) {
       console.error(pack ? pack.error : 'no voice package');
       return res.status(503).json({ error: 'Voice is not configured', audioError: 'Voice is not configured' });
     }
@@ -1505,7 +1524,9 @@ function createApp() {
     let audioError;
     let voiceDenied = null;
     let ttsChars = 0;
-    const voiceOk = voiceReady(config.voiceId);
+    const chatVoicePack = voicePack.load(req.characterId);
+    const placeholder = characters.loadMeta(req.characterId).placeholderVoice;
+    const voiceOk = placeholder ? Boolean(chatVoicePack && chatVoicePack.ok && chatVoicePack.enabled) : voiceReady(config.voiceId);
     if (!voiceOff && !voiceOk) audioError = 'Voice is not configured';
     // One TTS clip per message, in parallel; each with its own mood tag.
     await Promise.all(items.map(async (item) => {
@@ -1515,13 +1536,14 @@ function createApp() {
       const capped = [...speech].slice(0, starlight.loadConfig().voiceMaxChars).join('');
       const ttsText = `${moodDelivery(config, item.mood).prefix} ${capped}`.trim();
       ttsChars += ttsText.length;
-      const hash = audioFileHash(config.voiceId, config.ttsModel, ttsText);
+      const lockedRequest = placeholder && voiceOk ? voicePack.buildRequest(chatVoicePack, capped, item.mood) : null;
+      const hash = lockedRequest ? lockedRequest.cacheKey : audioFileHash(config.voiceId, config.ttsModel, ttsText);
       try {
         const voiced = await billVoice({
           userId: req.userId,
           requestId: `chat-voice:${req.userId}:${hash}`,
           cached: clipReady(hash),
-          speak: () => synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings),
+          speak: () => lockedRequest ? voiceExec.synthesize(lockedRequest, keys.voiceKey) : synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings),
         });
         if (voiced.denied) {
           voiceDenied = voiced;

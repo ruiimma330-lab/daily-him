@@ -1,0 +1,13 @@
+{
+  "characterId": "hanjin",
+  "version": "hanjin-placeholder-voice-1",
+  "contentHash": "898b38ce8fefb27d2b2ac9eb0abbff8cb7e5e575f6c672dc4454aba9515274f2",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "작은 것도 기억해 두고 싶어. [chuckles]"
+    }
+  ]
+}

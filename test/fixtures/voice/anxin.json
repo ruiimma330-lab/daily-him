@@ -1,0 +1,13 @@
+{
+  "characterId": "anxin",
+  "version": "anxin-placeholder-voice-1",
+  "contentHash": "c26e3256a36d2c0a4358f0c3835a6da3c795ae73488278fce135deb4d6f47344",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "한 칸만 해도 전진이야. [chuckles]"
+    }
+  ]
+}

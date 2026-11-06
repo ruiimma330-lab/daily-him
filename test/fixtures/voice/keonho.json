@@ -1,0 +1,13 @@
+{
+  "characterId": "keonho",
+  "version": "keonho-placeholder-voice-1",
+  "contentHash": "15d2b96fd52d776e1fc96fb932c9d66f238ec1e0f8074365281f71936acc5889",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "오늘 새로 본 거 있어? [chuckles]"
+    }
+  ]
+}

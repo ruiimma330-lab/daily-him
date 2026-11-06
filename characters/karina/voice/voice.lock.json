@@ -1,0 +1,24 @@
+{
+  "version": "karina-placeholder-voice-1",
+  "placeholderVoice": "female",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 이 선택지는 좀 끌리는데?",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "8bf497f1df8517bc28b55cb0d7fafb10f693e53039f8ae09433ae72bbbd95a99"
+}

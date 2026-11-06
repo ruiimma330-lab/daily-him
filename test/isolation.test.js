@@ -59,6 +59,7 @@ test.before(async () => {
     version: 1,
     files: ['character.json', 'persona.md'],
   }));
+  require('./helpers/complete-pack')(FIXTURE_DIR);
   await store.init();
   server = createApp().listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));

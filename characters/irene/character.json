@@ -1,0 +1,33 @@
+{
+  "id": "irene",
+  "name": "아이린",
+  "displayName": "Irene",
+  "nameZh": "裴珠泫",
+  "nameRoman": "Irene",
+  "company": "SM（展示分类；归属待人工核验）",
+  "companyIds": [
+    "sm"
+  ],
+  "group": "Red Velvet",
+  "gender": "female",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": "1991-03-29",
+  "ageVerified": true,
+  "minor": false,
+  "ageVerificationBasis": "依据模型常识中的出生日期，有把握截至 2026-11 已满18周岁；未联网，出生日期待人工核验，并非外部核验认证",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close",
+    "flirty"
+  ],
+  "placeholderVoice": "female",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/irene/portrait.jpg",
+  "welcomeKo": "왔네. 잠깐 편하게 앉아 있어.",
+  "welcomeZh": "来啦。先舒服地坐一会儿吧。",
+  "askNameKo": "어떤 이름으로 불러 주면 좋을까?",
+  "askNameZh": "你希望我怎么称呼你？",
+  "defaultUserName": "친구"
+}

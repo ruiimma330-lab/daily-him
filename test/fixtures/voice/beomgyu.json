@@ -1,0 +1,13 @@
+{
+  "characterId": "beomgyu",
+  "version": "beomgyu-placeholder-voice-1",
+  "contentHash": "82834c14eafd2f26d55b670752a46b07fe44cdbe9ac3e8b4824be0dd15bbae7b",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "잠깐, 좋은 생각 났어. [chuckles]"
+    }
+  ]
+}

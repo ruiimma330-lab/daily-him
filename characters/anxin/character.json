@@ -1,0 +1,32 @@
+{
+  "id": "anxin",
+  "name": "周安信",
+  "displayName": "Zhou Anxin",
+  "nameZh": "周安信",
+  "nameRoman": "Zhou Anxin",
+  "company": "WAKEONE",
+  "companyIds": [
+    "wakeone"
+  ],
+  "group": "ALPHA DRIVE ONE",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": null,
+  "ageVerificationBasis": "年龄未核实；离线模型常识不足以确认截至2026-11已满18岁，保守采用严格模式",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/anxin/portrait.jpg",
+  "welcomeKo": "한 칸만 해도 전진이야.",
+  "welcomeZh": "完成一格也是前进。",
+  "askNameKo": "어떻게 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

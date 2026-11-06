@@ -1,0 +1,32 @@
+{
+  "id": "xinlong",
+  "name": "贺鑫隆",
+  "displayName": "He Xinlong",
+  "nameZh": "贺鑫隆",
+  "nameRoman": "He Xinlong",
+  "company": "WAKEONE",
+  "companyIds": [
+    "wakeone"
+  ],
+  "group": "ALPHA DRIVE ONE",
+  "gender": "male",
+  "available": false,
+  "availabilityLabel": "暂未开放",
+  "birthDate": null,
+  "ageVerified": false,
+  "minor": null,
+  "ageVerificationBasis": "年龄未核实；离线模型常识不足以确认截至2026-11已满18岁，保守采用严格模式",
+  "allowedTiers": [
+    "stranger",
+    "friend",
+    "close"
+  ],
+  "placeholderVoice": "male",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/xinlong/portrait.jpg",
+  "welcomeKo": "준비 운동부터 하자.",
+  "welcomeZh": "先热个身吧。",
+  "askNameKo": "어떻게 불러 주면 좋을까?",
+  "askNameZh": "我怎么称呼你比较好？",
+  "defaultUserName": "친구"
+}

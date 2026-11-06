@@ -1,0 +1,13 @@
+{
+  "characterId": "jungkook",
+  "version": "jungkook-placeholder-voice-1",
+  "contentHash": "5b3208d8aac483b59775b1d6c16bce8381e3f8b95d5cf4abed7d14e3383f6f5d",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "일단 해 보자. [chuckles]"
+    }
+  ]
+}

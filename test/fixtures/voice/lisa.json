@@ -1,0 +1,13 @@
+{
+  "characterId": "lisa",
+  "version": "lisa-placeholder-voice-1",
+  "contentHash": "f75f032ccedf48188750881d9c2ca28669b04a7d91ec26779405efa2a8631419",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "characterId": "ahyeon",
+  "version": "ahyeon-placeholder-voice-1",
+  "contentHash": "f738fd3cc0331217cc669bbe1ad6aa2b9315df86ea5330ed9b01f4a097a5f0d8",
+  "enabled": false,
+  "requests": [],
+  "preparedSamples": [
+    {
+      "id": "neutral",
+      "text": "안녕 [chuckles] 오늘도 반가워."
+    }
+  ]
+}

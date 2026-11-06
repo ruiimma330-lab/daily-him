@@ -1,0 +1,24 @@
+{
+  "version": "hanyujin-placeholder-voice-1",
+  "placeholderVoice": "male",
+  "voiceId": "",
+  "model": "eleven_multilingual_v2",
+  "outputFormat": "mp3_44100_128",
+  "voiceSettings": {
+    "stability": 0.5,
+    "similarity_boost": 0.5
+  },
+  "speechPrefix": "",
+  "defaultMood": "soft",
+  "moodTags": {},
+  "tags": "keep",
+  "pins": [],
+  "samples": [
+    {
+      "id": "neutral",
+      "text": "한 번 더 해 보면 알지. [chuckles]",
+      "mood": "soft"
+    }
+  ],
+  "contentHash": "da77a86c5ddf4237a9547f0198b6903a52cd24f6ca733e913c4c21fe0e97b152"
+}
