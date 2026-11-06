@@ -500,8 +500,13 @@ function isPwaAsset(p) {
     || p.startsWith('/shell/');
 }
 
+function isInstallDownload(p) {
+  return p === '/downloads/daily-him.apk' || p === '/downloads/android.json'
+    || p === '/.well-known/assetlinks.json';
+}
+
 function isPublicPath(p) {
-  return PUBLIC_PATHS.has(p)
+  return isInstallDownload(p) || PUBLIC_PATHS.has(p)
     || p.startsWith('/icons/')
     || p.startsWith('/brand/')
     || isPwaAsset(p)
@@ -515,7 +520,8 @@ function isPublicPath(p) {
 
 function isGatePublicPath(p) {
   return (
-    p === '/login'
+    isInstallDownload(p)
+    || p === '/login'
     || p === '/login.html'
     || p === '/api/site-login'
     || p === '/api/auth-config'
@@ -1606,6 +1612,23 @@ function createApp() {
   });
 
   app.use('/audio', express.static(AUDIO_DIR, { fallthrough: true, maxAge: '7d' }));
+  app.get('/.well-known/assetlinks.json', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(PUBLIC_DIR, '.well-known', 'assetlinks.json'));
+  });
+  app.use('/downloads', express.static(path.join(PUBLIC_DIR, 'downloads'), {
+    fallthrough: true,
+    setHeaders(res, filePath) {
+      res.setHeader('Cache-Control', 'no-store');
+      if (filePath.endsWith('.apk')) {
+        res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+        res.setHeader('Content-Disposition', 'attachment; filename="daily-him.apk"');
+      }
+    },
+  }));
+  app.use('/downloads', (req, res) => {
+    res.status(404).json({ error: 'Download unavailable' });
+  });
   app.use(express.static(PUBLIC_DIR));
 
   app.use((err, req, res, next) => {

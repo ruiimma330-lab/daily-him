@@ -7,3 +7,13 @@ voice_samples/*.mp3
 screenshots/*.mp3
 
 data/
+
+# Android build output and private signing material (never commit).
+android/.gradle/
+android/**/build/
+android/local.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
