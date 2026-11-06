@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "female",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/minju/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/minju/portrait.jpg",
   "welcomeKo": "오늘은 조용한 얘기도 좋아.",
   "welcomeZh": "今天安静地聊聊也很好。",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",

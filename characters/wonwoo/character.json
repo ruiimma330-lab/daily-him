@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/wonwoo/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/wonwoo/portrait.jpg",
   "welcomeKo": "오늘은 한 페이지씩 가자.",
   "welcomeZh": "今天一页一页慢慢来。",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",

@@ -23,8 +23,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/riku/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/riku/portrait.jpg",
   "welcomeKo": "왔네. 좋아, 다음 박자 가자.",
   "welcomeZh": "来啦。好，接着下一拍。",
   "askNameKo": "어떤 이름으로 불러 주면 좋을까?",

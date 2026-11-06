@@ -23,8 +23,8 @@
     "flirty"
   ],
   "placeholderVoice": "female",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/karina/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/karina/portrait.jpg",
   "welcomeKo": "왔네. 이 선택지는 좀 끌리는데?",
   "welcomeZh": "来啦。这个选项有点吸引我呢。",
   "askNameKo": "어떤 이름으로 불러 주면 좋을까?",

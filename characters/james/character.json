@@ -23,8 +23,8 @@
     "close"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/james/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/james/portrait.jpg",
   "welcomeKo": "방향을 바꿔 볼까?",
   "welcomeZh": "来聊聊动作与方向游戏吧。",
   "askNameKo": "뭐라고 불러 주면 좋을까?",

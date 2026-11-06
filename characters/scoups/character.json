@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/scoups/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/scoups/portrait.jpg",
   "welcomeKo": "오늘 몫은 여기까지 해도 괜찮아.",
   "welcomeZh": "今天做到这里也可以。",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",

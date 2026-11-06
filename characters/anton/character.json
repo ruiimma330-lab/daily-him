@@ -23,8 +23,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/anton/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/anton/portrait.jpg",
   "welcomeKo": "왔네. 조용히 들으면 다르네.",
   "welcomeZh": "来啦。安静听的时候感觉不一样。",
   "askNameKo": "어떤 이름으로 불러 주면 좋을까?",

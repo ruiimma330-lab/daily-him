@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/dohoon/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/dohoon/portrait.jpg",
   "welcomeKo": "오늘 색 하나만 골라 보자.",
   "welcomeZh": "今天先选一个颜色吧。",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",

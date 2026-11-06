@@ -13,7 +13,6 @@ const ids = ['wonwoo','mingyu','jeonghan','scoups','shinyu','dohoon','hanjin','t
 
 test('15 complete packs are visible and deferred, with adult policy and valid placeholder locks', () => {
   assert.deepEqual(report.map(r => r.id), ids);
-  const colors = new Set();
   for (const id of ids) {
     const dir = path.join(chars.CHAR_DIR, id);
     assert.equal(packs.inspect(id).ok, true, id);
@@ -31,14 +30,12 @@ test('15 complete packs are visible and deferred, with adult policy and valid pl
     assert.match(fs.readFileSync(path.join(dir,'persona.md'),'utf8'), /### flirty/);
     assert.match(fs.readFileSync(path.join(dir,'facts.md'),'utf8'), /待人工核验/);
     assert.match(fs.readFileSync(path.join(dir,'moments.json'),'utf8'), /虚构日常/);
-    for (const asset of ['avatar.svg','portrait.svg']) {
-      const art = fs.readFileSync(path.join(dir,asset),'utf8');
-      assert.ok(art.includes(meta.nameZh[0]));
-      assert.doesNotMatch(art, /<image|https?:\/\/(?!www.w3.org)/);
-      if (asset === 'avatar.svg') {
-        const color = art.match(/fill="(#[a-f0-9]{6})"/)[1];
-        assert.ok(!colors.has(color), id); colors.add(color);
-      }
+    assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
+    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg`);
+    for (const asset of ['avatar.jpg','portrait.jpg']) {
+      const file = path.join(dir, asset);
+      assert.ok(fs.existsSync(file), `${id}/${asset}`);
+      assert.deepEqual(fs.readFileSync(file).subarray(0, 3), Buffer.from([0xff, 0xd8, 0xff]), `${id}/${asset}`);
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);

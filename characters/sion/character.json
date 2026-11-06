@@ -23,8 +23,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/sion/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/sion/portrait.jpg",
   "welcomeKo": "왔네. 하나씩 해 보자.",
   "welcomeZh": "来啦。一件一件来吧。",
   "askNameKo": "어떤 이름으로 불러 주면 좋을까?",

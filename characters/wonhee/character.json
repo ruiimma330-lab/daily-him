@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "female",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/wonhee/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/wonhee/portrait.jpg",
   "welcomeKo": "오늘 신기했던 거 하나만 골라 보자.",
   "welcomeZh": "选一个今天觉得新奇的事吧。",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",

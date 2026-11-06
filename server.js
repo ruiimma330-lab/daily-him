@@ -1294,10 +1294,15 @@ function createApp() {
     return res.sendFile(file);
   });
 
-  app.get('/characters/:id/portrait.svg', requireUser, (req, res) => {
+  app.get(['/characters/:id/portrait.svg', '/characters/:id/portrait.jpg'], requireUser, (req, res) => {
     const id = characters.resolveId(req.params.id);
     if (!id) return res.status(404).end();
-    return res.sendFile(path.join(characters.CHAR_DIR, id, 'portrait.svg'));
+    const meta = characters.loadMeta(id);
+    const name = path.basename(String(meta.portrait || 'portrait.svg'));
+    if (!name || name === '.' || name === '..') return res.status(404).end();
+    const file = path.join(characters.CHAR_DIR, id, name);
+    if (!fs.existsSync(file)) return res.status(404).end();
+    return res.sendFile(file);
   });
 
   app.get('/api/health', (req, res) => {

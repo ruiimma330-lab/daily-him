@@ -13,7 +13,6 @@ const ids = ['chaeunwoo','gdragon','taemin','juyeon','anxin','xinlong','sangwon'
 
 test('batch6 packs are visible, complete and deferred with reproducible placeholder voices', () => {
   assert.deepEqual(report.map(r => r.id), ids);
-  const colors = new Set();
   const visible = chars.list();
   for (const id of ids) {
     const dir = path.join(chars.CHAR_DIR, id);
@@ -25,14 +24,12 @@ test('batch6 packs are visible, complete and deferred with reproducible placehol
     assert.ok(info, id);
     assert.equal(info.available, false);
     assert.equal(info.availabilityLabel, '暂未开放');
-    for (const asset of ['avatar.svg','portrait.svg']) {
-      const svg = fs.readFileSync(path.join(dir,asset),'utf8');
-      assert.ok(svg.includes(meta.nameZh[0]));
-      assert.doesNotMatch(svg, /<image|https?:\/\/(?!www.w3.org)/);
-      if (asset === 'avatar.svg') {
-        const color = svg.match(/fill="(#[a-f0-9]{6})"/)[1];
-        assert.ok(!colors.has(color), id); colors.add(color);
-      }
+    assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
+    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg`);
+    for (const asset of ['avatar.jpg','portrait.jpg']) {
+      const file = path.join(dir, asset);
+      assert.ok(fs.existsSync(file), `${id}/${asset}`);
+      assert.deepEqual(fs.readFileSync(file).subarray(0, 3), Buffer.from([0xff, 0xd8, 0xff]), `${id}/${asset}`);
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);

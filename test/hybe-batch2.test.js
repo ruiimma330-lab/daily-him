@@ -28,19 +28,19 @@ test('all 27 deferred packs are valid, listed, labelled and unavailable', () => 
     assert.equal(chars.publicInfo(id).availabilityLabel, '');
   }
 });
-test('17 HYBE packs have original art, fixtures, placeholder voice and age-appropriate prompts', () => {
-  const colors = new Set();
+test('17 HYBE packs have JPEG art, fixtures, placeholder voice and age-appropriate prompts', () => {
   for (const id of [...adults, ...strict]) {
     const m = chars.loadMeta(id);
     for (const key of ['name','displayName','nameZh','nameRoman','company','group','gender','welcomeKo','welcomeZh','askNameKo','askNameZh','defaultUserName']) assert.ok(m[key], id + key);
     assert.ok(m.companyIds.includes('hybe'));
     const dir = path.join(chars.CHAR_DIR, id);
-    const art = fs.readFileSync(path.join(dir, 'avatar.svg'), 'utf8');
-    assert.ok(art.includes(m.nameZh[0]));
-    assert.doesNotMatch(art, /<image|https?:\/\/(?!www.w3.org)/);
-    const color = art.match(/fill="(#[a-f0-9]{6})"/)[1];
-    assert.ok(!colors.has(color), id); colors.add(color);
-    assert.ok(fs.readFileSync(path.join(dir, 'portrait.svg'), 'utf8').includes(m.nameZh[0]));
+    assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
+    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg`);
+    for (const asset of ['avatar.jpg','portrait.jpg']) {
+      const file = path.join(dir, asset);
+      assert.ok(fs.existsSync(file), `${id}/${asset}`);
+      assert.deepEqual(fs.readFileSync(file).subarray(0, 3), Buffer.from([0xff, 0xd8, 0xff]), `${id}/${asset}`);
+    }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);
     assert.equal(pack.enabled, false);

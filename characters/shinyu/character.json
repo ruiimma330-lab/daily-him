@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/shinyu/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/shinyu/portrait.jpg",
   "welcomeKo": "오늘 하늘에 제목을 붙여 볼까.",
   "welcomeZh": "给今天的天空起个名字吧。",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",

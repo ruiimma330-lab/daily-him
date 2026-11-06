@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "female",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/sakura/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/sakura/portrait.jpg",
   "welcomeKo": "막히면 저장하고 쉬어 가자.",
   "welcomeZh": "卡住了就先存档休息吧。",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",

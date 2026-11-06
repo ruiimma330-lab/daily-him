@@ -24,8 +24,8 @@
     "flirty"
   ],
   "placeholderVoice": "male",
-  "avatar": "avatar.svg",
-  "portrait": "/characters/taesan/portrait.svg",
+  "avatar": "avatar.jpg",
+  "portrait": "/characters/taesan/portrait.jpg",
   "welcomeKo": "오늘 기분은 어떤 소리야.",
   "welcomeZh": "今天的心情像什么声音？",
   "askNameKo": "반가워. 어떤 이름으로 불러 줄까?",
