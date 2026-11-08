@@ -11,7 +11,7 @@ const age = require('../lib/age-policy');
 const report = require('../batch6-age-report.json');
 const ids = ['chaeunwoo','gdragon','taemin','juyeon','anxin','xinlong','sangwon','ricky','zhanghao','gyuvin','hanyujin'];
 
-test('batch6 packs are visible, complete and deferred with reproducible placeholder voices', () => {
+test('batch6 packs remain complete and deferred; discovery follows the approved roster', () => {
   assert.deepEqual(report.map(r => r.id), ids);
   const visible = chars.list();
   for (const id of ids) {
@@ -20,7 +20,8 @@ test('batch6 packs are visible, complete and deferred with reproducible placehol
     const meta = chars.loadMeta(id);
     for (const key of ['name','displayName','nameZh','nameRoman','company','group','gender','welcomeKo','welcomeZh','askNameKo','askNameZh','defaultUserName']) assert.ok(meta[key], `${id}:${key}`);
     assert.ok(meta.companyIds.length);
-    const info = visible.find(c => c.id === id);
+    assert.equal(visible.some(c => c.id === id), chars.isPublic(id), id);
+    const info = chars.publicInfo(id);
     assert.ok(info, id);
     assert.equal(info.available, false);
     assert.equal(info.availabilityLabel, '暂未开放');

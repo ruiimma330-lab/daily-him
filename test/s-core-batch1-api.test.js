@@ -56,14 +56,15 @@ test('HTTP denies tier escalation, serves SVGs and rejects unavailable character
   assert.equal(scenes.status, 404);
 });
 
-test('picker lists every deferred character and chat/TTS reject them while Baekhyun passes availability', async () => {
+test('picker lists retained deferred characters and chat/TTS reject them while Baekhyun passes availability', async () => {
   const batch2 = ['sunghoon','niki','sunoo','jungwon','jimin','jungkook','taehyung','yeonjun','soobin','beomgyu','taehyun','hueningkai','martin','james','juhoon','seonghyeon','keonho'];
   const listing = await fetch(base + '/api/characters', { headers: { Cookie: cookie } });
   assert.equal(listing.status, 200);
   const data = await listing.json();
   for (const id of [...ids, ...batch2]) {
     const info = data.characters.find(c => c.id === id);
-    assert.ok(info, id);
+    assert.equal(Boolean(info), chars.isPublic(id), id);
+    if (!info) continue;
     assert.equal(info.available, false);
     assert.equal(info.availabilityLabel, '暂未开放');
     for (const route of ['/api/chat', '/api/tts']) {
@@ -77,4 +78,25 @@ test('picker lists every deferred character and chat/TTS reject them while Baekh
   const r = await fetch(base + '/api/chat', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: 'baekhyun', messages: [] }) });
   assert.equal(r.status, 400);
   assert.notEqual((await r.json()).error, 'character unavailable');
+});
+
+ test('discovery excludes archived packs; account history remains reachable and isolated', async () => {
+  const expected = require('../config/public-roster.json');
+  const get = (route, auth = cookie) => fetch(base + route, { headers: { Cookie: auth } });
+  const listing = await (await get('/api/characters')).json();
+  assert.deepEqual(listing.characters.map(ch => ch.id).sort(), [...expected].sort());
+  const me = await (await get('/api/me')).json();
+  const messages = [{ role: 'user', text: '历史消息', time: Date.now() }];
+  store.putHistory(me.user.id, 'anton', messages);
+  const saved = store.getHistory(me.user.id, 'anton');
+  const histories = await (await get('/api/conversations')).json();
+  assert.deepEqual(histories.conversations.map(ch => ch.id), ['anton']);
+  const history = await get('/api/history?characterId=anton');
+  assert.equal(history.status, 200);
+  assert.deepEqual((await history.json()).messages, saved);
+  assert.deepEqual(store.getHistory(me.user.id, 'anton'), saved);
+  const registration = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'rosterother', password: 'password123', age14: true }) });
+  const other = registration.headers.get('set-cookie').match(/sid=[^;]+/)[0];
+  assert.deepEqual((await (await get('/api/conversations', other)).json()).conversations, []);
+  assert.equal((await get('/api/history?characterId=anton', other)).status, 404);
 });

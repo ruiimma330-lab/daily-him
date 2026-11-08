@@ -903,7 +903,10 @@ function createApp() {
     });
   });
 
-  app.get('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
+  app.get('/api/history', requireUser, requireCharacter, (req, res, next) => {
+    if (!characters.isPublic(req.characterId) && store.getHistory(req.userId, req.characterId).length) return next();
+    return requireAvailable(req, res, next);
+  }, (req, res) => {
     const messages = store.getHistory(req.userId, req.characterId);
     res.json({ messages });
   });
@@ -1279,6 +1282,12 @@ function createApp() {
   app.get('/api/scenes', requireUser, requireCharacter, requireAvailable, (req, res) => {
     const scenes = characters.loadScenes(req.characterId).map(({ id, label, hintZh, messageKo }) => ({ id, label, hintZh, messageKo }));
     res.json({ ok: true, scenes });
+  });
+
+  // Account-scoped historical entries never enter the public discovery roster.
+  app.get('/api/conversations', requireUser, (req, res) => {
+    const conversations = characters.listAll().filter((ch) => store.getHistory(req.userId, ch.id).length);
+    res.json({ ok: true, conversations });
   });
 
   app.get('/api/characters', requireUser, (req, res) => {
