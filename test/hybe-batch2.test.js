@@ -12,12 +12,13 @@ const adults = ['sunghoon','niki','sunoo','jungwon','jimin','jungkook','taehyung
 const strict = ['martin','james','juhoon','seonghyeon','keonho'];
 const batch1 = ['sehun','the8','jun','renjun','ningning','yuqi','shuhua','tzuyu','jacksonwang','layzhang'];
 const deferred = [...batch1, ...adults, ...strict];
-test('all 27 deferred packs are valid, listed, labelled and unavailable', () => {
+test('all 27 deferred packs remain valid and unavailable; only approved packs are listed', () => {
   const list = chars.list();
   for (const id of deferred) {
     assert.equal(packs.inspect(id).ok, true, id + ': ' + packs.inspect(id).error);
     assert.equal(chars.isAvailable(id), false, id);
-    const info = list.find(c => c.id === id);
+    assert.equal(list.some(c => c.id === id), chars.isPublic(id), id);
+    const info = chars.publicInfo(id);
     assert.ok(info, id);
     assert.equal(info.available, false);
     assert.equal(info.availabilityLabel, '暂未开放');

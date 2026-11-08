@@ -1441,15 +1441,17 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   async function loadAlias() {
     try {
-      const [profRes, charsRes, meRes] = await Promise.all([
+      const [profRes, charsRes, meRes, historyRes] = await Promise.all([
         fetch(withChar('/api/profile')),
         fetch('/api/characters'),
         fetch('/api/me'),
+        fetch('/api/conversations'),
       ]);
       let profile = null;
       if (charsRes.ok) {
         const chars = await charsRes.json();
-        const ch = (chars.characters || []).find((item) => item.id === CHARACTER_ID);
+        const history = historyRes.ok ? await historyRes.json() : {};
+        const ch = [...(chars.characters || []), ...(history.conversations || [])].find((item) => item.id === CHARACTER_ID);
         if (ch) {
           characterVoiceUnavailable = !ch.voiceAvailable;
           if (characterVoiceUnavailable) { voiceNote = '语音暂不可用'; render(); }

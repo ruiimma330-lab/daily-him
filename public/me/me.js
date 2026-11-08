@@ -526,7 +526,11 @@
     const callLabel = document.createElement('span');
     callLabel.textContent = '他怎么叫你';
     callField.append(callLabel, call);
-    card.append(head, field, callField, stats, memory, clear);
+    const chat = document.createElement('a');
+    chat.className = 'me-link';
+    chat.textContent = '进入聊天';
+    chat.href = '/?c=' + encodeURIComponent(ch.id);
+    card.append(head, chat, field, callField, stats, memory, clear);
     return card;
   }
 
@@ -773,12 +777,13 @@
 
   async function refresh() {
     try {
-      const [me, settings, chars, about, starlight] = await Promise.all([
+      const [me, settings, chars, about, starlight, history] = await Promise.all([
         api('/api/me'),
         api('/api/me/settings'),
         api('/api/characters'),
         api('/api/about'),
         api('/api/starlight').catch(() => null),
+        api('/api/conversations'),
       ]);
       state.me = me;
       state.starlight = starlight;
@@ -787,7 +792,10 @@
         window.AccountCache.adopt(localStorage, me.user.id, characterId);
       }
       writeLocal(settings.settings || {});
-      state.characters = (chars.characters || []).filter((ch) => ch.available !== false);
+      state.characters = [...new Map([
+        ...(chars.characters || []).filter((ch) => ch.available !== false),
+        ...(history.conversations || []),
+      ].map((ch) => [ch.id, ch])).values()];
       state.about = about || state.about;
       const details = await Promise.all(state.characters.map(async (ch) => {
         const [prof, rel] = await Promise.all([

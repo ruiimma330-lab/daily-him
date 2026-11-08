@@ -1,5 +1,5 @@
 /* Daily Him shell. Bump VERSION when the precache list changes. */
-const VERSION = 'dh-pwa-3';
+const VERSION = 'dh-pwa-4';
 const SHELL = `dh-shell-${VERSION}`;
 const MEDIA = `dh-media-${VERSION}`;
 
