@@ -1,18 +1,120 @@
 {
-  "status": "模型常识，待人工核验",
+  "status": "已联网核对官方团体、成员、出道作品、粉丝名及本人公开采访；中文名和本名有二手辅证，官方汉字未确认；四项直播兴趣仍 unverified。检索日期：2026-11-11。部分 Weverse 正文动态加载，仅使用可读取标题、检索摘要及独立官方页交叉核验。",
   "sources": [
     {
-      "id": "model-general",
-      "kind": "model",
-      "label": "模型常识，待人工核验",
-      "verified": false,
+      "id": "bighit-profile",
+      "kind": "page",
+      "url": "https://ibighit.com/en/cortis/profile/",
+      "label": "BIGHIT MUSIC：CORTIS 官方介绍",
+      "verified": true,
       "supports": [
-        "facts",
-        "birthDate",
-        "companyIds"
-      ]
+        "艺名拼写",
+        "团体",
+        "公司",
+        "成员名单"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "jp-profile",
+      "kind": "page",
+      "url": "https://cortis-official.jp/profile",
+      "label": "CORTIS 日本官网 PROFILE",
+      "verified": true,
+      "supports": [
+        "成员名单",
+        "共同创作定位",
+        "不拘固定分工",
+        "BIGHIT MUSIC / HYBE 写法"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "debut-notice",
+      "kind": "page",
+      "url": "https://weverse.io/cortis/notice/29183",
+      "label": "BIGHIT MUSIC：首支主打单曲与首张 EP 发行公告",
+      "verified": true,
+      "supports": [
+        "2025-08-18 What You Want",
+        "2025-09-08 首张 EP"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "anniversary-post",
+      "kind": "page",
+      "url": "https://weverse.io/cortis/artist/4-239241700",
+      "label": "KEONHO：2026-08-18 一周年公开帖",
+      "verified": true,
+      "supports": [
+        "出道日为8月18日"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "fandom-notice",
+      "kind": "page",
+      "url": "https://weverse.io/cortis/notice/31881?hl=ko",
+      "label": "官方粉丝名公告：COER（코어）",
+      "verified": true,
+      "supports": [
+        "官方粉丝名"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "debut-interview",
+      "kind": "page",
+      "url": "https://magazine.weverse.io/article/view/1569?lang=en",
+      "label": "Weverse Magazine：KEONHO 出道采访",
+      "verified": true,
+      "supports": [
+        "游泳经历",
+        "影像企划和分镜",
+        "随性与古着穿搭"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "comeback-interview",
+      "kind": "page",
+      "url": "https://magazine.weverse.io/article/view/1839?lang=en",
+      "label": "Weverse Magazine：KEONHO GREENGREEN 采访",
+      "verified": true,
+      "supports": [
+        "游泳体验",
+        "穿搭",
+        "采访当时的 Oasis 兴趣"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "vogue-tw",
+      "kind": "page",
+      "url": "https://www.vogue.com.tw/article/all-about-boy-band-cortis",
+      "label": "Vogue Taiwan：CORTIS 五位成员介绍（二手媒体）",
+      "verified": true,
+      "supports": [
+        "中文名安乾鎬",
+        "出生日期资料",
+        "忙内称呼"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
+    },
+    {
+      "id": "zh-wiki",
+      "kind": "page",
+      "url": "https://zh.wikipedia.org/wiki/CORTIS",
+      "label": "中文维基百科 CORTIS（可编辑百科辅证）",
+      "verified": true,
+      "supports": [
+        "韩文全名 안건호",
+        "汉字名辅证"
+      ],
+      "verificationScope": "已核对页面或检索摘要；证据等级和限制见 facts.md"
     }
   ],
-  "artwork": "原创姓名首字与独立配色SVG，无真人照片",
-  "persona": "原创虚构互动，非本人语录或经历"
+  "persona": "公开形象启发的原创虚构互动设定。语气基础为用户直播观察，未经独立录音核验；所有可复用样句均原创，非本人语录。",
+  "artwork": "沿用原包图片路径；本轮不生成、不复制图片。"
 }

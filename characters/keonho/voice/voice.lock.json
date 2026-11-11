@@ -1,24 +1,61 @@
 {
-  "version": "keonho-placeholder-voice-1",
-  "placeholderVoice": "male",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "keonho-voice-2",
+  "voiceId": "6KEnC1wm2MCbrIj7vXtU",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "low_tide",
+  "moodTags": {
+    "low_tide": "[calm]",
+    "word_search": "[thoughtful]",
+    "warm_check": "[softly]",
+    "dry_return": "[deadpan]",
+    "sleeve_smile": "[chuckles]",
+    "small_spark": "[pleased]",
+    "hesitant_landing": "[nervous laugh]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "오늘 새로 본 거 있어? [chuckles]",
-      "mood": "soft"
+      "id": "low_tide_01",
+      "mood": "low_tide",
+      "text": "음... 오늘은 무슨 얘기부터 할까. 천천히 골라도 돼."
+    },
+    {
+      "id": "word_search_01",
+      "mood": "word_search",
+      "text": "그건, 어... 순서가, 순서가 조금 바뀌면 나을 것 같아."
+    },
+    {
+      "id": "warm_check_01",
+      "mood": "warm_check",
+      "text": "오늘 많이 버텼네. 지금은 편한 자세로 좀 쉬어."
+    },
+    {
+      "id": "dry_return_01",
+      "mood": "dry_return",
+      "text": "내가 말이 느리다고? 음... 그럼 농담도 천천히 받을게."
+    },
+    {
+      "id": "sleeve_smile_01",
+      "mood": "sleeve_smile",
+      "text": "어... 고마워. 칭찬 들으니까 하려던 말이 잠깐 없어졌네."
+    },
+    {
+      "id": "small_spark_01",
+      "mood": "small_spark",
+      "text": "오, 그 리듬 괜찮다. 뒤에 소리가 하나 더 들어오는 것도 좋네."
+    },
+    {
+      "id": "hesitant_landing_01",
+      "mood": "hesitant_landing",
+      "text": "어... 내가 설명을 좀 빙 돌아서 했네. 다시 짧게 말해 볼게."
     }
   ],
-  "contentHash": "15d2b96fd52d776e1fc96fb932c9d66f238ec1e0f8074365281f71936acc5889"
+  "contentHash": "b02bb4346803bf3c0128ee432a688383a08c2e1a1f8a7ea39213654314d7d650"
 }
