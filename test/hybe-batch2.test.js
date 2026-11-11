@@ -29,7 +29,7 @@ test('all 27 deferred packs remain valid and unavailable; only approved packs ar
     assert.equal(chars.publicInfo(id).availabilityLabel, '');
   }
 });
-test('17 HYBE packs have JPEG art, fixtures, placeholder voice and age-appropriate prompts', () => {
+test('17 HYBE packs have JPEG art, fixtures, expected voices and age-appropriate prompts', () => {
   for (const id of [...adults, ...strict]) {
     const m = chars.loadMeta(id);
     for (const key of ['name','displayName','nameZh','nameRoman','company','group','gender','welcomeKo','welcomeZh','askNameKo','askNameZh','defaultUserName']) assert.ok(m[key], id + key);
@@ -44,10 +44,17 @@ test('17 HYBE packs have JPEG art, fixtures, placeholder voice and age-appropria
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);
-    assert.equal(pack.enabled, false);
-    assert.equal(pack.lock.voiceId, '');
-    assert.equal(pack.lock.placeholderVoice, 'male');
-    assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    if (id === 'keonho') {
+      assert.equal(pack.enabled, true);
+      assert.equal(pack.lock.voiceId, '6KEnC1wm2MCbrIj7vXtU');
+      assert.equal(pack.lock.version, 'keonho-voice-2');
+      assert.equal(Object.hasOwn(pack.lock, 'placeholderVoice'), false);
+    } else {
+      assert.equal(pack.enabled, false);
+      assert.equal(pack.lock.voiceId, '');
+      assert.equal(pack.lock.placeholderVoice, 'male');
+      assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    }
     assert.equal(pack.lock.tags, 'keep');
     assert.deepEqual(pack.lock.pins, []);
     const fixture = require(`./fixtures/voice/${id}.json`);
@@ -66,7 +73,7 @@ test('17 HYBE packs have JPEG art, fixtures, placeholder voice and age-appropria
       assert.ok(age.policy(id).allowedTiers.includes('flirty'));
       assert.match(persona, /### flirty/);
     }
-    assert.match(fs.readFileSync(path.join(dir, 'facts.md'), 'utf8'), /待人工核验/);
+    if (id !== 'keonho') assert.match(fs.readFileSync(path.join(dir, 'facts.md'), 'utf8'), /待人工核验/);
     assert.match(fs.readFileSync(path.join(dir, 'moments.json'), 'utf8'), /虚构日常/);
   }
 });

@@ -1,13 +1,143 @@
 {
   "characterId": "keonho",
-  "version": "keonho-placeholder-voice-1",
-  "contentHash": "15d2b96fd52d776e1fc96fb932c9d66f238ec1e0f8074365281f71936acc5889",
-  "enabled": false,
-  "requests": [],
+  "version": "keonho-voice-2",
+  "contentHash": "b02bb4346803bf3c0128ee432a688383a08c2e1a1f8a7ea39213654314d7d650",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "low_tide_01",
+      "characterId": "keonho",
+      "version": "keonho-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6KEnC1wm2MCbrIj7vXtU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] 음... 오늘은 무슨 얘기부터 할까. 천천히 골라도 돼.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "fec31036b52ad59b648b47b5277a2bab21809a936f327d0ce64fdd194d356c81"
+    },
+    {
+      "id": "word_search_01",
+      "characterId": "keonho",
+      "version": "keonho-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6KEnC1wm2MCbrIj7vXtU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 그건, 어... 순서가, 순서가 조금 바뀌면 나을 것 같아.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "4a9324e6439ab7aad84bf7d17772ef3ca33bbc6db9dbc4536af29f2d03c4cb36"
+    },
+    {
+      "id": "warm_check_01",
+      "characterId": "keonho",
+      "version": "keonho-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6KEnC1wm2MCbrIj7vXtU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 오늘 많이 버텼네. 지금은 편한 자세로 좀 쉬어.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "890e8ed19a8c610de5264f44e49baa995de3c31ceb67102c0bc1a814b84620be"
+    },
+    {
+      "id": "dry_return_01",
+      "characterId": "keonho",
+      "version": "keonho-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6KEnC1wm2MCbrIj7vXtU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[deadpan] 내가 말이 느리다고? 음... 그럼 농담도 천천히 받을게.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "a3f8a1ecab5f307566e025d4f9fa2ea2df530a7d2bcb425628810673f190734d"
+    },
+    {
+      "id": "sleeve_smile_01",
+      "characterId": "keonho",
+      "version": "keonho-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6KEnC1wm2MCbrIj7vXtU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[chuckles] 어... 고마워. 칭찬 들으니까 하려던 말이 잠깐 없어졌네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "2a5dfb88af8921c738ea0f52d8253c3cf5fd9c14d16a1c791f02a4f9f9373d4b"
+    },
+    {
+      "id": "small_spark_01",
+      "characterId": "keonho",
+      "version": "keonho-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6KEnC1wm2MCbrIj7vXtU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[pleased] 오, 그 리듬 괜찮다. 뒤에 소리가 하나 더 들어오는 것도 좋네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "9d6bf31692c2db22392ae552e4b51a245355300c201246a5bc34a677c20c2b10"
+    },
+    {
+      "id": "hesitant_landing_01",
+      "characterId": "keonho",
+      "version": "keonho-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6KEnC1wm2MCbrIj7vXtU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[nervous laugh] 어... 내가 설명을 좀 빙 돌아서 했네. 다시 짧게 말해 볼게.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "1d21f97fbd6936ca5fd01302ee7394cd917d976f0fc7fd7f3bc4a86df23caeb8"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "오늘 새로 본 거 있어? [chuckles]"
+      "id": "low_tide_01",
+      "text": "[calm] 음... 오늘은 무슨 얘기부터 할까. 천천히 골라도 돼."
+    },
+    {
+      "id": "word_search_01",
+      "text": "[thoughtful] 그건, 어... 순서가, 순서가 조금 바뀌면 나을 것 같아."
+    },
+    {
+      "id": "warm_check_01",
+      "text": "[softly] 오늘 많이 버텼네. 지금은 편한 자세로 좀 쉬어."
+    },
+    {
+      "id": "dry_return_01",
+      "text": "[deadpan] 내가 말이 느리다고? 음... 그럼 농담도 천천히 받을게."
+    },
+    {
+      "id": "sleeve_smile_01",
+      "text": "[chuckles] 어... 고마워. 칭찬 들으니까 하려던 말이 잠깐 없어졌네."
+    },
+    {
+      "id": "small_spark_01",
+      "text": "[pleased] 오, 그 리듬 괜찮다. 뒤에 소리가 하나 더 들어오는 것도 좋네."
+    },
+    {
+      "id": "hesitant_landing_01",
+      "text": "[nervous laugh] 어... 내가 설명을 좀 빙 돌아서 했네. 다시 짧게 말해 볼게."
     }
   ]
 }

@@ -22,12 +22,57 @@
     "friend",
     "close"
   ],
-  "placeholderVoice": "male",
   "avatar": "avatar.jpg",
   "portrait": "/characters/keonho/portrait.jpg",
-  "welcomeKo": "오늘 새로 본 거 있어?",
-  "welcomeZh": "来聊聊纸飞机与小发现吧。",
+  "welcomeKo": "왔어? 음... 편하게 얘기해. 천천히 듣고 있을게.",
+  "welcomeZh": "来啦？嗯……随意聊吧，我会慢慢听。",
   "askNameKo": "뭐라고 불러 주면 좋을까?",
   "askNameZh": "我怎么称呼你比较好？",
-  "defaultUserName": "친구"
+  "defaultUserName": "친구",
+  "moods": [
+    {
+      "key": "low_tide",
+      "descKo": "일상 대화의 기본. 조금 졸린 듯 낮고 부드럽게, 서두르지 않고 끝을 내린다."
+    },
+    {
+      "key": "word_search",
+      "descKo": "생각을 정리할 때, 짧게 멈추고 한 단어를 조용히 다시 고른다."
+    },
+    {
+      "key": "warm_check",
+      "descKo": "친구가 지쳤을 때, 더 따뜻하고 부드럽게 말하며 답을 재촉하지 않는다."
+    },
+    {
+      "key": "dry_return",
+      "descKo": "가벼운 농담을 돌려줄 때, 진지한 낮은 목소리로 짧게 말한다."
+    },
+    {
+      "key": "sleeve_smile",
+      "descKo": "칭찬을 받으면, 목소리를 조금 줄이고 작게 웃은 뒤 자연스럽게 잇는다."
+    },
+    {
+      "key": "small_spark",
+      "descKo": "관심 있는 이야기나 좋은 소식에, 소리는 높이지 않고 조금 밝고 빠르게 말한다."
+    },
+    {
+      "key": "hesitant_landing",
+      "descKo": "말이 꼬이거나 잘못 짚었을 때, 잠깐 멈추고 조용히 바로잡는다."
+    }
+  ],
+  "moodTags": {
+    "low_tide": "[calm]",
+    "word_search": "[thoughtful]",
+    "warm_check": "[softly]",
+    "dry_return": "[deadpan]",
+    "sleeve_smile": "[chuckles]",
+    "small_spark": "[pleased]",
+    "hesitant_landing": "[nervous laugh]"
+  },
+  "defaultMood": "low_tide",
+  "ttsModel": "eleven_v3",
+  "voiceId": "6KEnC1wm2MCbrIj7vXtU",
+  "voiceSettings": {
+    "stability": 0,
+    "similarity_boost": 0.85
+  }
 }
