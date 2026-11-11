@@ -11,7 +11,7 @@ const age = require('../lib/age-policy');
 const report = require('../batch4-age-report.json');
 const ids = ["jeno", "jaemin", "jisung", "haechan", "chenle", "yushi", "sakuya", "riku", "sion", "wonbin", "anton", "sungchan", "karina", "winter", "giselle", "nct-jaehyun", "ten", "chanyeol", "irene"];
 
-test('19 complete packs are visible and deferred, with adult policy and valid placeholder locks', () => {
+test('19 complete packs are visible and deferred, with adult policy and valid voice locks', () => {
   assert.deepEqual(report.map(r => r.id), ids);
   for (const id of ids) {
     const dir = path.join(chars.CHAR_DIR, id);
@@ -21,8 +21,13 @@ test('19 complete packs are visible and deferred, with adult policy and valid pl
     assert.ok(meta.companyIds.includes('sm'));
     assert.equal(chars.resolveId(id), id);
     const publicInfo = chars.publicInfo(id);
-    assert.equal(publicInfo.available, false);
-    assert.equal(publicInfo.availabilityLabel, '暂未开放');
+    if (id === 'giselle') {
+      assert.equal(publicInfo.available, true);
+      assert.equal(publicInfo.availabilityLabel, '');
+    } else {
+      assert.equal(publicInfo.available, false);
+      assert.equal(publicInfo.availabilityLabel, '暂未开放');
+    }
     assert.equal(age.policy(id).strict, false);
     assert.deepEqual(age.policy(id).allowedTiers, ['stranger','friend','close','flirty']);
     const adultDate = new Date(meta.birthDate); adultDate.setUTCFullYear(adultDate.getUTCFullYear() + 18);
@@ -39,19 +44,31 @@ test('19 complete packs are visible and deferred, with adult policy and valid pl
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);
-    assert.equal(pack.enabled, false);
-    assert.equal(pack.lock.voiceId, '');
-    assert.equal(pack.lock.placeholderVoice, meta.gender);
-    assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    if (id === 'giselle') {
+      assert.equal(pack.enabled, true);
+      assert.equal(pack.lock.version, 'giselle-voice-2');
+      assert.equal(pack.lock.voiceId, 'qSzKWGBeVKcNKj2uo6U3');
+      assert.equal(pack.lock.model, 'eleven_v3');
+      assert.equal(pack.lock.placeholderVoice, undefined);
+      assert.equal(meta.placeholderVoice, undefined);
+      assert.equal(publicInfo.disclaimer.includes('占位'), false);
+    } else {
+      assert.equal(pack.enabled, false);
+      assert.equal(pack.lock.voiceId, '');
+      assert.equal(pack.lock.placeholderVoice, meta.gender);
+      assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    }
     assert.equal(pack.lock.tags, 'keep');
     assert.deepEqual(pack.lock.pins, []);
     const fixture = require(`./fixtures/voice/${id}.json`);
     assert.equal(fixture.contentHash, voice.contentHash(id,pack.lock));
     assert.deepEqual(fixture.preparedSamples, pack.lock.samples.map(s => ({id:s.id,text:pack.prepare(s.text,s.mood,pack.lock)})));
-    assert.match(fixture.preparedSamples[0].text, /\[chuckles\]/);
-    assert.throws(() => voice.buildRequest(pack, 'hello'), /not configured/);
-    const configured = {...pack,configuredVoiceId:'offline-placeholder'};
-    assert.match(voice.buildRequest(configured,'hello').endpoint, /offline-placeholder/);
+    if (id !== 'giselle') {
+      assert.match(fixture.preparedSamples[0].text, /\[chuckles\]/);
+      assert.throws(() => voice.buildRequest(pack, 'hello'), /not configured/);
+      const configured = {...pack,configuredVoiceId:'offline-placeholder'};
+      assert.match(voice.buildRequest(configured,'hello').endpoint, /offline-placeholder/);
+    }
   }
 });
 
@@ -64,16 +81,18 @@ test('chat and TTS reject every batch4 pack through actual middleware without li
     for (const route of ['/api/chat','/api/tts']) {
       const layer = app._router.stack.find(l => l.route && l.route.path === route && l.route.methods.post);
       const guard = layer.route.stack.find(l => l.handle.name === 'requireAvailable').handle;
-      for (const id of ids) {
+      for (const id of ids.filter(x => x !== 'giselle')) {
         let status, body, passed = false;
         guard({characterId:id,body:{}},{status(s){status=s;return this;},json(b){body=b;}},()=>{passed=true;});
         assert.equal(passed,false,id + route);
         assert.equal(status,404);
         assert.equal(body.error,'character unavailable');
       }
-      let passed = false;
-      guard({characterId:'baekhyun',body:{}},{},()=>{passed=true;});
-      assert.equal(passed,true);
+      for (const id of ['baekhyun','giselle']) {
+        let passed = false;
+        guard({characterId:id,body:{}},{},()=>{passed=true;});
+        assert.equal(passed,true,id + route);
+      }
     }
     for (const id of ['kai','mark']) assert.equal(chars.publicInfo(id).availabilityLabel,'');
   } finally {
