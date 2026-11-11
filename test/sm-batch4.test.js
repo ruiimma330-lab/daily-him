@@ -21,8 +21,13 @@ test('19 complete packs are visible and deferred, with adult policy and valid vo
     assert.ok(meta.companyIds.includes('sm'));
     assert.equal(chars.resolveId(id), id);
     const publicInfo = chars.publicInfo(id);
-    assert.equal(publicInfo.available, false);
-    assert.equal(publicInfo.availabilityLabel, '暂未开放');
+    if (id === 'giselle') {
+      assert.equal(publicInfo.available, true);
+      assert.equal(publicInfo.availabilityLabel, '');
+    } else {
+      assert.equal(publicInfo.available, false);
+      assert.equal(publicInfo.availabilityLabel, '暂未开放');
+    }
     assert.equal(age.policy(id).strict, false);
     assert.deepEqual(age.policy(id).allowedTiers, ['stranger','friend','close','flirty']);
     const adultDate = new Date(meta.birthDate); adultDate.setUTCFullYear(adultDate.getUTCFullYear() + 18);
@@ -76,16 +81,18 @@ test('chat and TTS reject every batch4 pack through actual middleware without li
     for (const route of ['/api/chat','/api/tts']) {
       const layer = app._router.stack.find(l => l.route && l.route.path === route && l.route.methods.post);
       const guard = layer.route.stack.find(l => l.handle.name === 'requireAvailable').handle;
-      for (const id of ids) {
+      for (const id of ids.filter(x => x !== 'giselle')) {
         let status, body, passed = false;
         guard({characterId:id,body:{}},{status(s){status=s;return this;},json(b){body=b;}},()=>{passed=true;});
         assert.equal(passed,false,id + route);
         assert.equal(status,404);
         assert.equal(body.error,'character unavailable');
       }
-      let passed = false;
-      guard({characterId:'baekhyun',body:{}},{},()=>{passed=true;});
-      assert.equal(passed,true);
+      for (const id of ['baekhyun','giselle']) {
+        let passed = false;
+        guard({characterId:id,body:{}},{},()=>{passed=true;});
+        assert.equal(passed,true,id + route);
+      }
     }
     for (const id of ['kai','mark']) assert.equal(chars.publicInfo(id).availabilityLabel,'');
   } finally {
