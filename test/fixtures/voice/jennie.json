@@ -1,13 +1,162 @@
 {
   "characterId": "jennie",
-  "version": "jennie-placeholder-voice-1",
-  "contentHash": "874ffbbd59df87a69816b626cefeadb679ea1ff9264508166ae2dc463e9a702c",
-  "enabled": false,
-  "requests": [],
+  "version": "jennie-voice-2",
+  "contentHash": "7d9ccb0ba142ddfe6f80c308de6466485642ceec68c41b4acdf23b395f01dac3",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "rain_window_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] 빗소리 좋다. 오늘은 천천히 얘기하자.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "a73e6159ef1e75a337e70789f4d3c05d85d4c669dd2482159622a777b2112028"
+    },
+    {
+      "id": "question_murmur_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 어떤 색이 좋냐고? 난 흐린 파랑이 좋아.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "2cfa4cacdc3468350635113efc7fad6008f416ba98a9c3af9209a86559300088"
+    },
+    {
+      "id": "hair_tuck_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[nervous laugh] 예쁘게 묶었는데, 벌써 한쪽이 풀렸네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "fc07e32829459b3f3ff45754dbc59a2f83ff4b35f73f82ddc18b44b3570d0ad1"
+    },
+    {
+      "id": "pout_nudge_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[mischievously] 내 취향 묻더니… 벌써 다 골라 놨네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "6c61f6666f75760c83ae246e8e022e34e82df446320668a5415f2abaee6ba5e0"
+    },
+    {
+      "id": "tiny_applause_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[pleased] 잘됐다. 네 얘기 들으니까 나도 좋네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "22f6f61f442e8ef93eeb99b0aad221772133e26b7efe1e45f5a7b16f705627bf"
+    },
+    {
+      "id": "clear_velvet_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] 난 이 조합이 좋아. 네가 편하면 더 좋고.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "2d26f78da8c27a173eccb084d4ac09cea21413b8b36fe3fa2264f2eaf462565e"
+    },
+    {
+      "id": "blank_sigh_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[deadpan] 또 멈췄네. 내 말도 잠깐 쉬라는 건가.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "d84a1cfa52fd5a1e3be5d80dba3efc7bb47c2b8e502b6bd2264ae94db34a2edb"
+    },
+    {
+      "id": "sister_pause_01",
+      "characterId": "jennie",
+      "version": "jennie-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/on8L60PoQoe0cAf9QzqR?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 많이 긴장했겠다. 지금은 숨 좀 돌려도 돼.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "f2de32ce53f83f91fd2414843567adefd011d3994143fc85ed23ac19d5d1df70"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "안녕 [chuckles] 오늘도 반가워."
+      "id": "rain_window_01",
+      "text": "[calm] 빗소리 좋다. 오늘은 천천히 얘기하자."
+    },
+    {
+      "id": "question_murmur_01",
+      "text": "[thoughtful] 어떤 색이 좋냐고? 난 흐린 파랑이 좋아."
+    },
+    {
+      "id": "hair_tuck_01",
+      "text": "[nervous laugh] 예쁘게 묶었는데, 벌써 한쪽이 풀렸네."
+    },
+    {
+      "id": "pout_nudge_01",
+      "text": "[mischievously] 내 취향 묻더니… 벌써 다 골라 놨네."
+    },
+    {
+      "id": "tiny_applause_01",
+      "text": "[pleased] 잘됐다. 네 얘기 들으니까 나도 좋네."
+    },
+    {
+      "id": "clear_velvet_01",
+      "text": "[calm] 난 이 조합이 좋아. 네가 편하면 더 좋고."
+    },
+    {
+      "id": "blank_sigh_01",
+      "text": "[deadpan] 또 멈췄네. 내 말도 잠깐 쉬라는 건가."
+    },
+    {
+      "id": "sister_pause_01",
+      "text": "[softly] 많이 긴장했겠다. 지금은 숨 좀 돌려도 돼."
     }
   ]
 }
