@@ -8,11 +8,12 @@ const chars = require('../lib/characters');
 const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
+const { isLaunch, expectGuard } = require('./helpers/launch10');
 const report = require('../batch6-age-report.json');
-const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (open for launch)
 const ids = ['chaeunwoo','gdragon','taemin','juyeon','anxin','xinlong','sangwon','ricky','zhanghao','gyuvin','hanyujin'];
 
-test('batch6 packs remain complete and deferred; discovery follows the approved roster', () => {
+test('batch6 packs remain complete (zhanghao open for launch, the rest deferred); discovery follows the approved roster', () => {
   assert.deepEqual(report.map(r => r.id), ids);
   const visible = chars.list();
   for (const id of ids) {
@@ -24,8 +25,8 @@ test('batch6 packs remain complete and deferred; discovery follows the approved 
     assert.equal(visible.some(c => c.id === id), chars.isPublic(id), id);
     const info = chars.publicInfo(id);
     assert.ok(info, id);
-    assert.equal(info.available, false);
-    assert.equal(info.availabilityLabel, '暂未开放');
+    assert.equal(info.available, isLaunch(id), id);
+    assert.equal(info.availabilityLabel, isLaunch(id) ? '' : '暂未开放');
     assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
     assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg`);
     for (const asset of ['avatar.jpg','portrait.jpg']) {
@@ -101,18 +102,18 @@ test('real route guards reject batch6 and batch1 packs without opening a listeni
   try {
     const app = require('../server').createApp();
     const deferred = [...ids,'sehun','the8','jun','renjun','ningning','yuqi','shuhua','tzuyu','jacksonwang','layzhang'];
-    for (const routePath of ['/api/chat','/api/tts','/api/history','/api/scenes','/api/moments']) {
+    for (const routePath of ['/api/chat','/api/tts','/api/scenes','/api/moments']) {
       const route = app._router.stack.find(l => l.route && l.route.path === routePath).route;
       const guard = route.stack.find(l => l.handle.name === 'requireAvailable').handle;
-      for (const id of deferred) {
-        let status, body;
-        guard({characterId:id,body:{}},{status(s){status=s;return this;},json(b){body=b;}},()=>assert.fail(`${id} passed ${routePath}`));
-        assert.equal(status,404);
-        assert.equal(body.error,'character unavailable');
-      }
-      let passed = false;
-      guard({characterId:'baekhyun',body:{}},{},()=>{passed=true;});
-      assert.equal(passed,true);
+      for (const id of [...deferred, 'baekhyun']) expectGuard(assert, guard, id, routePath);
+    }
+    // GET /api/history is read-only: it lets an account reopen its own existing chats even when the
+    // character is closed, and otherwise falls back to requireAvailable (see group-picker.test.js).
+    const history = app._router.stack.find(l => l.route && l.route.path === '/api/history' && l.route.methods.get).route;
+    assert.ok(history.stack.some(l => l.handle.name === 'allowHistoryRead'));
+    for (const method of ['put','delete']) {
+      const write = app._router.stack.find(l => l.route && l.route.path === '/api/history' && l.route.methods[method]).route;
+      assert.ok(write.stack.some(l => l.handle.name === 'requireAvailable'), method);
     }
     for (const id of ['kai','mark']) assert.equal(chars.publicInfo(id).availabilityLabel,'');
   } finally {

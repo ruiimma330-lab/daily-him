@@ -36,7 +36,7 @@ test('every other character retains byte-identical prompts and voice hashes', ()
   }
 });
 
-test('Jennie uses eight own moods and is available with flirty enabled', () => {
+test('Jennie uses eight own moods, flirty enabled, back to 待开放 for the 10-person launch', () => {
   const meta = require('../characters/jennie/character.json');
   assert.equal(meta.moods.length, 8);
   assert.deepEqual(meta.moods.map(m => m.key), Object.keys(tags));
@@ -50,9 +50,9 @@ test('Jennie uses eight own moods and is available with flirty enabled', () => {
     for (const tag of Object.values(tags)) assert.ok(prompt.includes(tag), tag);
     assert.doesNotMatch(prompt, /\[hesitant\]/);
   }
-  assert.equal(meta.available, true);
-  assert.equal(Object.hasOwn(meta, 'availabilityLabel'), false);
-  assert.equal(chars.isAvailable('jennie'), true);
+  assert.equal(meta.available, false);
+  assert.equal(meta.availabilityLabel, '暂未开放');
+  assert.equal(chars.isAvailable('jennie'), false);
   assert.equal(chars.isPublic('jennie'), true);
   assert.equal(meta.birthDate, '1996-01-16');
   assert.equal(meta.ageVerified, true);

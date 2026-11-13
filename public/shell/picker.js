@@ -1,6 +1,5 @@
 /* Idol picker. Reads /api/characters only. Does not import the chat app. */
 (function () {
-  const companiesEl = document.getElementById('picker-companies');
   const groupsEl = document.getElementById('picker-groups');
   const pager = document.getElementById('picker-pager');
   const pagesEl = document.getElementById('picker-pages');
@@ -11,57 +10,31 @@
   const queryInput = document.getElementById('picker-query');
   const menu = document.getElementById('picker-menu');
 
-  const state = { all: [], company: '全部', group: '全部', query: '', index: 0 };
-
-  const COMPANY_LABELS = { sm: 'SM', hybe: 'HYBE', pledis: 'PLEDIS', koz: 'KOZ', sourcemusic: 'SOURCE MUSIC', beliftlab: 'BELIFT LAB', bighitmusic: 'BIGHIT MUSIC', jyp: 'JYP', yg: 'YG', starship: 'STARSHIP', edam: 'EDAM', inb100: 'INB100', cube: 'CUBE', teamwang: 'TEAM WANG', laystudio: '张艺兴工作室', fantagio: 'Fantagio', galaxy: 'Galaxy Corporation', '78records': '78 Records（团体）', wakeone: 'WAKEONE', yuehua: 'YH 乐华' };
-  const COMPANY_ORDER = ['SM', 'HYBE', 'JYP', 'YG'];
-  function unique(list) {
-    return [...new Set(list.filter(Boolean))].sort((a, b) => {
-      const ia = COMPANY_ORDER.indexOf(a);
-      const ib = COMPANY_ORDER.indexOf(b);
-      return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || String(a).localeCompare(String(b));
-    });
-  }
+  const state = { all: [], model: { groups: [], pool: [] }, group: '全部', query: '', index: 0 };
 
   function filtered() {
-    const q = state.query.trim().toLowerCase();
-    return state.all.filter((ch) => {
-      if (state.company !== '全部' && !(ch.companyIds || []).includes(state.company)) return false;
-      if (state.group !== '全部' && ch.group !== state.group) return false;
-      if (!q) return true;
-      const hay = [ch.name, ch.displayName, ch.nameZh, ch.nameRoman, ch.group, ch.company, ch.id]
-        .filter(Boolean).join('\n').toLowerCase();
-      return hay.includes(q);
-    });
+    return PickerGroups.view(state.model, state.group, state.query);
   }
 
-  function tabRow(el, label, values, current, onPick) {
+  function tabRow(el, values, current, onPick) {
     el.innerHTML = '';
     values.forEach((value) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', value === current ? 'true' : 'false');
-      btn.textContent = label === '公司' ? (COMPANY_LABELS[value] || value) : value;
+      btn.textContent = value;
       btn.addEventListener('click', () => onPick(value));
       el.append(btn);
     });
     el.hidden = values.length <= 1;
   }
 
+  // Group tabs only: a group shows when at least one member can chat; 个人 comes last.
   function paintTabs() {
-    const companies = ['全部', ...unique(state.all.flatMap((ch) => ch.companyIds || []))];
-    if (!companies.includes(state.company)) state.company = '全部';
-    const pool = state.company === '全部' ? state.all : state.all.filter((ch) => (ch.companyIds || []).includes(state.company));
-    const groups = ['全部', ...unique(pool.map((ch) => ch.group))];
+    const groups = ['全部', ...state.model.groups.map((g) => g.name)];
     if (!groups.includes(state.group)) state.group = '全部';
-    tabRow(companiesEl, '公司', companies, state.company, (value) => {
-      state.company = value;
-      state.group = '全部';
-      state.index = 0;
-      paint();
-    });
-    tabRow(groupsEl, '团体', groups, state.group, (value) => {
+    tabRow(groupsEl, groups, state.group, (value) => {
       state.group = value;
       state.index = 0;
       paint();
@@ -78,7 +51,7 @@
     }
     const open = current.available !== false;
     goBtn.disabled = !open;
-    goBtn.textContent = open ? '开始聊天' : (current.availabilityLabel || '即将开放');
+    goBtn.textContent = open ? '开始聊天' : (current.availabilityLabel || '待开放');
     goBtn.classList.toggle('is-soon', !open);
     list.forEach((_, i) => {
       const btn = document.createElement('button');
@@ -186,6 +159,7 @@
 
   Shell.api('/api/characters').then((data) => {
     state.all = data.characters || [];
+    state.model = PickerGroups.build(state.all);
     const preset = Shell.qs('c') || data.defaultId;
     paint();
     const list = filtered();

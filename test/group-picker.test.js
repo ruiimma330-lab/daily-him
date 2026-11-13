@@ -1,0 +1,153 @@
+'use strict';
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const crypto = require('crypto');
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const data = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-group-picker-'));
+process.env.STORE_DATA_DIR = data;
+process.env.SESSION_SECRET = 'group-picker-test-session-secret-123456';
+delete process.env.TURSO_DATABASE_URL;
+delete process.env.TURSO_AUTH_TOKEN;
+delete process.env.APP_PASSWORD;
+const chars = require('../lib/characters');
+const voice = require('../lib/voice-pack');
+const store = require('../lib/store');
+const G = require('../public/shell/picker-groups');
+const { LAUNCH } = require('./helpers/launch10');
+const baseline = require('./fixtures/batch10-voice2-baseline.json');
+const ROOT = path.join(__dirname, '..');
+
+const roster = () => chars.list().map((c) => chars.publicInfo(c.id));
+const summary = (model) => Object.fromEntries(model.groups.map((g) => [g.name, {
+  open: g.members.filter(G.isOpen).map((c) => c.id).sort(),
+  soon: g.members.filter((c) => !G.isOpen(c)).map((c) => c.id).sort(),
+}]));
+
+test('exactly the 10 launch characters are open in the public roster', () => {
+  assert.deepEqual(roster().filter((c) => c.available).map((c) => c.id).sort(), [...LAUNCH].sort());
+  assert.equal(chars.loadMeta('baekhyun').available, true);
+  for (const id of ['giselle', 'jennie']) {
+    assert.equal(chars.isAvailable(id), false, id);
+    assert.equal(chars.publicInfo(id).availabilityLabel, '暂未开放', id);
+  }
+  // keonho stays off the public roster and in strict mode.
+  assert.equal(chars.isPublic('keonho'), false);
+  assert.equal(require('../lib/age-policy').policy('keonho').strict, true);
+});
+
+test('picker shows only groups with an open member; closed members stay as 待开放', () => {
+  const model = G.build(roster());
+  assert.deepEqual(summary(model), {
+    EXO: { open: ['baekhyun'], soon: ['kai', 'sehun'] },
+    TWS: { open: ['dohoon'], soon: ['shinyu'] },
+    aespa: { open: ['karina'], soon: ['giselle', 'ningning', 'winter'] },
+    BTS: { open: ['jimin', 'jungkook', 'taehyung'], soon: [] },
+    BOYNEXTDOOR: { open: ['myungjaehyun'], soon: [] },
+    AND2BLE: { open: ['zhanghao'], soon: ['ricky'] },
+    RIIZE: { open: ['wonbin'], soon: [] },
+    IVE: { open: ['wonyoung'], soon: ['yujin'] },
+  });
+  const names = model.groups.map((g) => g.name);
+  for (const hidden of ['BLACKPINK', '个人', 'SEVENTEEN', 'TXT', 'EXO／个人', 'GOT7／个人']) assert.equal(names.includes(hidden), false, hidden);
+  // 全部 covers only visible groups; hidden people (jennie, IU, 张艺兴, 王嘉尔) cannot leak in, even via search.
+  const pool = model.pool.map((c) => c.id);
+  assert.equal(pool.length, 18);
+  for (const id of ['jennie', 'iu', 'layzhang', 'jacksonwang', 'keonho']) {
+    assert.equal(pool.includes(id), false, id);
+    assert.equal(G.view(model, '全部', id).length, 0, id);
+  }
+  assert.deepEqual(G.view(model, 'aespa', '').map((c) => c.id), model.groups.find((g) => g.name === 'aespa').members.map((c) => c.id));
+  assert.deepEqual(G.view(model, '全部', 'karina').map((c) => c.id), ['karina']);
+  assert.deepEqual(G.view(model, 'BLACKPINK', ''), model.pool, 'unknown tab falls back to 全部');
+});
+
+test('solo characters (个人, GOT7／个人, EXO／个人, no group) form 个人 only once one of them is open', () => {
+  assert.equal(G.isSolo({ group: '个人' }), true);
+  assert.equal(G.isSolo({ group: 'EXO／个人' }), true);
+  assert.equal(G.isSolo({ group: 'GOT7／个人' }), true);
+  assert.equal(G.isSolo({}), true);
+  assert.equal(G.isSolo({ group: 'EXO' }), false);
+  const base = roster();
+  const withIu = base.map((c) => (c.id === 'iu' ? { ...c, available: true } : c));
+  const model = G.build(withIu);
+  const solo = model.groups[model.groups.length - 1];
+  assert.equal(solo.name, '个人');
+  assert.deepEqual(solo.members.map((c) => c.id).sort(), ['iu', 'jacksonwang', 'layzhang']);
+  assert.equal(model.groups.find((g) => g.name === 'EXO').members.some((c) => c.id === 'layzhang'), false);
+  assert.equal(G.build(base).groups.some((g) => g.solo), false);
+});
+
+test('picker page has no company tabs and loads the grouping module', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'public/shell/pick.html'), 'utf8');
+  const js = fs.readFileSync(path.join(ROOT, 'public/shell/picker.js'), 'utf8');
+  assert.equal(html.includes('picker-companies'), false);
+  assert.ok(html.indexOf('/shell/picker-groups.js') < html.indexOf('/shell/picker.js'));
+  assert.equal(/COMPANY_LABELS|picker-companies|state\.company/.test(js), false);
+  assert.match(js, /PickerGroups\.build/);
+  const sw = fs.readFileSync(path.join(ROOT, 'public/sw.js'), 'utf8');
+  assert.match(sw, /'\/shell\/picker-groups\.js'/);
+});
+
+test('availability change leaves personas and every voice pack byte-identical', () => {
+  for (const [id, expected] of Object.entries(baseline.voiceHashes)) {
+    const lock = JSON.parse(fs.readFileSync(voice.lockPath(id)));
+    assert.equal(lock.contentHash, expected, id);
+    assert.equal(voice.contentHash(id, lock), expected, id);
+  }
+  for (const [id, expected] of Object.entries(baseline.personaHashes || {})) {
+    const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(ROOT, 'characters', id, 'persona.md'))).digest('hex');
+    assert.equal(actual, expected, id);
+  }
+  for (const id of LAUNCH.filter((x) => x !== 'baekhyun')) {
+    const pack = voice.load(id);
+    assert.equal(pack.ok, true, id);
+    assert.equal(pack.lock.version, `${id}-voice-2`);
+    assert.equal(pack.lock.contentHash, voice.contentHash(id, pack.lock));
+  }
+  assert.equal(voice.load('baekhyun').lock.version, 'baekhyun-voice-1');
+});
+
+let server, base, cookie, userId;
+test.before(async () => {
+  await store.init();
+  server = require('../server').createApp().listen(0, '127.0.0.1');
+  await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
+  base = `http://127.0.0.1:${server.address().port}`;
+  const r = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'grouppicker', password: 'password123', age14: true }) });
+  cookie = r.headers.get('set-cookie').match(/sid=[^;]+/)[0];
+  userId = (await (await fetch(base + '/api/me', { headers: { Cookie: cookie } })).json()).user.id;
+});
+test.after(async () => {
+  await store.flush({ shutdown: true });
+  if (server && server.listening) await new Promise((resolve) => server.close(resolve));
+  fs.rmSync(data, { recursive: true, force: true });
+});
+
+test('existing chats with closed characters stay readable, but cannot be continued', async () => {
+  const get = (route) => fetch(base + route, { headers: { Cookie: cookie } });
+  const post = (route, body) => fetch(base + route, { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const messages = [{ role: 'user', text: '之前的聊天', time: Date.now() }];
+  store.putHistory(userId, 'giselle', messages);
+  const saved = store.getHistory(userId, 'giselle');
+
+  const conversations = await (await get('/api/conversations')).json();
+  assert.ok(conversations.conversations.some((c) => c.id === 'giselle'));
+  const history = await get('/api/history?characterId=giselle');
+  assert.equal(history.status, 200);
+  assert.deepEqual((await history.json()).messages, saved);
+
+  for (const route of ['/api/chat', '/api/tts']) {
+    const r = await post(route, { characterId: 'giselle', text: 'hello', messages: [], voice: false });
+    assert.equal(r.status, 404, route);
+    assert.equal((await r.json()).error, 'character unavailable');
+  }
+  const put = await fetch(base + '/api/history', { method: 'PUT', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: 'giselle', messages: [] }) });
+  assert.equal(put.status, 404);
+  assert.deepEqual(store.getHistory(userId, 'giselle'), saved);
+
+  // No history with a closed character: still 404. Launch characters: open.
+  assert.equal((await get('/api/history?characterId=jennie')).status, 404);
+  assert.equal((await get('/api/history?characterId=karina')).status, 200);
+});

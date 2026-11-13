@@ -903,8 +903,11 @@ function createApp() {
     });
   });
 
-  app.get('/api/history', requireUser, requireCharacter, (req, res, next) => {
-    if (!characters.isPublic(req.characterId) && store.getHistory(req.userId, req.characterId).length) return next();
+  // Read-only: an account may always reopen its own existing chats, even after the
+  // character is hidden or closed. Without history, closed characters still 404.
+  // Writing (PUT/DELETE history, chat, TTS) keeps requireAvailable.
+  app.get('/api/history', requireUser, requireCharacter, function allowHistoryRead(req, res, next) {
+    if (store.getHistory(req.userId, req.characterId).length) return next();
     return requireAvailable(req, res, next);
   }, (req, res) => {
     const messages = store.getHistory(req.userId, req.characterId);

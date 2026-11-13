@@ -8,11 +8,12 @@ const chars = require('../lib/characters');
 const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
+const { isLaunch, expectGuard } = require('./helpers/launch10');
 const report = require('../batch5-age-report.json');
-const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (open for launch)
 const ids = ["leeknow", "felix", "hyunjin", "bangchan", "han", "sana", "nayeon", "jennie", "lisa", "jisoo", "rose", "ahyeon", "iu", "yujin", "wonyoung", "rei", "liz"];
 
-test('17 complete packs have adult policy; Jennie is open and the other 16 remain deferred', () => {
+test('17 complete packs have adult policy; Wonyoung is open, Jennie and the rest are deferred', () => {
   assert.deepEqual(report.map(r => r.id), ids);
   for (const id of ids) {
     const dir = path.join(chars.CHAR_DIR, id);
@@ -22,8 +23,8 @@ test('17 complete packs have adult policy; Jennie is open and the other 16 remai
     assert.ok(meta.companyIds.length > 0);
     assert.equal(chars.resolveId(id), id);
     const publicInfo = chars.publicInfo(id);
-    if (id === 'jennie') {
-      assert.equal(publicInfo.available, true);
+    if (isLaunch(id)) {
+      assert.equal(publicInfo.available, true, id);
       assert.equal(publicInfo.availabilityLabel, '');
     } else {
       assert.equal(publicInfo.available, false);
@@ -77,7 +78,7 @@ test('17 complete packs have adult policy; Jennie is open and the other 16 remai
   }
 });
 
-test('chat and TTS allow Jennie and reject the other batch5 packs through actual middleware', () => {
+test('chat and TTS allow Wonyoung and reject Jennie and the other batch5 packs through actual middleware', () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-batch5-'));
   const previous = process.env.STORE_DATA_DIR;
   process.env.STORE_DATA_DIR = data;
@@ -86,18 +87,9 @@ test('chat and TTS allow Jennie and reject the other batch5 packs through actual
     for (const route of ['/api/chat','/api/tts']) {
       const layer = app._router.stack.find(l => l.route && l.route.path === route && l.route.methods.post);
       const guard = layer.route.stack.find(l => l.handle.name === 'requireAvailable').handle;
-      for (const id of ids.filter(id => id !== 'jennie')) {
-        let status, body, passed = false;
-        guard({characterId:id,body:{}},{status(s){status=s;return this;},json(b){body=b;}},()=>{passed=true;});
-        assert.equal(passed,false,id + route);
-        assert.equal(status,404);
-        assert.equal(body.error,'character unavailable');
-      }
-      for (const id of ['baekhyun', 'jennie']) {
-        let passed = false;
-        guard({characterId:id,body:{}},{},()=>{passed=true;});
-        assert.equal(passed,true,id + route);
-      }
+      // jennie went back to 待开放 for the 10-person launch.
+      assert.equal(isLaunch('jennie'), false);
+      for (const id of [...ids, 'baekhyun']) expectGuard(assert, guard, id, route);
     }
     for (const id of ['kai','mark']) assert.equal(chars.publicInfo(id).availabilityLabel,'');
   } finally {

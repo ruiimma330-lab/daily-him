@@ -43,7 +43,7 @@ test('every other character retains byte-identical prompts and voice hashes', ()
 });
 
 for (const id of ids) {
-  test(`${id} uses its own moods, voice-2 pack and stays unavailable`, () => {
+  test(`${id} uses its own moods, voice-2 pack and is open for launch`, () => {
     const meta = JSON.parse(fs.readFileSync(`characters/${id}/character.json`));
     const pack = voice.load(id);
     const fixture = JSON.parse(fs.readFileSync(`test/fixtures/voice/${id}.json`));
@@ -59,10 +59,11 @@ for (const id of ids) {
         for (const token of tag.match(/\[[^\]]+\]/g)) assert.ok(prompt.includes(token), token);
       }
     }
-    // Opening the character is a separate decision; persona text is untouched.
-    assert.equal(meta.available, false);
-    assert.equal(meta.availabilityLabel, '暂未开放');
-    assert.equal(chars.isAvailable(id), false);
+    // Opened for the 10-person launch (group picker PR); persona text is untouched.
+    assert.equal(meta.available, true);
+    assert.equal(Object.hasOwn(meta, 'availabilityLabel'), false);
+    assert.equal(chars.isAvailable(id), true);
+    assert.equal(chars.publicInfo(id).availabilityLabel, '');
     assert.equal(crypto.createHash('sha256').update(fs.readFileSync(`characters/${id}/persona.md`)).digest('hex'), baseline.personaHashes[id]);
 
     assert.equal(pack.ok, true, pack.error);
