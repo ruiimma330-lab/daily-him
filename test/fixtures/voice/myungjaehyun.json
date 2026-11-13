@@ -1,13 +1,143 @@
 {
   "characterId": "myungjaehyun",
-  "version": "myungjaehyun-placeholder-voice-1",
-  "contentHash": "f4b33eff14f541d0e07bcca8997329ae14b042c42b5263a80e4b1ee30e2b8b96",
-  "enabled": false,
-  "requests": [],
+  "version": "myungjaehyun-voice-2",
+  "contentHash": "7ee2809ef235d58b4acd3cf385e65af1cbab165c4256e68ef7b30c90bb7d6b8c",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "closing_plan_01",
+      "characterId": "myungjaehyun",
+      "version": "myungjaehyun-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MK090xTm93AZXdILmI6C?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] [thoughtful] 네 얘기 먼저 듣고 내 얘기 할게. 그러면 되겠지?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "2bef9d9bdd905737fb483e31e7b3b5a1bd91217d016e324abfe02da872cb0e6b"
+    },
+    {
+      "id": "heart_song_01",
+      "characterId": "myungjaehyun",
+      "version": "myungjaehyun-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MK090xTm93AZXdILmI6C?output_format=mp3_44100_128",
+      "body": {
+        "text": "[pleased] 첫 소절부터 좋다. 이건 너랑 같이 듣고 싶었어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "0792cfb2be62c8c85fad76bcfb619db63e4f63e0a95fe55d8695202db54f7654"
+    },
+    {
+      "id": "comfort_check_01",
+      "characterId": "myungjaehyun",
+      "version": "myungjaehyun-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MK090xTm93AZXdILmI6C?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 내가 너무 빨리 말했어요? 네 얘기도 천천히 듣고 싶어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "27f712c89c1bc1cbd054d6128cea17065d40e2e6290d5be7a79ae9b6aeb99610"
+    },
+    {
+      "id": "pose_confirm_01",
+      "characterId": "myungjaehyun",
+      "version": "myungjaehyun-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MK090xTm93AZXdILmI6C?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] 이 각도? 아니면 이렇게? 네가 말한 게 이거 맞지?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "1ed8919b471c7dd1a199ef7ca3b991585ee6c22f75b27cbfe14e5f59d71aaa35"
+    },
+    {
+      "id": "all_in_promise_01",
+      "characterId": "myungjaehyun",
+      "version": "myungjaehyun-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MK090xTm93AZXdILmI6C?output_format=mp3_44100_128",
+      "body": {
+        "text": "[pleased] 하나씩 말해봐. 내가 할 수 있는 건 같이 해볼게.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "934944d0a087f3a476300beeb493ee18a26472ac25120b236db7c08be8d33351"
+    },
+    {
+      "id": "formal_sendoff_01",
+      "characterId": "myungjaehyun",
+      "version": "myungjaehyun-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MK090xTm93AZXdILmI6C?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 덕분에 편하게 얘기했어요. 남은 시간도 잘 보내요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "071b247f4c85fc04b44ffd4aea2793fb33dc130bbb7ee328ad1777b58661f61f"
+    },
+    {
+      "id": "fan_name_call_01",
+      "characterId": "myungjaehyun",
+      "version": "myungjaehyun-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MK090xTm93AZXdILmI6C?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [pleased] 원도어, 원도어. 내 마음 전해졌죠? 잘 자요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "b8f8f6b8fc2f897105da3c47dff1b348e54eb72703ae07b44af8fc461b5f47e3"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "작은 소식도 크게 반겨 줄게. [chuckles]"
+      "id": "closing_plan_01",
+      "text": "[calm] [thoughtful] 네 얘기 먼저 듣고 내 얘기 할게. 그러면 되겠지?"
+    },
+    {
+      "id": "heart_song_01",
+      "text": "[pleased] 첫 소절부터 좋다. 이건 너랑 같이 듣고 싶었어요."
+    },
+    {
+      "id": "comfort_check_01",
+      "text": "[softly] 내가 너무 빨리 말했어요? 네 얘기도 천천히 듣고 싶어요."
+    },
+    {
+      "id": "pose_confirm_01",
+      "text": "[playful] 이 각도? 아니면 이렇게? 네가 말한 게 이거 맞지?"
+    },
+    {
+      "id": "all_in_promise_01",
+      "text": "[pleased] 하나씩 말해봐. 내가 할 수 있는 건 같이 해볼게."
+    },
+    {
+      "id": "formal_sendoff_01",
+      "text": "[softly] 덕분에 편하게 얘기했어요. 남은 시간도 잘 보내요."
+    },
+    {
+      "id": "fan_name_call_01",
+      "text": "[softly] [pleased] 원도어, 원도어. 내 마음 전해졌죠? 잘 자요."
     }
   ]
 }

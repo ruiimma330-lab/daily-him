@@ -1,13 +1,143 @@
 {
   "characterId": "karina",
-  "version": "karina-placeholder-voice-1",
-  "contentHash": "8bf497f1df8517bc28b55cb0d7fafb10f693e53039f8ae09433ae72bbbd95a99",
-  "enabled": false,
-  "requests": [],
+  "version": "karina-voice-2",
+  "contentHash": "c2d399b75a902fea7e96b1104a5d2859839602e4f520d4b9cbaa149853a3c741",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "concept_opener_01",
+      "characterId": "karina",
+      "version": "karina-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/3720mcZIsm2L1TgRNjxU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] [thoughtful] 오늘은 그냥 편하게 얘기하자. 뭐 하고 있었어?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "20ec509352d01c33610e09eeb1b5556059cc0b48801bc4a15c9c0beeffe33f76"
+    },
+    {
+      "id": "food_short_01",
+      "characterId": "karina",
+      "version": "karina-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/3720mcZIsm2L1TgRNjxU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] [pleased] 이거 괜찮네. 너도 한 입 먹어봐.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "c14c660eafa16507213b1c551956a65696c80bfe25421894485ac5cad3f4abce"
+    },
+    {
+      "id": "mumble_confess_01",
+      "characterId": "karina",
+      "version": "karina-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/3720mcZIsm2L1TgRNjxU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 아, 그게 아니라… 잠깐, 설명이 자꾸 꼬이네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "9d21e135772b129290ee31d9a78a96f47ef29874cb837b5b5dad5fc84d5e4582"
+    },
+    {
+      "id": "clingy_bye_01",
+      "characterId": "karina",
+      "version": "karina-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/3720mcZIsm2L1TgRNjxU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [playful] 너랑 얘기하다 보니까 갈 타이밍을 놓쳤네. 조금만 더 있자.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "fc7f536586120616a5e0314b28807fc5f18df10a572afbc304fcedc5830555d7"
+    },
+    {
+      "id": "sound_play_01",
+      "characterId": "karina",
+      "version": "karina-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/3720mcZIsm2L1TgRNjxU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] [amused] 의자가 드르륵 밀려서 나만 저쪽으로 갔어. 좀 웃기지?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "c83169d2a0b45ed31f48760bf23c0a1687ea0330e40bd832ed2f2cde64e030d3"
+    },
+    {
+      "id": "spoiler_chase_01",
+      "characterId": "karina",
+      "version": "karina-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/3720mcZIsm2L1TgRNjxU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] 잠깐, 그다음엔? 너 그래서 뭐라고 했어?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "82172062df6cba0f54cf26d5f4c9b68af2ba06a0cdb6d01c3d05b1d209ec2df5"
+    },
+    {
+      "id": "tmi_drop_01",
+      "characterId": "karina",
+      "version": "karina-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/3720mcZIsm2L1TgRNjxU?output_format=mp3_44100_128",
+      "body": {
+        "text": "[mischievously] [pleased] 나 사실 아까부터 네 답장 기다렸어. 이런 것도 TMI인가?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "ea5636987890074dfb7b41414f032619b1fb23e46ce3f214dd9831b3acc8276a"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "안녕 [chuckles] 이 선택지는 좀 끌리는데?"
+      "id": "concept_opener_01",
+      "text": "[calm] [thoughtful] 오늘은 그냥 편하게 얘기하자. 뭐 하고 있었어?"
+    },
+    {
+      "id": "food_short_01",
+      "text": "[calm] [pleased] 이거 괜찮네. 너도 한 입 먹어봐."
+    },
+    {
+      "id": "mumble_confess_01",
+      "text": "[thoughtful] 아, 그게 아니라… 잠깐, 설명이 자꾸 꼬이네."
+    },
+    {
+      "id": "clingy_bye_01",
+      "text": "[softly] [playful] 너랑 얘기하다 보니까 갈 타이밍을 놓쳤네. 조금만 더 있자."
+    },
+    {
+      "id": "sound_play_01",
+      "text": "[playful] [amused] 의자가 드르륵 밀려서 나만 저쪽으로 갔어. 좀 웃기지?"
+    },
+    {
+      "id": "spoiler_chase_01",
+      "text": "[playful] 잠깐, 그다음엔? 너 그래서 뭐라고 했어?"
+    },
+    {
+      "id": "tmi_drop_01",
+      "text": "[mischievously] [pleased] 나 사실 아까부터 네 답장 기다렸어. 이런 것도 TMI인가?"
     }
   ]
 }

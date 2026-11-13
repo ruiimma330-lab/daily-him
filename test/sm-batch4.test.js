@@ -9,6 +9,7 @@ const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
 const report = require('../batch4-age-report.json');
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
 const ids = ["jeno", "jaemin", "jisung", "haechan", "chenle", "yushi", "sakuya", "riku", "sion", "wonbin", "anton", "sungchan", "karina", "winter", "giselle", "nct-jaehyun", "ten", "chanyeol", "irene"];
 
 test('19 complete packs are visible and deferred, with adult policy and valid voice locks', () => {
@@ -44,7 +45,12 @@ test('19 complete packs are visible and deferred, with adult policy and valid vo
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);
-    if (id === 'giselle') {
+    if (voice2.includes(id)) {
+      assert.equal(pack.enabled, true);
+      assert.equal(pack.lock.version, `${id}-voice-2`);
+      assert.equal(pack.lock.model, 'eleven_v3');
+      assert.equal(Object.hasOwn(pack.lock, 'placeholderVoice'), false);
+    } else if (id === 'giselle') {
       assert.equal(pack.enabled, true);
       assert.equal(pack.lock.version, 'giselle-voice-2');
       assert.equal(pack.lock.voiceId, 'qSzKWGBeVKcNKj2uo6U3');
@@ -63,7 +69,7 @@ test('19 complete packs are visible and deferred, with adult policy and valid vo
     const fixture = require(`./fixtures/voice/${id}.json`);
     assert.equal(fixture.contentHash, voice.contentHash(id,pack.lock));
     assert.deepEqual(fixture.preparedSamples, pack.lock.samples.map(s => ({id:s.id,text:pack.prepare(s.text,s.mood,pack.lock)})));
-    if (id !== 'giselle') {
+    if (id !== 'giselle' && !voice2.includes(id)) {
       assert.match(fixture.preparedSamples[0].text, /\[chuckles\]/);
       assert.throws(() => voice.buildRequest(pack, 'hello'), /not configured/);
       const configured = {...pack,configuredVoiceId:'offline-placeholder'};

@@ -1,24 +1,61 @@
 {
-  "version": "wonyoung-placeholder-voice-1",
-  "placeholderVoice": "female",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "wonyoung-voice-2",
+  "voiceId": "CQsxAisrNbwF3bKufT9U",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "warm_comment",
+  "moodTags": {
+    "tech_check": "[thoughtful] [pleased]",
+    "unnie_help": "[softly]",
+    "warm_comment": "[pleased]",
+    "pretend_calm": "[mischievously] [playful]",
+    "self_meme": "[playful] [mischievously]",
+    "taste_test": "[thoughtful]",
+    "quick_signoff": "[calm] [softly]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "안녕 [chuckles] 오늘도 반가워.",
-      "mood": "soft"
+      "id": "tech_check_01",
+      "mood": "tech_check",
+      "text": "어, 네가 보낸 사진 이제 보여. 너무 귀엽잖아!"
+    },
+    {
+      "id": "unnie_help_01",
+      "mood": "unnie_help",
+      "text": "나 이거 처음 해봐서, 네가 옆에서 좀 알려줘야 돼."
+    },
+    {
+      "id": "warm_comment_01",
+      "mood": "warm_comment",
+      "text": "너 그렇게 말해주니까 나 진짜 힘난다. 고마워요."
+    },
+    {
+      "id": "pretend_calm_01",
+      "mood": "pretend_calm",
+      "text": "지금은 아무 말도 안 하려고 했는데… 벌써 참을 수가 없네."
+    },
+    {
+      "id": "self_meme_01",
+      "mood": "self_meme",
+      "text": "이 정도면 내가 간식 심사위원 해도 되겠어. 너무 진지한가?"
+    },
+    {
+      "id": "taste_test_01",
+      "mood": "taste_test",
+      "text": "조금 긴장된다. 향은 괜찮은데, 맛이 좀 낯설어요."
+    },
+    {
+      "id": "quick_signoff_01",
+      "mood": "quick_signoff",
+      "text": "나 잠깐 할 일만 마저 하고 올게. 조금만 기다려줘."
     }
   ],
-  "contentHash": "7d59d5446325098945363cfe6e209b636ce78265c8ab77cbf3ca93b81b1586ad"
+  "contentHash": "0688df750f1b6a4c672582dc61d83fc9e8e752017f9a790864e11306f52f6eec"
 }

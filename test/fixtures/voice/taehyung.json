@@ -1,13 +1,162 @@
 {
   "characterId": "taehyung",
-  "version": "taehyung-placeholder-voice-1",
-  "contentHash": "92b583e33a8c1120ec2b6d9c6c0217fb2bc933a4b23c80301e3d37da7a7c54ad",
-  "enabled": false,
-  "requests": [],
+  "version": "taehyung-voice-2",
+  "contentHash": "10912f3431853e2346409549afe7fca34f0ff20d1f1fba99f28c30b3cd9e206e",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "radio_host_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] [softly] 오늘 마음에 남은 일이 있으면 천천히 얘기해줘요. 제가 듣고 있을게요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "b8856c68f84d6c35f22eab67a4ec98e1ae051acf4bc8e1fc38a3ea9693b17670"
+    },
+    {
+      "id": "mixed_greeting_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] [pleased] 자, 오늘도 시작해볼까요. 예스, 다들 왔죠?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "668a22321da1fc0c2a267a17c489a9775346a4e1bab7780574c585a934781297"
+    },
+    {
+      "id": "english_switch_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] 영어로요? 좋아요. Tell me one good thing about today.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "da3757c07ff3eeea5302c1c3050f068a3615a4fe7552de43635dc2f97d24b312"
+    },
+    {
+      "id": "stress_advice_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] [softly] 지금 답을 다 정하려고 하니까 더 지치는 것 같아요. 오늘은 잠깐 쉬어가도 괜찮아요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "7d42687f37ad2a6603d2d2730cc65d6f906a51bed2b5ba55115772b0442438da"
+    },
+    {
+      "id": "dream_push_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [thoughtful] 여러분이 가고 싶은 길이면, 저는 그걸 응원하고 싶어요. 그 길을 믿어 봐요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "0ae897c20f28c7c3aeddf84f229b5f0ceabb35aaec61ccf6efc8c2a7d2b54aaa"
+    },
+    {
+      "id": "lullaby_close_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[chuckles softly] [softly] 하하, 오늘은 내가 재워줄게요. 눈을 감아요, 포근한 밤이에요~",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "12938346658f2b1adc2784739e4725800eb3b96c9333ddf48ae8bd39a5123553"
+    },
+    {
+      "id": "cosmic_praise_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[excited] 여러분이 조금만 힘을 내도, 하늘이 통째로 열릴 것 같은 기분이 들어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "49c7123c86f050ebd91c260a48a1484ba41a5c8f4ce4a9203e71fb9c8d07fb22"
+    },
+    {
+      "id": "neighbor_care_01",
+      "characterId": "taehyung",
+      "version": "taehyung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CSF1CsGjIZb9NurqOf1u?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 아까 제가 너무 크게 웃었죠? 방해가 됐다면 미안해요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "6317ec772d605f16315bfb02ae8f6094aa520ae8055a1dd4055fabceda1c3aa4"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "이 장면 좋다. [chuckles]"
+      "id": "radio_host_01",
+      "text": "[calm] [softly] 오늘 마음에 남은 일이 있으면 천천히 얘기해줘요. 제가 듣고 있을게요."
+    },
+    {
+      "id": "mixed_greeting_01",
+      "text": "[playful] [pleased] 자, 오늘도 시작해볼까요. 예스, 다들 왔죠?"
+    },
+    {
+      "id": "english_switch_01",
+      "text": "[calm] 영어로요? 좋아요. Tell me one good thing about today."
+    },
+    {
+      "id": "stress_advice_01",
+      "text": "[thoughtful] [softly] 지금 답을 다 정하려고 하니까 더 지치는 것 같아요. 오늘은 잠깐 쉬어가도 괜찮아요."
+    },
+    {
+      "id": "dream_push_01",
+      "text": "[softly] [thoughtful] 여러분이 가고 싶은 길이면, 저는 그걸 응원하고 싶어요. 그 길을 믿어 봐요."
+    },
+    {
+      "id": "lullaby_close_01",
+      "text": "[chuckles softly] [softly] 하하, 오늘은 내가 재워줄게요. 눈을 감아요, 포근한 밤이에요~"
+    },
+    {
+      "id": "cosmic_praise_01",
+      "text": "[excited] 여러분이 조금만 힘을 내도, 하늘이 통째로 열릴 것 같은 기분이 들어요."
+    },
+    {
+      "id": "neighbor_care_01",
+      "text": "[softly] 아까 제가 너무 크게 웃었죠? 방해가 됐다면 미안해요."
     }
   ]
 }

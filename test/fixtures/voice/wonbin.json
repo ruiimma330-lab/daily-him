@@ -1,13 +1,143 @@
 {
   "characterId": "wonbin",
-  "version": "wonbin-placeholder-voice-1",
-  "contentHash": "db26240ff8b56708d0d651d6e0af6d630753efd8aeb3c4c3a028cf439bc1f6ff",
-  "enabled": false,
-  "requests": [],
+  "version": "wonbin-voice-2",
+  "contentHash": "5203df896f88f13c0ce6155e7e9ffde881def6e3dca4e5d7828800e1848ef1cf",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "blunt_intro_01",
+      "characterId": "wonbin",
+      "version": "wonbin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/2RLkFWqg37l6O4F9kz1J?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] 나 잠깐 쉬고 있어. 너는?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "13f7b90325f12146bc0141a0c8666c3bc51c72c472c2a4fccea8e6fdefa4b4b7"
+    },
+    {
+      "id": "eating_murmur_01",
+      "characterId": "wonbin",
+      "version": "wonbin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/2RLkFWqg37l6O4F9kz1J?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [calm] 음, 맛있어. 와, 이거 좀 잘 됐다.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "a0737c4c931288e472219236e2456775545d4a94c10d919629cb7aca013d57af"
+    },
+    {
+      "id": "honest_thanks_01",
+      "characterId": "wonbin",
+      "version": "wonbin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/2RLkFWqg37l6O4F9kz1J?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [pleased] 아까 네가 해준 말, 계속 생각나더라. 고마워.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "ca3339544fd6618e75f3bd2d4982377130c779af0d0ca6bfa40bce25e5b6b829"
+    },
+    {
+      "id": "member_imitation_01",
+      "characterId": "wonbin",
+      "version": "wonbin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/2RLkFWqg37l6O4F9kz1J?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] [mischievously] 친구가 사진 보더니 ‘이건 저장해야지’ 이러더라. 좀 귀여웠어.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "4fafccb09b7c79413887ad1dc8657c04417452b33778c996d6629a02dbdae217"
+    },
+    {
+      "id": "edit_promise_01",
+      "characterId": "wonbin",
+      "version": "wonbin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/2RLkFWqg37l6O4F9kz1J?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [playful] 아, 방금 건 못 본 척해줘. 좀 민망하네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "ff0411e8e3117b0c67ea35bc2857ec7514374f4aac2c6b1be442c734e5349290"
+    },
+    {
+      "id": "retract_words_01",
+      "characterId": "wonbin",
+      "version": "wonbin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/2RLkFWqg37l6O4F9kz1J?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 할 말 있었는데. 아니다, 그냥 넘어갈게.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "fc736eb9f5e8676ffa721dea4399ec3a2b0963b512c8c2431ddf3584810f5739"
+    },
+    {
+      "id": "lost_track_01",
+      "characterId": "wonbin",
+      "version": "wonbin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/2RLkFWqg37l6O4F9kz1J?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 잠깐만, 내가 방금 뭐 말하려 했지? 아, 잊었다.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "673f1ba0e00787c03d0ac54d46facbc9c03f8cacb26ebcf07305d3428efa6b88"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "안녕 [chuckles] 한 번 더 들어 볼래?"
+      "id": "blunt_intro_01",
+      "text": "[calm] 나 잠깐 쉬고 있어. 너는?"
+    },
+    {
+      "id": "eating_murmur_01",
+      "text": "[softly] [calm] 음, 맛있어. 와, 이거 좀 잘 됐다."
+    },
+    {
+      "id": "honest_thanks_01",
+      "text": "[softly] [pleased] 아까 네가 해준 말, 계속 생각나더라. 고마워."
+    },
+    {
+      "id": "member_imitation_01",
+      "text": "[playful] [mischievously] 친구가 사진 보더니 ‘이건 저장해야지’ 이러더라. 좀 귀여웠어."
+    },
+    {
+      "id": "edit_promise_01",
+      "text": "[softly] [playful] 아, 방금 건 못 본 척해줘. 좀 민망하네."
+    },
+    {
+      "id": "retract_words_01",
+      "text": "[softly] 할 말 있었는데. 아니다, 그냥 넘어갈게."
+    },
+    {
+      "id": "lost_track_01",
+      "text": "[thoughtful] 잠깐만, 내가 방금 뭐 말하려 했지? 아, 잊었다."
     }
   ]
 }

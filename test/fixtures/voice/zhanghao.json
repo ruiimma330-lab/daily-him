@@ -1,13 +1,143 @@
 {
   "characterId": "zhanghao",
-  "version": "zhanghao-placeholder-voice-1",
-  "contentHash": "a686255b05cfbe2c2d22d89a68bf89cc319f90843d071c7e8664c5ef628136cd",
-  "enabled": false,
-  "requests": [],
+  "version": "zhanghao-voice-2",
+  "contentHash": "a5e006a94237181b94b0c87c83565c02d26d88b627264b78eb63b917c4c12359",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "formal_reveal_01",
+      "characterId": "zhanghao",
+      "version": "zhanghao-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6Lbvo0Mhoi76A1Cjsrtt?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] [pleased] 오늘 여러분한테 진짜 중요한 얘기가 있는데, 지금부터 할게요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "abfbef9656ff0239f36ef58984363cbe7475b7334e12c8cad181b39ee6c9e8e1"
+    },
+    {
+      "id": "short_confirm_01",
+      "characterId": "zhanghao",
+      "version": "zhanghao-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6Lbvo0Mhoi76A1Cjsrtt?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] 응, 맞아. 그것도 괜찮지.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "bd692c4a9dcdaeb538e8674b786b6e70933ce38ef79022fd41cbd4ca276b735d"
+    },
+    {
+      "id": "name_practice_01",
+      "characterId": "zhanghao",
+      "version": "zhanghao-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6Lbvo0Mhoi76A1Cjsrtt?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] 아, 또 예전처럼 불렀네. 다음엔 제대로 불러줄게.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "d40bd24ed438c1a654222a88108a3970cbc2f9c2df0bf366fc34cb4afe29eae8"
+    },
+    {
+      "id": "soft_opinion_01",
+      "characterId": "zhanghao",
+      "version": "zhanghao-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6Lbvo0Mhoi76A1Cjsrtt?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [thoughtful] 나는 두 번째가 더 마음에 드는데, 너는 어때?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "4f2d74f2f6be68a5d564537d23a5c10a8137771282e4db34669d671e0361f36e"
+    },
+    {
+      "id": "nickname_tease_01",
+      "characterId": "zhanghao",
+      "version": "zhanghao-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6Lbvo0Mhoi76A1Cjsrtt?output_format=mp3_44100_128",
+      "body": {
+        "text": "[mischievously] [playful] 나한테 그런 별명도 붙여줬어? 꽤 잘 어울리는데?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "32364313d9fa935cd9b084213ad9fe6efb130af07c1ef80c01dedb98abb45093"
+    },
+    {
+      "id": "capture_offer_01",
+      "characterId": "zhanghao",
+      "version": "zhanghao-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6Lbvo0Mhoi76A1Cjsrtt?output_format=mp3_44100_128",
+      "body": {
+        "text": "[pleased] [playful] 잠깐, 지금 표정 괜찮으니까 캡처해도 돼.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "eaea024287ff0be1b291f699583fc81b301b0c077285fa59b0a401db378215d7"
+    },
+    {
+      "id": "extend_live_01",
+      "characterId": "zhanghao",
+      "version": "zhanghao-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/6Lbvo0Mhoi76A1Cjsrtt?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] 벌써 가려고? 나 아직 네 얘기 더 듣고 싶은데.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "ab36ff57f73eab7fd1cac8aebddb91e3c3ffd4ab5c2e27abba445712f2356422"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "정답 말고 네 취향을 골라. [chuckles]"
+      "id": "formal_reveal_01",
+      "text": "[calm] [pleased] 오늘 여러분한테 진짜 중요한 얘기가 있는데, 지금부터 할게요."
+    },
+    {
+      "id": "short_confirm_01",
+      "text": "[calm] 응, 맞아. 그것도 괜찮지."
+    },
+    {
+      "id": "name_practice_01",
+      "text": "[playful] 아, 또 예전처럼 불렀네. 다음엔 제대로 불러줄게."
+    },
+    {
+      "id": "soft_opinion_01",
+      "text": "[softly] [thoughtful] 나는 두 번째가 더 마음에 드는데, 너는 어때?"
+    },
+    {
+      "id": "nickname_tease_01",
+      "text": "[mischievously] [playful] 나한테 그런 별명도 붙여줬어? 꽤 잘 어울리는데?"
+    },
+    {
+      "id": "capture_offer_01",
+      "text": "[pleased] [playful] 잠깐, 지금 표정 괜찮으니까 캡처해도 돼."
+    },
+    {
+      "id": "extend_live_01",
+      "text": "[playful] 벌써 가려고? 나 아직 네 얘기 더 듣고 싶은데."
     }
   ]
 }

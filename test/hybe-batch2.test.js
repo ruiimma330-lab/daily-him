@@ -8,6 +8,7 @@ const chars = require('../lib/characters');
 const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
 const adults = ['sunghoon','niki','sunoo','jungwon','jimin','jungkook','taehyung','yeonjun','soobin','beomgyu','taehyun','hueningkai'];
 const strict = ['martin','james','juhoon','seonghyeon','keonho'];
 const batch1 = ['sehun','the8','jun','renjun','ningning','yuqi','shuhua','tzuyu','jacksonwang','layzhang'];
@@ -44,7 +45,12 @@ test('17 HYBE packs have JPEG art, fixtures, expected voices and age-appropriate
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);
-    if (id === 'keonho') {
+    if (voice2.includes(id)) {
+      assert.equal(pack.enabled, true);
+      assert.equal(pack.lock.version, `${id}-voice-2`);
+      assert.equal(pack.lock.model, 'eleven_v3');
+      assert.equal(Object.hasOwn(pack.lock, 'placeholderVoice'), false);
+    } else if (id === 'keonho') {
       assert.equal(pack.enabled, true);
       assert.equal(pack.lock.voiceId, '6KEnC1wm2MCbrIj7vXtU');
       assert.equal(pack.lock.version, 'keonho-voice-2');

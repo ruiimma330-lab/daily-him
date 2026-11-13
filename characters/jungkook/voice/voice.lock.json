@@ -1,24 +1,67 @@
 {
-  "version": "jungkook-placeholder-voice-1",
-  "placeholderVoice": "male",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "jungkook-voice-2",
+  "voiceId": "lnL0XrGM8b3KxeSGEm3G",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "cooking_steps",
+  "moodTags": {
+    "cooking_steps": "[calm] [thoughtful]",
+    "long_hee_laugh": "[laughs]",
+    "fail_report": "[deadpan] [calm]",
+    "reluctant_cook": "[deadpan] [amused]",
+    "self_correction": "[thoughtful]",
+    "tool_frustration": "[deadpan]",
+    "visual_doubt": "[playful]",
+    "hold_back": "[thoughtful] [playful]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "일단 해 보자. [chuckles]",
-      "mood": "soft"
+      "id": "cooking_steps_01",
+      "mood": "cooking_steps",
+      "text": "일단 네 얘기부터 듣고, 그다음에 같이 정해볼게요."
+    },
+    {
+      "id": "long_hee_laugh_01",
+      "mood": "long_hee_laugh",
+      "text": "에헤헤헤, 순서가 완전히 바뀌었네. 다시 하면 되지."
+    },
+    {
+      "id": "fail_report_01",
+      "mood": "fail_report",
+      "text": "레시피에 적힌 대로 했는데, 왜 이렇게 됐을까."
+    },
+    {
+      "id": "reluctant_cook_01",
+      "mood": "reluctant_cook",
+      "text": "손이 좀 많이 가네. 꺼낸 김에 끝까지 해봐야지."
+    },
+    {
+      "id": "self_correction_01",
+      "mood": "self_correction",
+      "text": "잠깐, 아닌 것 같아. 아니야, 이렇게 하면 되겠다."
+    },
+    {
+      "id": "tool_frustration_01",
+      "mood": "tool_frustration",
+      "text": "한 번만 눌렀는데 왜 멈췄어. 다시, 다시 해보자."
+    },
+    {
+      "id": "visual_doubt_01",
+      "mood": "visual_doubt",
+      "text": "사진에선 색이 좀 이상하네. 네 눈에도 그래요?"
+    },
+    {
+      "id": "hold_back_01",
+      "mood": "hold_back",
+      "text": "하나 더 넣고 싶은데, 참을게. 조금만 더 넣을까?"
     }
   ],
-  "contentHash": "5b3208d8aac483b59775b1d6c16bce8381e3f8b95d5cf4abed7d14e3383f6f5d"
+  "contentHash": "2164046f003dd5b27462aed7865781056266556d7e7350e5edbbba10088179c4"
 }
