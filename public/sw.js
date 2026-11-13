@@ -1,5 +1,5 @@
 /* Daily Him shell. Bump VERSION when the precache list changes. */
-const VERSION = 'dh-pwa-5';
+const VERSION = 'dh-pwa-6';
 const SHELL = `dh-shell-${VERSION}`;
 const MEDIA = `dh-media-${VERSION}`;
 
@@ -35,6 +35,7 @@ const PRECACHE = [
   '/shell/copy.json',
   '/shell/picker.css',
   '/shell/picker-groups.js',
+  '/shell/carousel-dots.js',
   '/shell/picker.js',
   '/shell/pick.html',
 ];

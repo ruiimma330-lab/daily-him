@@ -44,7 +44,6 @@
   function paintMeta(list) {
     const current = list[state.index];
     metaEl.innerHTML = '';
-    pagesEl.innerHTML = '';
     if (!current) {
       goBtn.disabled = true;
       return;
@@ -53,14 +52,7 @@
     goBtn.disabled = !open;
     goBtn.textContent = open ? '开始聊天' : (current.availabilityLabel || '待开放');
     goBtn.classList.toggle('is-soon', !open);
-    list.forEach((_, i) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = String(i + 1);
-      if (i === state.index) btn.setAttribute('aria-current', 'true');
-      btn.addEventListener('click', () => jump(i));
-      pagesEl.append(btn);
-    });
+    paintDots(list.length);
     const name = document.createElement('b');
     const ko = current.name || current.displayName || current.id;
     const zh = current.nameZh ? `  ${current.nameZh}` : '';
@@ -90,16 +82,82 @@
       page.append(img);
       pager.append(page);
     });
+    buildDots(list.length);
     paintMeta(list);
+    autoplay.setCount(list.length);
     requestAnimationFrame(() => jump(state.index));
   }
 
-  function jump(index) {
+  // Instagram-style dots: the current photo's dot stays centered; at most 4 visible each side.
+  function buildDots(count) {
+    pagesEl.innerHTML = '';
+    pagesEl.hidden = count <= 1;
+    const track = document.createElement('div');
+    track.className = 'picker-dots-track';
+    for (let i = 0; i < count; i += 1) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'picker-dot';
+      btn.setAttribute('aria-label', `第 ${i + 1} 张，共 ${count} 张`);
+      btn.addEventListener('click', () => {
+        autoplay.poke();
+        jump(i, true);
+      });
+      track.append(btn);
+    }
+    pagesEl.append(track);
+  }
+
+  function paintDots(count) {
+    const track = pagesEl.firstElementChild;
+    if (!track || track.children.length !== count) return;
+    const view = CarouselDots.layout(count, state.index);
+    pagesEl.dataset.mode = view.mode;
+    pagesEl.style.setProperty('--dot-slots', String(view.slots));
+    track.style.setProperty('--dot-offset', String(view.offset));
+    view.dots.forEach((dot, i) => {
+      const btn = track.children[i];
+      btn.style.setProperty('--dot-scale', String(dot.scale));
+      btn.style.setProperty('--dot-opacity', String(dot.opacity));
+      btn.classList.toggle('is-hidden', dot.hidden);
+      btn.tabIndex = dot.hidden ? -1 : 0;
+      if (dot.hidden) btn.setAttribute('aria-hidden', 'true');
+      else btn.removeAttribute('aria-hidden');
+      if (dot.active) btn.setAttribute('aria-current', 'true');
+      else btn.removeAttribute('aria-current');
+    });
+  }
+
+  function jump(index, smooth) {
     const width = pager.clientWidth || 1;
     state.index = index;
-    pager.scrollTo({ left: index * width, behavior: 'auto' });
+    pager.scrollTo({ left: index * width, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'auto' });
     paintMeta(filtered());
   }
+
+  // Autoplay: ~3.5s per photo, loops; pauses while touched, resumes 5s after; off-screen/hidden tab/reduced motion stop it.
+  const reducedMotion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  const autoplay = CarouselDots.createAutoplay({
+    interval: 3500,
+    resumeDelay: 5000,
+    advance() {
+      const list = filtered();
+      if (list.length > 1) jump(CarouselDots.nextIndex(list.length, state.index), true);
+    },
+  });
+  autoplay.setReducedMotion(reducedMotion.matches);
+  if (reducedMotion.addEventListener) reducedMotion.addEventListener('change', (e) => autoplay.setReducedMotion(e.matches));
+  autoplay.setPageVisible(document.visibilityState !== 'hidden');
+  document.addEventListener('visibilitychange', () => autoplay.setPageVisible(document.visibilityState !== 'hidden'));
+  if (typeof IntersectionObserver === 'function') {
+    new IntersectionObserver((entries) => {
+      entries.forEach((entry) => autoplay.setOnScreen(entry.isIntersecting));
+    }, { threshold: 0.3 }).observe(pager);
+  }
+  ['touchstart', 'pointerdown'].forEach((name) => pager.addEventListener(name, () => autoplay.interactStart(), { passive: true }));
+  ['touchend', 'touchcancel', 'pointerup', 'pointercancel'].forEach((name) => pager.addEventListener(name, () => autoplay.interactEnd(), { passive: true }));
+  pager.addEventListener('wheel', () => autoplay.poke(), { passive: true });
+  pager.addEventListener('keydown', () => autoplay.poke());
 
   function syncFromScroll() {
     const list = filtered();
