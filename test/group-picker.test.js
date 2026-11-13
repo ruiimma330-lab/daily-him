@@ -51,16 +51,32 @@ test('picker shows only groups with an open member; closed members stay as 待�
   });
   const names = model.groups.map((g) => g.name);
   for (const hidden of ['BLACKPINK', '个人', 'SEVENTEEN', 'TXT', 'EXO／个人', 'GOT7／个人']) assert.equal(names.includes(hidden), false, hidden);
-  // 全部 covers only visible groups; hidden people (jennie, IU, 张艺兴, 王嘉尔) cannot leak in, even via search.
+  // The pool still lists every member of a visible group (including 待开放) for group tabs.
+  // 「全部」 and a search on it only show people you can chat with. Hidden groups stay out.
   const pool = model.pool.map((c) => c.id);
   assert.equal(pool.length, 18);
+  const openIds = model.pool.filter(G.isOpen).map((c) => c.id);
+  assert.deepEqual(G.view(model, '全部', '').map((c) => c.id), openIds);
+  assert.deepEqual([...openIds].sort(), [...LAUNCH].sort());
+  assert.ok(G.view(model, '全部', '').every(G.isOpen));
+  assert.ok(G.view(model, '全部', 'a').every(G.isOpen));
   for (const id of ['jennie', 'iu', 'layzhang', 'jacksonwang', 'keonho']) {
     assert.equal(pool.includes(id), false, id);
     assert.equal(G.view(model, '全部', id).length, 0, id);
   }
+  for (const id of ['kai', 'sehun', 'giselle', 'ningning', 'winter', 'shinyu', 'ricky', 'yujin']) {
+    assert.equal(pool.includes(id), true, id);
+    assert.equal(G.view(model, '全部', '').some((c) => c.id === id), false, id);
+    assert.equal(G.view(model, '全部', id).some((c) => c.id === id), false, id);
+  }
+  const exoSearch = G.view(model, '全部', 'exo');
+  assert.ok(exoSearch.every(G.isOpen));
+  assert.deepEqual(exoSearch.map((c) => c.id), ['baekhyun']);
   assert.deepEqual(G.view(model, 'aespa', '').map((c) => c.id), model.groups.find((g) => g.name === 'aespa').members.map((c) => c.id));
+  assert.ok(G.view(model, 'EXO', '').some((c) => c.id === 'kai'));
+  assert.deepEqual(G.view(model, 'EXO', 'kai').map((c) => c.id), ['kai']);
   assert.deepEqual(G.view(model, '全部', 'karina').map((c) => c.id), ['karina']);
-  assert.deepEqual(G.view(model, 'BLACKPINK', ''), model.pool, 'unknown tab falls back to 全部');
+  assert.deepEqual(G.view(model, 'BLACKPINK', '').map((c) => c.id), openIds, 'unknown tab falls back to 全部');
 });
 
 test('solo characters (个人, GOT7／个人, EXO／个人, no group) form 个人 only once one of them is open', () => {

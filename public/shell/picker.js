@@ -72,15 +72,17 @@
     pager.innerHTML = '';
     emptyEl.hidden = list.length > 0;
     goBtn.hidden = list.length === 0;
+    // Every cover in this roster starts loading here, so a swipe usually finds the photo
+    // already decoded. Each page still shows the dots until its own image is fully ready.
     list.forEach((ch) => {
       const page = document.createElement('article');
       page.className = 'picker-page';
       page.dataset.id = ch.id;
       const img = document.createElement('img');
       img.alt = ch.nameZh || ch.name || ch.id;
-      img.src = ch.portrait || ch.avatar;
       page.append(img);
       pager.append(page);
+      PortraitLoader.attach(page, img, ch.portrait || ch.avatar || '');
     });
     buildDots(list.length);
     paintMeta(list);
