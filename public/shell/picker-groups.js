@@ -52,10 +52,16 @@
       .filter(Boolean).join('\n').toLowerCase().includes(q));
   }
 
-  /** Characters shown for a tab ("全部" or a group/个人 name) and a search query. */
+  /**
+   * Characters shown for a tab and a search query.
+   * 「全部」 (and an unknown tab, which falls back to it) lists only people you can chat with.
+   * A real group tab still includes closed members so they show as 待开放.
+   * Search runs on that same list, so a search on 「全部」 cannot surface 待开放.
+   */
   function view(model, tab, query) {
     const group = tab && tab !== '全部' ? model.groups.find((g) => g.name === tab) : null;
-    return search(group ? group.members : model.pool, query);
+    const list = group ? group.members : model.pool.filter(isOpen);
+    return search(list, query);
   }
 
   return { SOLO, isOpen, isSolo, bucketOf, build, view, search };
