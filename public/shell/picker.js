@@ -223,5 +223,15 @@
     const list = filtered();
     const found = list.findIndex((ch) => ch.id === preset);
     if (found > 0) jump(found);
-  }).catch(() => { emptyEl.hidden = false; });
+  }).catch((err) => {
+    // Load/paint failure is not "no match": say so, hide the dead button, offer a retry.
+    if (window.console) console.error('picker failed', err);
+    pager.innerHTML = '';
+    goBtn.hidden = true;
+    emptyEl.hidden = false;
+    emptyEl.textContent = '加载失败，点这里重试';
+    emptyEl.setAttribute('role', 'button');
+    emptyEl.tabIndex = 0;
+    emptyEl.addEventListener('click', () => location.reload(), { once: true });
+  });
 })();

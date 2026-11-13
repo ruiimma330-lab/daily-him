@@ -1,5 +1,7 @@
-/* Daily Him shell. Bump VERSION when the precache list changes. */
-const VERSION = 'dh-pwa-6';
+/* Daily Him shell. Bump VERSION when the precache list changes.
+   Code (html/js/css/json) is network-first and only read from THIS version's cache, so an old
+   worker or old cache can never pair a stale script with a newer page (the empty-picker bug). */
+const VERSION = 'dh-pwa-7';
 const SHELL = `dh-shell-${VERSION}`;
 const MEDIA = `dh-media-${VERSION}`;
 
@@ -38,10 +40,24 @@ const PRECACHE = [
   '/shell/carousel-dots.js',
   '/shell/picker.js',
   '/shell/pick.html',
+  '/sw-heal.js',
 ];
 
+// Precache best-effort. Never store a redirect (e.g. /login served for a signed-in-only file
+// while logged out) under another file's URL. Activate right away instead of waiting for every
+// tab/PWA window to close, which on a home-screen app is effectively never.
+async function precache() {
+  const cache = await caches.open(SHELL);
+  await Promise.all(PRECACHE.map(async (path) => {
+    try {
+      const response = await fetch(new Request(path, { cache: 'reload', credentials: 'same-origin' }));
+      if (response && response.ok && !response.redirected) await cache.put(path, response);
+    } catch (_) { /* offline copy is optional */ }
+  }));
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(SHELL).then((cache) => cache.addAll(PRECACHE)));
+  event.waitUntil(precache().then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -70,6 +86,22 @@ function isImage(request, url) {
   return url.pathname.startsWith('/characters/') || url.pathname.startsWith('/icons/');
 }
 
+// Network first; on failure use this version's cache only (never another version's cache).
+async function networkFirst(request, cacheName, fallbackPath) {
+  const cache = await caches.open(cacheName);
+  try {
+    const response = await fetch(request);
+    if (response && response.ok && !response.redirected && response.type === 'basic') {
+      cache.put(request, response.clone()).catch(() => {});
+    }
+    return response;
+  } catch (_) {
+    const cached = await cache.match(request, { ignoreSearch: true })
+      || (fallbackPath ? await cache.match(fallbackPath) : null);
+    return cached || new Response('', { status: 504 });
+  }
+}
+
 async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
@@ -92,18 +124,19 @@ self.addEventListener('fetch', (event) => {
   // Only the public character list is.
   if (isApi(url)) {
     if (!isCharacterConfig(request, url)) return;
-    event.respondWith(staleWhileRevalidate(request, MEDIA));
+    // The roster changes with deploys (who is open); never show last deploy's list first.
+    event.respondWith(networkFirst(request, MEDIA));
     return;
   }
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request);
-        return response;
+        return await fetch(request);
       } catch (_) {
-        const cached = await caches.match(request) || await caches.match('/offline.html');
-        return cached;
+        const cache = await caches.open(SHELL);
+        return (await cache.match(request, { ignoreSearch: true })) || (await cache.match('/offline.html'))
+          || new Response('', { status: 504 });
       }
     })());
     return;
@@ -114,13 +147,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith((async () => {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    try {
-      return await fetch(request);
-    } catch (_) {
-      return cached || new Response('', { status: 504 });
-    }
-  })());
+  // Scripts, styles, copy.json, fonts: network first, this version's cache when offline.
+  event.respondWith(networkFirst(request, SHELL));
 });
