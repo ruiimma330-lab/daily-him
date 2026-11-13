@@ -254,12 +254,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   let relState = null;
   const TIER_LABEL = { stranger: '陌生 · 처음', friend: '朋友 · 친구', close: '好友 · 절친', flirty: '暧昧 · 썸' };
+  const SPARK_FLAME = '<svg class="spark-flame" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="12" height="12" fill="none" aria-hidden="true"><path d="M12 20.6c-3.4-1.6-5.3-5.1-4.7-8.7.4 1.5 1.5 2.4 2.5 2.4C9.6 9.6 11.2 6.4 14.4 3.6c.1 3.2 2.7 5.2 2.9 8.4.3 3.3-1.8 6.6-5.3 8.6z" stroke="currentColor" stroke-width="1.55" stroke-linejoin="round" stroke-linecap="round"/></svg>';
   function renderSpark() {
     const node = document.getElementById('spark');
     if (!node || !relState) return;
     node.hidden = false;
     node.className = `spark ${relState.streakState}`;
-    node.textContent = `🔥${relState.streak || 0}`;
+    node.innerHTML = `${SPARK_FLAME}<span class="spark-count">${relState.streak || 0}</span>`;
     node.title = '连续聊天天数';
   }
   function renderRelPop() {
@@ -276,7 +277,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const lines = [
       `相识第 <b>${relState.daysKnown || 0}</b> 天 · 一共聊了 ${relState.totalTurns} 次`,
       `现在的关系：<b>${TIER_LABEL[relState.tier.id] || relState.tier.name}</b>`,
-      `连续聊天 🔥 ${relState.streak || 0} 天`,
+      `连续聊天 <span class="spark spark-inline ${relState.streakState}">${SPARK_FLAME}</span> ${relState.streak || 0} 天`,
       `<small>${tip}</small>`,
     ];
     pop.innerHTML = lines.join('<br>');
