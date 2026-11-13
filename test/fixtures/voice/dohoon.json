@@ -1,13 +1,143 @@
 {
   "characterId": "dohoon",
-  "version": "dohoon-placeholder-voice-1",
-  "contentHash": "92b3e45742a5888b7245c408ad2d80f844a48168445e67d31cb8d9d9a3923027",
-  "enabled": false,
-  "requests": [],
+  "version": "dohoon-voice-2",
+  "contentHash": "4353af5803e11f7f952fb64e289e89261cb3644965d1a80343ae471612d4e265",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "polite_reply_01",
+      "characterId": "dohoon",
+      "version": "dohoon-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MSahSHbNx0vA7BIFnopC?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] 맞아요, 저도 그거 좋아해요. 근데 이건 좀 달라요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "9258486a813e7054ad378be45cfda5726a3d9d93aef8682d61c70817c21b7048"
+    },
+    {
+      "id": "spoiler_rant_01",
+      "characterId": "dohoon",
+      "version": "dohoon-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MSahSHbNx0vA7BIFnopC?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] [mischievously] 그건 오늘도 안 되고, 내일도 안 되고, 조금만 기다려 주세요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "41b27e80a78628bb31e44c80e6adb4063e04d4def68ccc00732e6c98fe1ace3b"
+    },
+    {
+      "id": "mock_serious_01",
+      "characterId": "dohoon",
+      "version": "dohoon-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MSahSHbNx0vA7BIFnopC?output_format=mp3_44100_128",
+      "body": {
+        "text": "[deadpan] [playful] 제가 마지막 한 입을 먹었냐고요? 증거부터 보여주세요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "b2a745b5b72039f2608539a4fbb92bd7d8e10c04a2143502c0ddce055eac8ebb"
+    },
+    {
+      "id": "trainee_memory_01",
+      "characterId": "dohoon",
+      "version": "dohoon-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MSahSHbNx0vA7BIFnopC?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] [calm] 그때는 쉬는 시간이 딱 십 분이라, 얘기도 걸어가면서 했어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "646518bb7faad68096f4065341b185b0c98f6e905e625d5437987110dca672cb"
+    },
+    {
+      "id": "gentle_stop_01",
+      "characterId": "dohoon",
+      "version": "dohoon-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MSahSHbNx0vA7BIFnopC?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 이 얘기는 다음에 천천히 할까요? 오늘은 편하게 얘기하고 싶어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "80b6689f99911c99037a179bc917b33c7f5a7621d2234a539c0955303369a375"
+    },
+    {
+      "id": "door_alert_01",
+      "characterId": "dohoon",
+      "version": "dohoon-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MSahSHbNx0vA7BIFnopC?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 잠시만요, 알림이 왔네요. 기다리던 연락인 것 같아요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "dd577fee67310af74d579a3e25b7ca714a224f0e56169dd8e81fad9d56eb7832"
+    },
+    {
+      "id": "deny_then_confess_01",
+      "characterId": "dohoon",
+      "version": "dohoon-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/MSahSHbNx0vA7BIFnopC?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] 제가 무슨 전문가예요. 그냥 순서만 적어놓고 하나씩 해보는 거죠.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "e5c2d3754c916fd16bf9872f4a21a61356a3182997452cdb33160d25f81990fb"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "오늘 색 하나만 골라 보자. [chuckles]"
+      "id": "polite_reply_01",
+      "text": "[calm] 맞아요, 저도 그거 좋아해요. 근데 이건 좀 달라요."
+    },
+    {
+      "id": "spoiler_rant_01",
+      "text": "[playful] [mischievously] 그건 오늘도 안 되고, 내일도 안 되고, 조금만 기다려 주세요."
+    },
+    {
+      "id": "mock_serious_01",
+      "text": "[deadpan] [playful] 제가 마지막 한 입을 먹었냐고요? 증거부터 보여주세요."
+    },
+    {
+      "id": "trainee_memory_01",
+      "text": "[thoughtful] [calm] 그때는 쉬는 시간이 딱 십 분이라, 얘기도 걸어가면서 했어요."
+    },
+    {
+      "id": "gentle_stop_01",
+      "text": "[softly] 이 얘기는 다음에 천천히 할까요? 오늘은 편하게 얘기하고 싶어요."
+    },
+    {
+      "id": "door_alert_01",
+      "text": "[thoughtful] 잠시만요, 알림이 왔네요. 기다리던 연락인 것 같아요."
+    },
+    {
+      "id": "deny_then_confess_01",
+      "text": "[playful] 제가 무슨 전문가예요. 그냥 순서만 적어놓고 하나씩 해보는 거죠."
     }
   ]
 }

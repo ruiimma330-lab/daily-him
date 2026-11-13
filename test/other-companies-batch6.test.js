@@ -9,6 +9,7 @@ const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
 const report = require('../batch6-age-report.json');
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
 const ids = ['chaeunwoo','gdragon','taemin','juyeon','anxin','xinlong','sangwon','ricky','zhanghao','gyuvin','hanyujin'];
 
 test('batch6 packs remain complete and deferred; discovery follows the approved roster', () => {
@@ -34,17 +35,26 @@ test('batch6 packs remain complete and deferred; discovery follows the approved 
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);
-    assert.equal(pack.lock.voiceId, '');
-    assert.equal(pack.lock.placeholderVoice, 'male');
-    assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    if (voice2.includes(id)) {
+      assert.equal(pack.enabled, true);
+      assert.equal(pack.lock.version, `${id}-voice-2`);
+      assert.equal(pack.lock.model, 'eleven_v3');
+      assert.equal(Object.hasOwn(pack.lock, 'placeholderVoice'), false);
+    } else {
+      assert.equal(pack.lock.voiceId, '');
+      assert.equal(pack.lock.placeholderVoice, 'male');
+      assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    }
     assert.deepEqual(pack.lock.pins, []);
     assert.equal(pack.lock.tags, 'keep');
     const fixture = require(`./fixtures/voice/${id}.json`);
     assert.equal(fixture.contentHash, voice.contentHash(id, pack.lock));
     assert.deepEqual(fixture.preparedSamples, pack.lock.samples.map(s => ({id:s.id,text:pack.prepare(s.text,s.mood,pack.lock)})));
-    assert.match(fixture.preparedSamples[0].text, /\[chuckles\]/);
-    assert.throws(() => voice.buildRequest({...pack,configuredVoiceId:''},'안녕'), /not configured/);
-    assert.match(voice.buildRequest({...pack,configuredVoiceId:'offline-placeholder'},'안녕').endpoint,/offline-placeholder/);
+    if (!voice2.includes(id)) {
+      assert.match(fixture.preparedSamples[0].text, /\[chuckles\]/);
+      assert.throws(() => voice.buildRequest({...pack,configuredVoiceId:''},'안녕'), /not configured/);
+      assert.match(voice.buildRequest({...pack,configuredVoiceId:'offline-placeholder'},'안녕').endpoint,/offline-placeholder/);
+    }
     assert.match(fs.readFileSync(path.join(dir,'facts.md'),'utf8'),/待人工核验/);
     const moments = JSON.parse(fs.readFileSync(path.join(dir,'moments.json'),'utf8'));
     for (const post of moments.posts) {

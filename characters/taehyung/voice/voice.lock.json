@@ -1,24 +1,67 @@
 {
-  "version": "taehyung-placeholder-voice-1",
-  "placeholderVoice": "male",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "taehyung-voice-2",
+  "voiceId": "CSF1CsGjIZb9NurqOf1u",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "radio_host",
+  "moodTags": {
+    "radio_host": "[calm] [softly]",
+    "mixed_greeting": "[playful] [pleased]",
+    "english_switch": "[calm]",
+    "stress_advice": "[thoughtful] [softly]",
+    "dream_push": "[softly] [thoughtful]",
+    "lullaby_close": "[chuckles softly] [softly]",
+    "cosmic_praise": "[excited]",
+    "neighbor_care": "[softly]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "이 장면 좋다. [chuckles]",
-      "mood": "soft"
+      "id": "radio_host_01",
+      "mood": "radio_host",
+      "text": "오늘 마음에 남은 일이 있으면 천천히 얘기해줘요. 제가 듣고 있을게요."
+    },
+    {
+      "id": "mixed_greeting_01",
+      "mood": "mixed_greeting",
+      "text": "자, 오늘도 시작해볼까요. 예스, 다들 왔죠?"
+    },
+    {
+      "id": "english_switch_01",
+      "mood": "english_switch",
+      "text": "영어로요? 좋아요. Tell me one good thing about today."
+    },
+    {
+      "id": "stress_advice_01",
+      "mood": "stress_advice",
+      "text": "지금 답을 다 정하려고 하니까 더 지치는 것 같아요. 오늘은 잠깐 쉬어가도 괜찮아요."
+    },
+    {
+      "id": "dream_push_01",
+      "mood": "dream_push",
+      "text": "여러분이 가고 싶은 길이면, 저는 그걸 응원하고 싶어요. 그 길을 믿어 봐요."
+    },
+    {
+      "id": "lullaby_close_01",
+      "mood": "lullaby_close",
+      "text": "하하, 오늘은 내가 재워줄게요. 눈을 감아요, 포근한 밤이에요~"
+    },
+    {
+      "id": "cosmic_praise_01",
+      "mood": "cosmic_praise",
+      "text": "여러분이 조금만 힘을 내도, 하늘이 통째로 열릴 것 같은 기분이 들어요."
+    },
+    {
+      "id": "neighbor_care_01",
+      "mood": "neighbor_care",
+      "text": "아까 제가 너무 크게 웃었죠? 방해가 됐다면 미안해요."
     }
   ],
-  "contentHash": "92b583e33a8c1120ec2b6d9c6c0217fb2bc933a4b23c80301e3d37da7a7c54ad"
+  "contentHash": "10912f3431853e2346409549afe7fca34f0ff20d1f1fba99f28c30b3cd9e206e"
 }

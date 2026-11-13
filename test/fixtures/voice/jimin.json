@@ -1,13 +1,162 @@
 {
   "characterId": "jimin",
-  "version": "jimin-placeholder-voice-1",
-  "contentHash": "c60020ea168f92f31a63024220b4c8e3278c73bce146feed075967cdd7ffb651",
-  "enabled": false,
-  "requests": [],
+  "version": "jimin-voice-2",
+  "contentHash": "9b0722e92a0a619a7e0f5c8ab6cd06d383d516513de006b70170250dfc1d2902",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "word_search_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 이걸 어떻게 말해야 할지 모르겠어요. 뭔가, 조금 복잡한 마음이에요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "58b92185dc3a48482e0112d6642033d94f7103c204d75e34810ba254eea21705"
+    },
+    {
+      "id": "flaw_breakdown_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] [thoughtful] 제가 설명을 짧게 못 하겠더라고요. 이유까지 말해야 마음이 놓여서 그런가 봐요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "2f978b9333b93112661bf89683f85467e4cc06b0f70eb89fc1423f092ae1d9a8"
+    },
+    {
+      "id": "cringe_self_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 이런 얘기 하다 보면, 조금 민망하기도 해요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "abfb28299a08fe69468bc3b2a7d06ae1adc2a64f3a8fbee1c9a06beb2c601c9d"
+    },
+    {
+      "id": "gentle_aging_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 나중에 돌아봤을 때 지금 모습도 편하게 웃으면서 볼 수 있으면 좋겠어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "31c2177b90bb147783ce5f46f0c9582963e774c2d90eca06c2e61eaf581f46bf"
+    },
+    {
+      "id": "earn_not_easy_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 바로 하겠다고 말은 못 하겠어요. 제대로 생각하고 준비해서 하고 싶어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "d0c17029b14652912418e849e3246f5421db897000cb65337f7da5be9f4c8761"
+    },
+    {
+      "id": "comment_echo_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 추천이요? 제가 고르는 데 시간이 좀 걸리는데, 같이 골라볼까요?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "4ee40d526d6a947425a35a7914d0ddd465f70e50fb8a6391aaf07efedf3b5726"
+    },
+    {
+      "id": "food_memory_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[amused] [playful] 예전엔 메뉴 사진만 봐도 배가 고팠어요. 분명 방금 먹었는데도요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "d24fb42cd7f8a6415b899141226e0424794020edd83be0e65226538aa676c38e"
+    },
+    {
+      "id": "reunion_nervous_01",
+      "characterId": "jimin",
+      "version": "jimin-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/qFXWyEzH208iC0VGeu1p?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] [thoughtful] 오랜만이라 긴장돼요. 너무 오래 못 보여줘서 그래요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "d84698c6fe6b0ac2cebce324c10025a5dc552e6eac220443cdec3a4fbe99628a"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "오늘도 잘 왔어. [chuckles]"
+      "id": "word_search_01",
+      "text": "[thoughtful] 이걸 어떻게 말해야 할지 모르겠어요. 뭔가, 조금 복잡한 마음이에요."
+    },
+    {
+      "id": "flaw_breakdown_01",
+      "text": "[calm] [thoughtful] 제가 설명을 짧게 못 하겠더라고요. 이유까지 말해야 마음이 놓여서 그런가 봐요."
+    },
+    {
+      "id": "cringe_self_01",
+      "text": "[softly] 이런 얘기 하다 보면, 조금 민망하기도 해요."
+    },
+    {
+      "id": "gentle_aging_01",
+      "text": "[softly] 나중에 돌아봤을 때 지금 모습도 편하게 웃으면서 볼 수 있으면 좋겠어요."
+    },
+    {
+      "id": "earn_not_easy_01",
+      "text": "[thoughtful] 바로 하겠다고 말은 못 하겠어요. 제대로 생각하고 준비해서 하고 싶어요."
+    },
+    {
+      "id": "comment_echo_01",
+      "text": "[softly] 추천이요? 제가 고르는 데 시간이 좀 걸리는데, 같이 골라볼까요?"
+    },
+    {
+      "id": "food_memory_01",
+      "text": "[amused] [playful] 예전엔 메뉴 사진만 봐도 배가 고팠어요. 분명 방금 먹었는데도요."
+    },
+    {
+      "id": "reunion_nervous_01",
+      "text": "[softly] [thoughtful] 오랜만이라 긴장돼요. 너무 오래 못 보여줘서 그래요."
     }
   ]
 }

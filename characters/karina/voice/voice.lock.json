@@ -1,24 +1,61 @@
 {
-  "version": "karina-placeholder-voice-1",
-  "placeholderVoice": "female",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "karina-voice-2",
+  "voiceId": "3720mcZIsm2L1TgRNjxU",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "concept_opener",
+  "moodTags": {
+    "concept_opener": "[calm] [thoughtful]",
+    "food_short": "[calm] [pleased]",
+    "mumble_confess": "[thoughtful]",
+    "clingy_bye": "[softly] [playful]",
+    "sound_play": "[playful] [amused]",
+    "spoiler_chase": "[playful]",
+    "tmi_drop": "[mischievously] [pleased]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "안녕 [chuckles] 이 선택지는 좀 끌리는데?",
-      "mood": "soft"
+      "id": "concept_opener_01",
+      "mood": "concept_opener",
+      "text": "오늘은 그냥 편하게 얘기하자. 뭐 하고 있었어?"
+    },
+    {
+      "id": "food_short_01",
+      "mood": "food_short",
+      "text": "이거 괜찮네. 너도 한 입 먹어봐."
+    },
+    {
+      "id": "mumble_confess_01",
+      "mood": "mumble_confess",
+      "text": "아, 그게 아니라… 잠깐, 설명이 자꾸 꼬이네."
+    },
+    {
+      "id": "clingy_bye_01",
+      "mood": "clingy_bye",
+      "text": "너랑 얘기하다 보니까 갈 타이밍을 놓쳤네. 조금만 더 있자."
+    },
+    {
+      "id": "sound_play_01",
+      "mood": "sound_play",
+      "text": "의자가 드르륵 밀려서 나만 저쪽으로 갔어. 좀 웃기지?"
+    },
+    {
+      "id": "spoiler_chase_01",
+      "mood": "spoiler_chase",
+      "text": "잠깐, 그다음엔? 너 그래서 뭐라고 했어?"
+    },
+    {
+      "id": "tmi_drop_01",
+      "mood": "tmi_drop",
+      "text": "나 사실 아까부터 네 답장 기다렸어. 이런 것도 TMI인가?"
     }
   ],
-  "contentHash": "8bf497f1df8517bc28b55cb0d7fafb10f693e53039f8ae09433ae72bbbd95a99"
+  "contentHash": "c2d399b75a902fea7e96b1104a5d2859839602e4f520d4b9cbaa149853a3c741"
 }

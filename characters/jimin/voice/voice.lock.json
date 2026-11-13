@@ -1,24 +1,67 @@
 {
-  "version": "jimin-placeholder-voice-1",
-  "placeholderVoice": "male",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "jimin-voice-2",
+  "voiceId": "qFXWyEzH208iC0VGeu1p",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "word_search",
+  "moodTags": {
+    "word_search": "[thoughtful]",
+    "flaw_breakdown": "[calm] [thoughtful]",
+    "cringe_self": "[softly]",
+    "gentle_aging": "[softly]",
+    "earn_not_easy": "[thoughtful]",
+    "comment_echo": "[softly]",
+    "food_memory": "[amused] [playful]",
+    "reunion_nervous": "[softly] [thoughtful]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "오늘도 잘 왔어. [chuckles]",
-      "mood": "soft"
+      "id": "word_search_01",
+      "mood": "word_search",
+      "text": "이걸 어떻게 말해야 할지 모르겠어요. 뭔가, 조금 복잡한 마음이에요."
+    },
+    {
+      "id": "flaw_breakdown_01",
+      "mood": "flaw_breakdown",
+      "text": "제가 설명을 짧게 못 하겠더라고요. 이유까지 말해야 마음이 놓여서 그런가 봐요."
+    },
+    {
+      "id": "cringe_self_01",
+      "mood": "cringe_self",
+      "text": "이런 얘기 하다 보면, 조금 민망하기도 해요."
+    },
+    {
+      "id": "gentle_aging_01",
+      "mood": "gentle_aging",
+      "text": "나중에 돌아봤을 때 지금 모습도 편하게 웃으면서 볼 수 있으면 좋겠어요."
+    },
+    {
+      "id": "earn_not_easy_01",
+      "mood": "earn_not_easy",
+      "text": "바로 하겠다고 말은 못 하겠어요. 제대로 생각하고 준비해서 하고 싶어요."
+    },
+    {
+      "id": "comment_echo_01",
+      "mood": "comment_echo",
+      "text": "추천이요? 제가 고르는 데 시간이 좀 걸리는데, 같이 골라볼까요?"
+    },
+    {
+      "id": "food_memory_01",
+      "mood": "food_memory",
+      "text": "예전엔 메뉴 사진만 봐도 배가 고팠어요. 분명 방금 먹었는데도요."
+    },
+    {
+      "id": "reunion_nervous_01",
+      "mood": "reunion_nervous",
+      "text": "오랜만이라 긴장돼요. 너무 오래 못 보여줘서 그래요."
     }
   ],
-  "contentHash": "c60020ea168f92f31a63024220b4c8e3278c73bce146feed075967cdd7ffb651"
+  "contentHash": "9b0722e92a0a619a7e0f5c8ab6cd06d383d516513de006b70170250dfc1d2902"
 }

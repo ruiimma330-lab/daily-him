@@ -9,6 +9,7 @@ const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
 const report = require('../batch3-age-report.json');
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
 const ids = ['wonwoo','mingyu','jeonghan','scoups','shinyu','dohoon','hanjin','tws-jihoon','myungjaehyun','taesan','wonhee','moka','minju','sakura','chaewon'];
 
 test('15 complete packs are visible and deferred, with adult policy and valid placeholder locks', () => {
@@ -39,19 +40,28 @@ test('15 complete packs are visible and deferred, with adult policy and valid pl
     }
     const pack = voice.load(id);
     assert.equal(pack.ok, true, id);
-    assert.equal(pack.enabled, false);
-    assert.equal(pack.lock.voiceId, '');
-    assert.equal(pack.lock.placeholderVoice, meta.gender);
-    assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    if (voice2.includes(id)) {
+      assert.equal(pack.enabled, true);
+      assert.equal(pack.lock.version, `${id}-voice-2`);
+      assert.equal(pack.lock.model, 'eleven_v3');
+      assert.equal(Object.hasOwn(pack.lock, 'placeholderVoice'), false);
+    } else {
+      assert.equal(pack.enabled, false);
+      assert.equal(pack.lock.voiceId, '');
+      assert.equal(pack.lock.placeholderVoice, meta.gender);
+      assert.equal(pack.lock.version, `${id}-placeholder-voice-1`);
+    }
     assert.equal(pack.lock.tags, 'keep');
     assert.deepEqual(pack.lock.pins, []);
     const fixture = require(`./fixtures/voice/${id}.json`);
     assert.equal(fixture.contentHash, voice.contentHash(id,pack.lock));
     assert.deepEqual(fixture.preparedSamples, pack.lock.samples.map(s => ({id:s.id,text:pack.prepare(s.text,s.mood,pack.lock)})));
-    assert.match(fixture.preparedSamples[0].text, /\[chuckles\]/);
-    assert.throws(() => voice.buildRequest(pack, 'hello'), /not configured/);
-    const configured = {...pack,configuredVoiceId:'offline-placeholder'};
-    assert.match(voice.buildRequest(configured,'hello').endpoint, /offline-placeholder/);
+    if (!voice2.includes(id)) {
+      assert.match(fixture.preparedSamples[0].text, /\[chuckles\]/);
+      assert.throws(() => voice.buildRequest(pack, 'hello'), /not configured/);
+      const configured = {...pack,configuredVoiceId:'offline-placeholder'};
+      assert.match(voice.buildRequest(configured,'hello').endpoint, /offline-placeholder/);
+    }
   }
 });
 

@@ -1,24 +1,61 @@
 {
-  "version": "wonbin-placeholder-voice-1",
-  "placeholderVoice": "male",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "wonbin-voice-2",
+  "voiceId": "2RLkFWqg37l6O4F9kz1J",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "blunt_intro",
+  "moodTags": {
+    "blunt_intro": "[calm]",
+    "eating_murmur": "[softly] [calm]",
+    "honest_thanks": "[softly] [pleased]",
+    "member_imitation": "[playful] [mischievously]",
+    "edit_promise": "[softly] [playful]",
+    "retract_words": "[softly]",
+    "lost_track": "[thoughtful]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "안녕 [chuckles] 한 번 더 들어 볼래?",
-      "mood": "soft"
+      "id": "blunt_intro_01",
+      "mood": "blunt_intro",
+      "text": "나 잠깐 쉬고 있어. 너는?"
+    },
+    {
+      "id": "eating_murmur_01",
+      "mood": "eating_murmur",
+      "text": "음, 맛있어. 와, 이거 좀 잘 됐다."
+    },
+    {
+      "id": "honest_thanks_01",
+      "mood": "honest_thanks",
+      "text": "아까 네가 해준 말, 계속 생각나더라. 고마워."
+    },
+    {
+      "id": "member_imitation_01",
+      "mood": "member_imitation",
+      "text": "친구가 사진 보더니 ‘이건 저장해야지’ 이러더라. 좀 귀여웠어."
+    },
+    {
+      "id": "edit_promise_01",
+      "mood": "edit_promise",
+      "text": "아, 방금 건 못 본 척해줘. 좀 민망하네."
+    },
+    {
+      "id": "retract_words_01",
+      "mood": "retract_words",
+      "text": "할 말 있었는데. 아니다, 그냥 넘어갈게."
+    },
+    {
+      "id": "lost_track_01",
+      "mood": "lost_track",
+      "text": "잠깐만, 내가 방금 뭐 말하려 했지? 아, 잊었다."
     }
   ],
-  "contentHash": "db26240ff8b56708d0d651d6e0af6d630753efd8aeb3c4c3a028cf439bc1f6ff"
+  "contentHash": "5203df896f88f13c0ce6155e7e9ffde881def6e3dca4e5d7828800e1848ef1cf"
 }

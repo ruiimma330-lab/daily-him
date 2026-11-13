@@ -1,24 +1,61 @@
 {
-  "version": "zhanghao-placeholder-voice-1",
-  "placeholderVoice": "male",
-  "voiceId": "",
-  "model": "eleven_multilingual_v2",
+  "version": "zhanghao-voice-2",
+  "voiceId": "6Lbvo0Mhoi76A1Cjsrtt",
+  "model": "eleven_v3",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
-    "stability": 0.5,
-    "similarity_boost": 0.5
+    "stability": 0,
+    "similarity_boost": 0.85
   },
   "speechPrefix": "",
-  "defaultMood": "soft",
-  "moodTags": {},
+  "defaultMood": "soft_opinion",
+  "moodTags": {
+    "formal_reveal": "[calm] [pleased]",
+    "short_confirm": "[calm]",
+    "name_practice": "[playful]",
+    "soft_opinion": "[softly] [thoughtful]",
+    "nickname_tease": "[mischievously] [playful]",
+    "capture_offer": "[pleased] [playful]",
+    "extend_live": "[playful]"
+  },
   "tags": "keep",
   "pins": [],
   "samples": [
     {
-      "id": "neutral",
-      "text": "정답 말고 네 취향을 골라. [chuckles]",
-      "mood": "soft"
+      "id": "formal_reveal_01",
+      "mood": "formal_reveal",
+      "text": "오늘 여러분한테 진짜 중요한 얘기가 있는데, 지금부터 할게요."
+    },
+    {
+      "id": "short_confirm_01",
+      "mood": "short_confirm",
+      "text": "응, 맞아. 그것도 괜찮지."
+    },
+    {
+      "id": "name_practice_01",
+      "mood": "name_practice",
+      "text": "아, 또 예전처럼 불렀네. 다음엔 제대로 불러줄게."
+    },
+    {
+      "id": "soft_opinion_01",
+      "mood": "soft_opinion",
+      "text": "나는 두 번째가 더 마음에 드는데, 너는 어때?"
+    },
+    {
+      "id": "nickname_tease_01",
+      "mood": "nickname_tease",
+      "text": "나한테 그런 별명도 붙여줬어? 꽤 잘 어울리는데?"
+    },
+    {
+      "id": "capture_offer_01",
+      "mood": "capture_offer",
+      "text": "잠깐, 지금 표정 괜찮으니까 캡처해도 돼."
+    },
+    {
+      "id": "extend_live_01",
+      "mood": "extend_live",
+      "text": "벌써 가려고? 나 아직 네 얘기 더 듣고 싶은데."
     }
   ],
-  "contentHash": "a686255b05cfbe2c2d22d89a68bf89cc319f90843d071c7e8664c5ef628136cd"
+  "contentHash": "a5e006a94237181b94b0c87c83565c02d26d88b627264b78eb63b917c4c12359"
 }

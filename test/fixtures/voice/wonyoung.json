@@ -1,13 +1,143 @@
 {
   "characterId": "wonyoung",
-  "version": "wonyoung-placeholder-voice-1",
-  "contentHash": "7d59d5446325098945363cfe6e209b636ce78265c8ab77cbf3ca93b81b1586ad",
-  "enabled": false,
-  "requests": [],
+  "version": "wonyoung-voice-2",
+  "contentHash": "0688df750f1b6a4c672582dc61d83fc9e8e752017f9a790864e11306f52f6eec",
+  "enabled": true,
+  "requests": [
+    {
+      "id": "tech_check_01",
+      "characterId": "wonyoung",
+      "version": "wonyoung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CQsxAisrNbwF3bKufT9U?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] [pleased] 어, 네가 보낸 사진 이제 보여. 너무 귀엽잖아!",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "8958a18b0349682bd9833f1c0dc07252ec9adf4336eae59cf0995a742dd13096"
+    },
+    {
+      "id": "unnie_help_01",
+      "characterId": "wonyoung",
+      "version": "wonyoung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CQsxAisrNbwF3bKufT9U?output_format=mp3_44100_128",
+      "body": {
+        "text": "[softly] 나 이거 처음 해봐서, 네가 옆에서 좀 알려줘야 돼.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "8dd5c0ef92347f6c1653465d734569494dbf95be63ce02ba6a40516cb4c59cf6"
+    },
+    {
+      "id": "warm_comment_01",
+      "characterId": "wonyoung",
+      "version": "wonyoung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CQsxAisrNbwF3bKufT9U?output_format=mp3_44100_128",
+      "body": {
+        "text": "[pleased] 너 그렇게 말해주니까 나 진짜 힘난다. 고마워요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "8fe37f0d9c4e44faa99eb0301b4eaed0fc4db6ee9c132981fc90f55821845c1f"
+    },
+    {
+      "id": "pretend_calm_01",
+      "characterId": "wonyoung",
+      "version": "wonyoung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CQsxAisrNbwF3bKufT9U?output_format=mp3_44100_128",
+      "body": {
+        "text": "[mischievously] [playful] 지금은 아무 말도 안 하려고 했는데… 벌써 참을 수가 없네.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "0937e42a9b5f8f83edf5df15b44d1e4ee01417d9408f2b0f03d5bcd5e4267c77"
+    },
+    {
+      "id": "self_meme_01",
+      "characterId": "wonyoung",
+      "version": "wonyoung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CQsxAisrNbwF3bKufT9U?output_format=mp3_44100_128",
+      "body": {
+        "text": "[playful] [mischievously] 이 정도면 내가 간식 심사위원 해도 되겠어. 너무 진지한가?",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "a0d88b34a79cb44a39a779bd24f6306dd5e2ef86b133eaf327f2d305a7a37a45"
+    },
+    {
+      "id": "taste_test_01",
+      "characterId": "wonyoung",
+      "version": "wonyoung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CQsxAisrNbwF3bKufT9U?output_format=mp3_44100_128",
+      "body": {
+        "text": "[thoughtful] 조금 긴장된다. 향은 괜찮은데, 맛이 좀 낯설어요.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "aafa44eb192587742a92c69b6be3665947d18fa785cd096604626afe30b0eeb3"
+    },
+    {
+      "id": "quick_signoff_01",
+      "characterId": "wonyoung",
+      "version": "wonyoung-voice-2",
+      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/CQsxAisrNbwF3bKufT9U?output_format=mp3_44100_128",
+      "body": {
+        "text": "[calm] [softly] 나 잠깐 할 일만 마저 하고 올게. 조금만 기다려줘.",
+        "model_id": "eleven_v3",
+        "voice_settings": {
+          "stability": 0,
+          "similarity_boost": 0.85
+        }
+      },
+      "cacheKey": "1fd51a16af27073f538d33a4e62807bf3d71967656432975308e441c0a88365e"
+    }
+  ],
   "preparedSamples": [
     {
-      "id": "neutral",
-      "text": "안녕 [chuckles] 오늘도 반가워."
+      "id": "tech_check_01",
+      "text": "[thoughtful] [pleased] 어, 네가 보낸 사진 이제 보여. 너무 귀엽잖아!"
+    },
+    {
+      "id": "unnie_help_01",
+      "text": "[softly] 나 이거 처음 해봐서, 네가 옆에서 좀 알려줘야 돼."
+    },
+    {
+      "id": "warm_comment_01",
+      "text": "[pleased] 너 그렇게 말해주니까 나 진짜 힘난다. 고마워요."
+    },
+    {
+      "id": "pretend_calm_01",
+      "text": "[mischievously] [playful] 지금은 아무 말도 안 하려고 했는데… 벌써 참을 수가 없네."
+    },
+    {
+      "id": "self_meme_01",
+      "text": "[playful] [mischievously] 이 정도면 내가 간식 심사위원 해도 되겠어. 너무 진지한가?"
+    },
+    {
+      "id": "taste_test_01",
+      "text": "[thoughtful] 조금 긴장된다. 향은 괜찮은데, 맛이 좀 낯설어요."
+    },
+    {
+      "id": "quick_signoff_01",
+      "text": "[calm] [softly] 나 잠깐 할 일만 마저 하고 올게. 조금만 기다려줘."
     }
   ]
 }
