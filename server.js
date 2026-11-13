@@ -494,7 +494,10 @@ function isBrandPath(p) {
 }
 
 function isPwaAsset(p) {
-  return p === '/sw.js' || p === '/pwa.js' || p === '/pwa.css' || p === '/offline.html'
+  // account-cache.js / sw-heal.js are plain code with no account data. They must be public so the
+  // service worker never precaches the /login page under their URL while logged out.
+  return p === '/sw.js' || p === '/sw-heal.js' || p === '/account-cache.js'
+    || p === '/pwa.js' || p === '/pwa.css' || p === '/offline.html'
     || p === '/app.js' || p === '/style.css' || p === '/moments.css' || p === '/moments.js' || p === '/memory.js'
     || p.startsWith('/me/')
     || p.startsWith('/shell/');
