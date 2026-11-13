@@ -15,6 +15,7 @@ const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
 const relationship = require('../lib/relationship');
 const store = require('../lib/store');
+const { isLaunch } = require('./helpers/launch10');
 const ids = ['sehun','the8','jun','renjun','ningning','yuqi','shuhua','tzuyu','jacksonwang','layzhang'];
 const fixtureId = 'zzagebatchapi';
 const fixtureDir = path.join(chars.CHAR_DIR, fixtureId);
@@ -65,6 +66,12 @@ test('picker lists retained deferred characters and chat/TTS reject them while B
     const info = data.characters.find(c => c.id === id);
     assert.equal(Boolean(info), chars.isPublic(id), id);
     if (!info) continue;
+    if (isLaunch(id)) {
+      // jimin / jungkook / taehyung are open for the 10-person launch.
+      assert.equal(info.available, true, id);
+      assert.equal(info.availabilityLabel, '');
+      continue;
+    }
     assert.equal(info.available, false);
     assert.equal(info.availabilityLabel, '暂未开放');
     for (const route of ['/api/chat', '/api/tts']) {

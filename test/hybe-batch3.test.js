@@ -8,11 +8,12 @@ const chars = require('../lib/characters');
 const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
+const { isLaunch, expectGuard } = require('./helpers/launch10');
 const report = require('../batch3-age-report.json');
-const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (open for launch)
 const ids = ['wonwoo','mingyu','jeonghan','scoups','shinyu','dohoon','hanjin','tws-jihoon','myungjaehyun','taesan','wonhee','moka','minju','sakura','chaewon'];
 
-test('15 complete packs are visible and deferred, with adult policy and valid placeholder locks', () => {
+test('15 complete packs are visible (launch ones open, the rest deferred), with adult policy and valid placeholder locks', () => {
   assert.deepEqual(report.map(r => r.id), ids);
   for (const id of ids) {
     const dir = path.join(chars.CHAR_DIR, id);
@@ -22,8 +23,8 @@ test('15 complete packs are visible and deferred, with adult policy and valid pl
     assert.ok(meta.companyIds.includes('hybe'));
     assert.equal(chars.resolveId(id), id);
     const publicInfo = chars.publicInfo(id);
-    assert.equal(publicInfo.available, false);
-    assert.equal(publicInfo.availabilityLabel, '暂未开放');
+    assert.equal(publicInfo.available, isLaunch(id), id);
+    assert.equal(publicInfo.availabilityLabel, isLaunch(id) ? '' : '暂未开放');
     assert.equal(age.policy(id).strict, false);
     assert.deepEqual(age.policy(id).allowedTiers, ['stranger','friend','close','flirty']);
     const adultDate = new Date(meta.birthDate); adultDate.setUTCFullYear(adultDate.getUTCFullYear() + 18);
@@ -65,7 +66,7 @@ test('15 complete packs are visible and deferred, with adult policy and valid pl
   }
 });
 
-test('chat and TTS reject every batch3 pack through actual middleware without listening', () => {
+test('chat and TTS reject deferred batch3 packs and allow launch ones through actual middleware without listening', () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-batch3-'));
   const previous = process.env.STORE_DATA_DIR;
   process.env.STORE_DATA_DIR = data;
@@ -74,16 +75,7 @@ test('chat and TTS reject every batch3 pack through actual middleware without li
     for (const route of ['/api/chat','/api/tts']) {
       const layer = app._router.stack.find(l => l.route && l.route.path === route && l.route.methods.post);
       const guard = layer.route.stack.find(l => l.handle.name === 'requireAvailable').handle;
-      for (const id of ids) {
-        let status, body, passed = false;
-        guard({characterId:id,body:{}},{status(s){status=s;return this;},json(b){body=b;}},()=>{passed=true;});
-        assert.equal(passed,false,id + route);
-        assert.equal(status,404);
-        assert.equal(body.error,'character unavailable');
-      }
-      let passed = false;
-      guard({characterId:'baekhyun',body:{}},{},()=>{passed=true;});
-      assert.equal(passed,true);
+      for (const id of [...ids, 'baekhyun']) expectGuard(assert, guard, id, route);
     }
     for (const id of ['kai','mark']) assert.equal(chars.publicInfo(id).availabilityLabel,'');
   } finally {

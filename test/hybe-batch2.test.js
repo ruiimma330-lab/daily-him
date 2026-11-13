@@ -8,13 +8,20 @@ const chars = require('../lib/characters');
 const packs = require('../lib/character-pack');
 const voice = require('../lib/voice-pack');
 const age = require('../lib/age-policy');
-const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (still unavailable)
+const { isLaunch, expectGuard } = require('./helpers/launch10');
+const voice2 = ['jungkook','taehyung','jimin','zhanghao','karina','wonyoung','wonbin','myungjaehyun','dohoon']; // batch10 voice-2 packs (open for launch)
 const adults = ['sunghoon','niki','sunoo','jungwon','jimin','jungkook','taehyung','yeonjun','soobin','beomgyu','taehyun','hueningkai'];
 const strict = ['martin','james','juhoon','seonghyeon','keonho'];
 const batch1 = ['sehun','the8','jun','renjun','ningning','yuqi','shuhua','tzuyu','jacksonwang','layzhang'];
-const deferred = [...batch1, ...adults, ...strict];
-test('all 27 deferred packs remain valid and unavailable; only approved packs are listed', () => {
+const deferred = [...batch1, ...adults, ...strict].filter(id => !isLaunch(id));
+const opened = [...batch1, ...adults, ...strict].filter(isLaunch);
+test('deferred batch packs remain valid and unavailable; launch packs are open; only approved packs are listed', () => {
   const list = chars.list();
+  assert.deepEqual(opened, ['jimin','jungkook','taehyung']);
+  for (const id of opened) {
+    assert.equal(chars.isAvailable(id), true, id);
+    assert.equal(chars.publicInfo(id).availabilityLabel, '', id);
+  }
   for (const id of deferred) {
     assert.equal(packs.inspect(id).ok, true, id + ': ' + packs.inspect(id).error);
     assert.equal(chars.isAvailable(id), false, id);
@@ -127,9 +134,7 @@ test('actual chat and TTS middleware reject deferred packs before provider calls
         assert.equal(status, 404);
         assert.equal(body.error, 'character unavailable');
       }
-      let passed = false;
-      guard({ characterId: 'baekhyun', body: {} }, {}, () => { passed = true; });
-      assert.equal(passed, true);
+      for (const id of ['baekhyun', ...opened]) expectGuard(assert, guard, id, route);
     }
   } finally {
     if (previous === undefined) delete process.env.STORE_DATA_DIR; else process.env.STORE_DATA_DIR = previous;
