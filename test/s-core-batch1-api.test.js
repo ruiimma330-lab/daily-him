@@ -46,10 +46,10 @@ test('HTTP denies tier escalation, serves SVGs and rejects unavailable character
     const r = await fetch(base + route + '?characterId=' + fixtureId, { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ tierId: 'flirty', text: 'hello' }) });
     assert.equal(r.status, 403);
   }
-  for (const suffix of ['avatar','portrait.svg']) {
+  for (const suffix of ['avatar','portrait.jpg']) {
     const r = await fetch(base + '/characters/sehun/' + suffix, { headers: { Cookie: cookie } });
     assert.equal(r.status, 200);
-    assert.match(r.headers.get('content-type'), /svg/);
+    assert.match(r.headers.get('content-type'), /jpeg/);
   }
   const tts = await fetch(base + '/api/tts?characterId=sehun', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'hello' }) });
   assert.equal(tts.status, 404);
