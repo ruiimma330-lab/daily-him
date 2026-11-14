@@ -4,6 +4,7 @@
   const status = document.getElementById('install-status');
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (document.body && document.body.dataset) document.body.dataset.installOs = ios ? 'ios' : 'android';
   function installed() {
     button.disabled = true;
     button.textContent = '已添加到主屏幕';

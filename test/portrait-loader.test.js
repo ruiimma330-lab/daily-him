@@ -239,7 +239,11 @@ test('picker wires the loader, keeps the photo crop, and reuses the shell dots',
   const css = fs.readFileSync(path.join(ROOT, 'public/shell/picker.css'), 'utf8');
   const sw = fs.readFileSync(path.join(ROOT, 'public/sw.js'), 'utf8');
   assert.ok(html.indexOf('/shell/portrait-loader.js') < html.indexOf('/shell/picker.js'));
-  assert.match(js, /PortraitLoader\.attach\(page, img, ch\.portrait \|\| ch\.avatar/);
+  assert.match(js, /page\.dataset\.portraitSrc = ch\.portrait \|\| ch\.avatar/);
+  assert.match(js, /PortraitLoader\.attach\(page, img, page\.dataset\.portraitSrc/);
+  assert.match(js, /function loadPortraitNeighbors\(center\)/);
+  assert.match(js, /center - 2/);
+  assert.match(js, /center \+ 2/);
   assert.equal(/img\.src\s*=/.test(js), false);
   assert.match(css, /object-fit:\s*cover/);
   assert.match(css, /object-position:\s*center 18%/);
@@ -252,6 +256,6 @@ test('picker wires the loader, keeps the photo crop, and reuses the shell dots',
   assert.match(css, /animation-delay:\s*\.15s/);
   assert.match(css, /animation-delay:\s*\.3s/);
   assert.match(css, /@keyframes bounce/);
-  assert.match(sw, /const VERSION = 'dh-pwa-11';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-13';/);
   assert.match(sw, /'\/shell\/portrait-loader\.js'/);
 });

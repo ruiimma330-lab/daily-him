@@ -72,17 +72,15 @@
     pager.innerHTML = '';
     emptyEl.hidden = list.length > 0;
     goBtn.hidden = list.length === 0;
-    // Every cover in this roster starts loading here, so a swipe usually finds the photo
-    // already decoded. Each page still shows the dots until its own image is fully ready.
     list.forEach((ch) => {
       const page = document.createElement('article');
       page.className = 'picker-page';
       page.dataset.id = ch.id;
+      page.dataset.portraitSrc = ch.portrait || ch.avatar || '';
       const img = document.createElement('img');
       img.alt = ch.nameZh || ch.name || ch.id;
       page.append(img);
       pager.append(page);
-      PortraitLoader.attach(page, img, ch.portrait || ch.avatar || '');
     });
     buildDots(list.length);
     paintMeta(list);
@@ -131,10 +129,34 @@
   }
 
   function jump(index, smooth) {
+    const list = filtered();
+    const last = Math.max(0, list.length - 1);
+    const next = Math.max(0, Math.min(last, index));
     const width = pager.clientWidth || 1;
-    state.index = index;
-    pager.scrollTo({ left: index * width, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'auto' });
-    paintMeta(filtered());
+    state.index = next;
+    pager.scrollTo({ left: next * width, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'auto' });
+    loadPortraitNeighbors(next);
+    paintMeta(list);
+  }
+
+  // Keep network/decode work bounded: current cover plus at most two on either side.
+  function loadPortraitNeighbors(center) {
+    const start = Math.max(0, center - 2);
+    const end = Math.min(pager.children.length - 1, center + 2);
+    for (let index = start; index <= end; index += 1) {
+      const page = pager.children[index];
+      if (!page || page.dataset.portraitLoading === '1') continue;
+      const img = page.querySelector('img');
+      if (!img) continue;
+      page.dataset.portraitLoading = '1';
+      PortraitLoader.attach(page, img, page.dataset.portraitSrc || '');
+    }
+  }
+
+  function step(direction) {
+    const list = filtered();
+    if (list.length < 2) return;
+    jump(state.index + direction, true);
   }
 
   // Autoplay: ~3.5s per photo, loops; pauses while touched, resumes 5s after; off-screen/hidden tab/reduced motion stop it.
@@ -156,10 +178,50 @@
       entries.forEach((entry) => autoplay.setOnScreen(entry.isIntersecting));
     }, { threshold: 0.3 }).observe(pager);
   }
-  ['touchstart', 'pointerdown'].forEach((name) => pager.addEventListener(name, () => autoplay.interactStart(), { passive: true }));
-  ['touchend', 'touchcancel', 'pointerup', 'pointercancel'].forEach((name) => pager.addEventListener(name, () => autoplay.interactEnd(), { passive: true }));
-  pager.addEventListener('wheel', () => autoplay.poke(), { passive: true });
-  pager.addEventListener('keydown', () => autoplay.poke());
+  let touchStart = null;
+  pager.addEventListener('touchstart', (event) => {
+    const point = event.touches[0];
+    touchStart = point ? { x: point.clientX, y: point.clientY } : null;
+    autoplay.interactStart();
+  }, { passive: true });
+  pager.addEventListener('touchend', (event) => {
+    const point = event.changedTouches[0];
+    if (touchStart && point) {
+      const dx = touchStart.x - point.clientX;
+      const dy = touchStart.y - point.clientY;
+      if (Math.abs(dx) >= 36 && Math.abs(dx) > Math.abs(dy)) {
+        event.preventDefault();
+        step(dx > 0 ? 1 : -1);
+      }
+    }
+    touchStart = null;
+    autoplay.interactEnd();
+  }, { passive: false });
+  pager.addEventListener('touchcancel', () => {
+    touchStart = null;
+    autoplay.interactEnd();
+  }, { passive: true });
+
+  let wheelLocked = false;
+  let wheelUnlock = 0;
+  pager.addEventListener('wheel', (event) => {
+    autoplay.poke();
+    clearTimeout(wheelUnlock);
+    wheelUnlock = setTimeout(() => { wheelLocked = false; }, 180);
+    if (wheelLocked) return;
+    const amount = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(amount) < 8) return;
+    event.preventDefault();
+    wheelLocked = true;
+    step(amount > 0 ? 1 : -1);
+  }, { passive: false });
+
+  pager.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    autoplay.poke();
+    step(event.key === 'ArrowRight' ? 1 : -1);
+  });
 
   function syncFromScroll() {
     const list = filtered();
@@ -167,6 +229,7 @@
     const index = Math.max(0, Math.min(list.length - 1, Math.round(pager.scrollLeft / width)));
     if (index === state.index) return;
     state.index = index;
+    loadPortraitNeighbors(index);
     paintMeta(list);
   }
 

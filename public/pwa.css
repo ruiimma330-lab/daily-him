@@ -9,7 +9,7 @@
   box-sizing: border-box;
   background: #111;
   color: #fff;
-  font-family: "Noto Sans KR", "PingFang SC", sans-serif;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK SC", "Noto Sans CJK KR", sans-serif;
   font-weight: 300;
   font-size: 13px;
   letter-spacing: 0.04em;
@@ -56,7 +56,7 @@
   background: #fff;
   color: #111;
   padding: 22px 20px 16px;
-  font-family: "Noto Sans KR", "PingFang SC", sans-serif;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK SC", "Noto Sans CJK KR", sans-serif;
   font-weight: 300;
 }
 .pwa-ios h2 { margin: 0 0 8px; font-size: 16px; font-weight: 400; letter-spacing: 0.08em; }

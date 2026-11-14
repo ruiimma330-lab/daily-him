@@ -2,8 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>声音盲听</title>
+  <link rel="stylesheet" href="/mobile-lock.css" />
   <style>
     body { margin: 0; font: 15px/1.5 sans-serif; background: #f6f4f1; color: #222; }
     main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
@@ -24,6 +25,7 @@
     <button id="start" type="button" hidden>生成这一组</button>
     <div id="list"></div>
   </main>
+  <script src="/mobile-lock.js"></script>
   <script>
     const note = document.getElementById('note');
     const status = document.getElementById('status');

@@ -1,0 +1,48 @@
+/* Mobile viewport guard shared by every app page. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+.wechat-browser-guide {
+  position: fixed;
+  z-index: 1000;
+  top: max(12px, env(safe-area-inset-top));
+  right: 12px;
+  left: 12px;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #1c1c1c;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  color: #fff;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK SC", "Noto Sans CJK KR", sans-serif;
+}
+
+.wechat-browser-guide strong,
+.wechat-browser-guide span {
+  display: block;
+}
+
+.wechat-browser-guide strong {
+  margin-bottom: 5px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.wechat-browser-guide span {
+  color: #d2d2d2;
+  font-size: 13px;
+  line-height: 1.6;
+}

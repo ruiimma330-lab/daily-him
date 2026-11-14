@@ -42,7 +42,7 @@ test.after(async () => {
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
 test('install resources and assetlinks bypass site gate and account login', async () => {
-  for (const url of ['/shell/install.html', '/shell/install.css', '/shell/install.js', '/shell/install-qr.svg', '/pwa.js', '/manifest.webmanifest', '/downloads/android.json', '/.well-known/assetlinks.json']) {
+  for (const url of ['/shell/install.html', '/shell/install.css', '/shell/install.js', '/shell/install-qr.svg', '/mobile-lock.css', '/mobile-lock.js', '/pwa.js', '/manifest.webmanifest', '/downloads/android.json', '/.well-known/assetlinks.json']) {
     const response = await request(url);
     assert.equal(response.status, 200, url);
   }
@@ -58,4 +58,24 @@ test('install resources and assetlinks bypass site gate and account login', asyn
   }
   const account = await request('/api/me');
   assert.equal(account.status, 401, 'account still requires authentication');
+});
+
+test('install QR is desktop-only and mobile instructions cover iOS, Android, and WeChat', () => {
+  const html = fs.readFileSync(path.join(__dirname, '../public/shell/install.html'), 'utf8');
+  const css = fs.readFileSync(path.join(__dirname, '../public/shell/install.css'), 'utf8');
+  const js = fs.readFileSync(path.join(__dirname, '../public/shell/install.js'), 'utf8');
+  const qr = fs.readFileSync(path.join(__dirname, '../public/shell/install-qr.svg'), 'utf8');
+  const mobile = fs.readFileSync(path.join(__dirname, '../public/mobile-lock.js'), 'utf8');
+  assert.match(html, /class="qr"[^>]*width="222"[^>]*height="222"/);
+  assert.match(css, /\.qr-section\s*\{\s*display:\s*none/);
+  assert.match(css, /@media \(min-width:\s*760px\)[\s\S]*\.qr-section\s*\{\s*display:\s*block/);
+  assert.doesNotMatch(css, /\.qr[^}]*height:\s*auto/);
+  assert.match(qr, /<svg[^>]*width="222"[^>]*height="222"[^>]*viewBox="0 0 37 37"/);
+  assert.match(html, /Safari[\s\S]*分享[\s\S]*添加到主屏幕[\s\S]*添加/);
+  assert.match(html, /Chrome[\s\S]*安装应用[\s\S]*添加到主屏幕/);
+  assert.match(js, /dataset\.installOs = ios \? 'ios' : 'android'/);
+  assert.match(mobile, /MicroMessenger/);
+  assert.match(mobile, /在浏览器打开/);
+  assert.match(mobile, /Safari/);
+  assert.match(mobile, /Chrome/);
 });

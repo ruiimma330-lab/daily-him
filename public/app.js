@@ -57,6 +57,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   const profileSheet = document.getElementById('profile-sheet');
   const modal = document.getElementById('modal');
   const toast = document.getElementById('toast');
+  const aiNotice = document.getElementById('ai-notice');
+  const aiNoticeOk = document.getElementById('ai-notice-ok');
   const listTime = document.getElementById('list-time');
   const listPreview = document.getElementById('list-preview');
   const listBadge = document.getElementById('list-badge');
@@ -82,6 +84,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let voiceNote = '';
   let charRemark = '';
   let userNickname = '';
+  let aiNoticeAccountId = '';
   const charDefault = { name: '백현', emoji: '🐶' };
 
   function shownName() {
@@ -100,7 +103,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     document.title = `Daily Him · ${shownName()}`;
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-13`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -145,6 +148,29 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function syncAiNotice(me) {
+    if (!aiNotice) return;
+    aiNoticeAccountId = me && me.user && me.user.id ? me.user.id : '';
+    // The response is authoritative. A local flag is written only as a fast-path hint.
+    aiNotice.hidden = !me || me.aiDisclaimerAcknowledged !== false;
+  }
+
+  if (aiNoticeOk) {
+    aiNoticeOk.addEventListener('click', async () => {
+      aiNoticeOk.disabled = true;
+      try {
+        const response = await fetch('/api/me/ai-disclaimer', { method: 'POST' });
+        if (!response.ok) throw new Error('acknowledgement failed');
+        if (aiNoticeAccountId) localStorage.setItem(`idol-ai-disclaimer-${aiNoticeAccountId}`, '1');
+        aiNotice.hidden = true;
+      } catch (_) {
+        showToast('请检查网络连接后重试');
+      } finally {
+        aiNoticeOk.disabled = false;
+      }
+    });
+  }
 
   function el(tag, className) {
     const node = document.createElement(tag);
@@ -1456,23 +1482,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         if (ch) {
           characterVoiceUnavailable = !ch.voiceAvailable;
           if (characterVoiceUnavailable) { voiceNote = '语音暂不可用'; render(); }
-          const noticeKey = 'idol-disclaimer-v2-' + CHARACTER_ID;
-          let notice = document.getElementById('character-disclaimer');
-          if (!notice) {
-            notice = document.createElement('div');
-            notice.id = 'character-disclaimer';
-            notice.className = 'ai-notice';
-            notice.hidden = true;
-            notice.innerHTML = '<div class="ai-notice-card" role="dialog" aria-modal="true" aria-label="角色免责声明"><h2>开始之前</h2><p></p><button type="button">知道了</button></div>';
-            document.body.append(notice);
-          }
-          if (notice) {
-            notice.querySelector('p').textContent = ch.disclaimer;
-            if (!localStorage.getItem(noticeKey)) {
-              notice.hidden = false;
-              notice.querySelector('button').addEventListener('click', () => { localStorage.setItem(noticeKey, '1'); notice.hidden = true; }, { once: true });
-            }
-          }
           if (ch.displayName || ch.name) charDefault.name = ch.displayName || ch.name;
           if (typeof ch.displayEmoji === 'string') charDefault.emoji = ch.displayEmoji;
         }
@@ -1484,6 +1493,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         charRemark = typeof nick === 'string' ? nick : '';
       }
       const me = meRes.ok ? await meRes.json() : null;
+      syncAiNotice(me);
       setMyName(profile, me);
       if (me && me.hasAvatar) userAvatarVersion = Date.now();
       applyUserAvatar();

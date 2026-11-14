@@ -17,7 +17,7 @@ html, body {
 }
 
 body {
-  font-family: "Noto Sans KR", "Noto Sans SC", "Apple SD Gothic Neo", "PingFang SC", "Malgun Gothic", sans-serif;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK SC", "Noto Sans CJK KR", sans-serif;
   font-weight: 400;
   color: var(--ink);
   background:
