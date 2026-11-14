@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
   <meta name="robots" content="noindex" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,6 +15,7 @@
   <link rel="icon" href="/brand/mark.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/brand/brand.css" />
   <link rel="stylesheet" href="/pwa.css" />
+  <link rel="stylesheet" href="/mobile-lock.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -171,6 +172,20 @@
     }
 
     [hidden] { display: none !important; }
+
+    .ai-notice {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: end center;
+      padding: 22px;
+      background: rgba(28, 28, 28, 0.28);
+    }
+    .ai-notice-card { width: min(340px, 100%); margin-bottom: calc(24px + env(safe-area-inset-bottom)); background: #fff; padding: 22px 20px 16px; text-align: left; }
+    .ai-notice-card h2 { margin: 0 0 8px; font-size: 16px; font-weight: 400; letter-spacing: 0.08em; }
+    .ai-notice-card p { margin: 0 0 16px; font-size: 14px; line-height: 1.6; color: #6f6a64; font-weight: 300; }
+    .ai-notice-card button { width: 100%; }
   </style>
 </head>
 <body>
@@ -209,6 +224,13 @@
     </div>
     <p class="login-disclaimer" style="margin:24px 0 8px;text-align:center;font-size:11px;color:#9a9a9a;">角色均为 AI 模拟，非本人 · 仅供个人使用</p>
   </main>
+  <div class="ai-notice" id="ai-notice" hidden>
+    <div class="ai-notice-card" role="dialog" aria-modal="true" aria-labelledby="ai-notice-title">
+      <h2 id="ai-notice-title">开始之前</h2>
+      <p>这里的角色由 AI 模拟，不是本人。聊天内容会用于生成回复，不代表艺人本人的意思。</p>
+      <button type="button" id="ai-notice-ok">知道了</button>
+    </div>
+  </div>
   <script src="/sw-heal.js"></script>
   <script src="/account-cache.js"></script>
   <script>
@@ -226,8 +248,11 @@
       const sitePassword = document.getElementById('site-password');
       const siteSubmit = document.getElementById('site-submit');
       const siteError = document.getElementById('site-error');
+      const aiNotice = document.getElementById('ai-notice');
+      const aiNoticeOk = document.getElementById('ai-notice-ok');
 
       let mode = 'login';
+      let registeredAccountId = '';
 
       function destination() {
         const next = new URLSearchParams(location.search).get('next') || '';
@@ -266,6 +291,19 @@
 
       tabLogin.addEventListener('click', () => setMode('login'));
       tabRegister.addEventListener('click', () => setMode('register'));
+
+      aiNoticeOk.addEventListener('click', async () => {
+        aiNoticeOk.disabled = true;
+        try {
+          const response = await fetch('/api/me/ai-disclaimer', { method: 'POST' });
+          if (!response.ok) throw new Error('acknowledgement failed');
+          if (registeredAccountId) localStorage.setItem(`idol-ai-disclaimer-${registeredAccountId}`, '1');
+          location.href = destination();
+        } catch (_) {
+          accountError.textContent = '请检查网络连接后重试。';
+          aiNoticeOk.disabled = false;
+        }
+      });
 
       siteForm.addEventListener('submit', async function (event) {
         event.preventDefault();
@@ -344,6 +382,11 @@
           if (window.AccountCache && data.user && data.user.id) {
             window.AccountCache.adopt(localStorage, data.user.id);
           }
+          if (mode === 'register' && data.aiDisclaimerAcknowledged === false) {
+            registeredAccountId = data.user && data.user.id ? data.user.id : '';
+            aiNotice.hidden = false;
+            return;
+          }
           location.href = destination();
         } catch (err) {
           accountError.textContent = '请检查网络连接。';
@@ -371,6 +414,7 @@
     })();
   </script>
   <script src="/brand/brand.js"></script>
+  <script src="/mobile-lock.js"></script>
   <script src="/pwa.js"></script>
 </body>
 </html>
