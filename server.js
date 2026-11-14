@@ -761,7 +761,11 @@ function createApp() {
       const user = store.createUser({ username, passwordHash });
       await starlight.ensure(user.id);
       setSessionCookie(req, res, user.id);
-      return res.status(201).json({ ok: true, user: { id: user.id, username: user.username } });
+      return res.status(201).json({
+        ok: true,
+        user: { id: user.id, username: user.username },
+        aiDisclaimerAcknowledged: false,
+      });
     } catch (err) {
       if (err && err.code === 'USERNAME_TAKEN') {
         recordAuthFailure();
@@ -809,7 +813,19 @@ function createApp() {
 
   app.get('/api/me', requireUser, (req, res) => {
     const avatar = readAccountDoc(store, 'avatar', req.userId);
-    res.json({ ok: true, user: req.user, hasAvatar: Boolean(avatar && avatar.data) });
+    const user = store.findUserById(req.userId);
+    res.json({
+      ok: true,
+      user: req.user,
+      hasAvatar: Boolean(avatar && avatar.data),
+      aiDisclaimerAcknowledged: !user || user.aiDisclaimerAcknowledged !== false,
+    });
+  });
+
+  app.post('/api/me/ai-disclaimer', requireUser, (req, res) => {
+    const user = store.updateUser(req.userId, { aiDisclaimerAcknowledged: true });
+    if (!user) return res.status(404).json({ error: 'Not found' });
+    return res.json({ ok: true, aiDisclaimerAcknowledged: true });
   });
 
   function readUserJpeg(body) {
