@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const compression = require('compression');
 const bcrypt = require('bcryptjs');
 const store = require('./lib/store');
 const relationship = require('./lib/relationship');
@@ -497,7 +498,7 @@ function isPwaAsset(p) {
   // account-cache.js / sw-heal.js are plain code with no account data. They must be public so the
   // service worker never precaches the /login page under their URL while logged out.
   return p === '/sw.js' || p === '/sw-heal.js' || p === '/account-cache.js'
-    || p === '/pwa.js' || p === '/pwa.css' || p === '/offline.html'
+    || p === '/pwa.js' || p === '/pwa.css' || p === '/mobile-lock.js' || p === '/mobile-lock.css' || p === '/offline.html'
     || p === '/app.js' || p === '/style.css' || p === '/moments.css' || p === '/moments.js' || p === '/memory.js'
     || p.startsWith('/me/')
     || p.startsWith('/shell/');
@@ -703,8 +704,24 @@ function createApp() {
   app.set('case sensitive routing', true);
   app.set('strict routing', false);
   app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
+  app.use(compression());
   app.use(gateMiddleware);
   app.use(express.json({ limit: HISTORY_BODY_LIMIT }));
+  app.use((req, res, next) => {
+    const requestPath = req.path.toLowerCase();
+    if (requestPath === '/' || requestPath === '/login' || requestPath.endsWith('.html')) {
+      res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+    } else if (/\.(?:js|css|json|webmanifest)$/.test(requestPath)) {
+      // Code and configuration always revalidate; the SW also isolates them by VERSION.
+      res.set('Cache-Control', 'public, max-age=0, must-revalidate');
+    } else if (/\.(?:avif|gif|jpe?g|png|svg|webp|woff2)$/.test(requestPath)) {
+      const versioned = typeof req.query.v === 'string' && req.query.v.length > 0;
+      res.set('Cache-Control', versioned
+        ? 'public, max-age=31536000, immutable'
+        : 'public, max-age=86400, must-revalidate');
+    }
+    next();
+  });
 
   app.get('/login', (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'login.html'));
@@ -1328,17 +1345,28 @@ function createApp() {
     ];
     const file = candidates.find((candidate) => fs.existsSync(candidate));
     if (!file) return res.status(404).end();
+    res.set('Cache-Control', req.query.v === 'dh-pwa-13'
+      ? 'public, max-age=31536000, immutable'
+      : 'public, max-age=300, must-revalidate');
     return res.sendFile(file);
   });
 
-  app.get(['/characters/:id/portrait.svg', '/characters/:id/portrait.jpg'], requireUser, (req, res) => {
+  app.get(['/characters/:id/portrait.svg', '/characters/:id/portrait.jpg', '/characters/:id/portrait.webp'], requireUser, (req, res) => {
     const id = characters.resolveId(req.params.id);
     if (!id) return res.status(404).end();
     const meta = characters.loadMeta(id);
     const name = path.basename(String(meta.portrait || 'portrait.svg'));
     if (!name || name === '.' || name === '..') return res.status(404).end();
-    const file = path.join(characters.CHAR_DIR, id, name);
+    const original = path.join(characters.CHAR_DIR, id, name);
+    const webp = path.join(characters.CHAR_DIR, id, 'portrait.webp');
+    const acceptsWebp = /(?:^|,|\s)image\/webp(?:\s*;|,|$)/i.test(req.get('Accept') || '');
+    const wantsWebp = req.path.endsWith('.webp') || (name.endsWith('.jpg') && acceptsWebp);
+    const file = wantsWebp && fs.existsSync(webp) ? webp : original;
     if (!fs.existsSync(file)) return res.status(404).end();
+    res.vary('Accept');
+    res.set('Cache-Control', req.query.v === 'dh-pwa-13'
+      ? 'public, max-age=31536000, immutable'
+      : 'public, max-age=300, must-revalidate');
     return res.sendFile(file);
   });
 
@@ -1660,7 +1688,13 @@ function createApp() {
   app.use('/downloads', (req, res) => {
     res.status(404).json({ error: 'Download unavailable' });
   });
-  app.use(express.static(PUBLIC_DIR));
+  app.use(express.static(PUBLIC_DIR, {
+    setHeaders(res, filePath) {
+      if (filePath.endsWith('.html') || /\.(?:js|css|json|webmanifest)$/.test(filePath)) {
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+      }
+    },
+  }));
 
   app.use((err, req, res, next) => {
     if (res.headersSent) return next(err);

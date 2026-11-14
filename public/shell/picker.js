@@ -72,17 +72,15 @@
     pager.innerHTML = '';
     emptyEl.hidden = list.length > 0;
     goBtn.hidden = list.length === 0;
-    // Every cover in this roster starts loading here, so a swipe usually finds the photo
-    // already decoded. Each page still shows the dots until its own image is fully ready.
     list.forEach((ch) => {
       const page = document.createElement('article');
       page.className = 'picker-page';
       page.dataset.id = ch.id;
+      page.dataset.portraitSrc = ch.portrait || ch.avatar || '';
       const img = document.createElement('img');
       img.alt = ch.nameZh || ch.name || ch.id;
       page.append(img);
       pager.append(page);
-      PortraitLoader.attach(page, img, ch.portrait || ch.avatar || '');
     });
     buildDots(list.length);
     paintMeta(list);
@@ -137,7 +135,22 @@
     const width = pager.clientWidth || 1;
     state.index = next;
     pager.scrollTo({ left: next * width, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'auto' });
+    loadPortraitNeighbors(next);
     paintMeta(list);
+  }
+
+  // Keep network/decode work bounded: current cover plus at most two on either side.
+  function loadPortraitNeighbors(center) {
+    const start = Math.max(0, center - 2);
+    const end = Math.min(pager.children.length - 1, center + 2);
+    for (let index = start; index <= end; index += 1) {
+      const page = pager.children[index];
+      if (!page || page.dataset.portraitLoading === '1') continue;
+      const img = page.querySelector('img');
+      if (!img) continue;
+      page.dataset.portraitLoading = '1';
+      PortraitLoader.attach(page, img, page.dataset.portraitSrc || '');
+    }
   }
 
   function step(direction) {
@@ -216,6 +229,7 @@
     const index = Math.max(0, Math.min(list.length - 1, Math.round(pager.scrollLeft / width)));
     if (index === state.index) return;
     state.index = index;
+    loadPortraitNeighbors(index);
     paintMeta(list);
   }
 
