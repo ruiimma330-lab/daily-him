@@ -1,7 +1,7 @@
 :root { color-scheme: dark; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; background: #111; color: #ededed; font-family: "Noto Sans KR", "PingFang SC", sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: #111; color: #ededed; font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK SC", "Noto Sans CJK KR", sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; }
 main { max-width: 560px; margin: auto; padding: calc(20px + env(safe-area-inset-top)) 24px calc(32px + env(safe-area-inset-bottom)); }
 header { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
 a { color: inherit; text-decoration: none; }
@@ -13,8 +13,8 @@ h1 { font-size: 34px; font-weight: 400; margin: 18px 0 8px; }
 h2 { font-size: 17px; font-weight: 500; margin: 0 0 14px; }
 p, li { font-size: 14px; line-height: 1.8; color: #b7b7b7; }
 section { padding: 28px 0; border-bottom: 1px solid #303030; }
-.qr-section { text-align: center; }
-.qr { display: block; margin: 18px auto; max-width: 100%; height: auto; }
+.qr-section { display: none; text-align: center; }
+.qr { display: block; width: 222px; height: 222px; margin: 18px auto; }
 .site-url { display: block; font-size: 12px; overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 4px; }
 button, .button { display: flex; justify-content: center; align-items: center; width: 100%; min-height: 48px; padding: 12px; border: 0; border-radius: 2px; background: #fee500; color: #111; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; text-align: center; }
 .secondary { background: #252525; color: #ededed; border: 1px solid #555; margin-top: 16px; }
@@ -29,4 +29,12 @@ a:focus-visible, button:focus-visible { outline: 2px solid #fee500; outline-offs
 .pwa-ios form { background: #222; color: #eee; }
 .pwa-ios p { color: #ccc; }
 .pwa-ios button { background: #fee500; color: #111; }
-@media (min-width: 760px) { main { padding-top: 32px; } .intro { padding-top: 56px; } }
+@media (max-width: 759px) {
+  body[data-install-os="ios"] #android,
+  body[data-install-os="android"] #ios { display: none; }
+}
+@media (min-width: 760px) {
+  main { padding-top: 32px; }
+  .intro { padding-top: 56px; }
+  .qr-section { display: block; }
+}

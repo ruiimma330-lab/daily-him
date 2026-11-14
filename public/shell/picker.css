@@ -5,7 +5,7 @@ html, body { margin: 0; background: #fff; }
   --pk-ink: #1c1c1c;
   --pk-muted: #9a9590;
   --pk-line: rgba(28, 28, 28, 0.14);
-  --pk-font: "Noto Sans KR", "Noto Sans SC", "PingFang SC", sans-serif;
+  --pk-font: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK SC", "Noto Sans CJK KR", sans-serif;
   box-sizing: border-box;
   height: 100dvh;
   min-height: 100dvh;

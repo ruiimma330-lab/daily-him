@@ -4,7 +4,7 @@
   --me-ink: #1c1c1c;
   --me-muted: #9a9590;
   --me-line: rgba(28, 28, 28, 0.08);
-  --me-font: "Noto Sans KR", "Noto Sans SC", "PingFang SC", sans-serif;
+  --me-font: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK SC", "Noto Sans CJK KR", sans-serif;
   position: absolute;
   inset: 0;
   z-index: 1;
