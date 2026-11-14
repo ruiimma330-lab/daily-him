@@ -1,0 +1,15 @@
+/* Mobile viewport guard shared by every app page. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  touch-action: manipulation;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

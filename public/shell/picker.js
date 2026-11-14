@@ -131,10 +131,19 @@
   }
 
   function jump(index, smooth) {
+    const list = filtered();
+    const last = Math.max(0, list.length - 1);
+    const next = Math.max(0, Math.min(last, index));
     const width = pager.clientWidth || 1;
-    state.index = index;
-    pager.scrollTo({ left: index * width, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'auto' });
-    paintMeta(filtered());
+    state.index = next;
+    pager.scrollTo({ left: next * width, behavior: smooth && !reducedMotion.matches ? 'smooth' : 'auto' });
+    paintMeta(list);
+  }
+
+  function step(direction) {
+    const list = filtered();
+    if (list.length < 2) return;
+    jump(state.index + direction, true);
   }
 
   // Autoplay: ~3.5s per photo, loops; pauses while touched, resumes 5s after; off-screen/hidden tab/reduced motion stop it.
@@ -156,10 +165,50 @@
       entries.forEach((entry) => autoplay.setOnScreen(entry.isIntersecting));
     }, { threshold: 0.3 }).observe(pager);
   }
-  ['touchstart', 'pointerdown'].forEach((name) => pager.addEventListener(name, () => autoplay.interactStart(), { passive: true }));
-  ['touchend', 'touchcancel', 'pointerup', 'pointercancel'].forEach((name) => pager.addEventListener(name, () => autoplay.interactEnd(), { passive: true }));
-  pager.addEventListener('wheel', () => autoplay.poke(), { passive: true });
-  pager.addEventListener('keydown', () => autoplay.poke());
+  let touchStart = null;
+  pager.addEventListener('touchstart', (event) => {
+    const point = event.touches[0];
+    touchStart = point ? { x: point.clientX, y: point.clientY } : null;
+    autoplay.interactStart();
+  }, { passive: true });
+  pager.addEventListener('touchend', (event) => {
+    const point = event.changedTouches[0];
+    if (touchStart && point) {
+      const dx = touchStart.x - point.clientX;
+      const dy = touchStart.y - point.clientY;
+      if (Math.abs(dx) >= 36 && Math.abs(dx) > Math.abs(dy)) {
+        event.preventDefault();
+        step(dx > 0 ? 1 : -1);
+      }
+    }
+    touchStart = null;
+    autoplay.interactEnd();
+  }, { passive: false });
+  pager.addEventListener('touchcancel', () => {
+    touchStart = null;
+    autoplay.interactEnd();
+  }, { passive: true });
+
+  let wheelLocked = false;
+  let wheelUnlock = 0;
+  pager.addEventListener('wheel', (event) => {
+    autoplay.poke();
+    clearTimeout(wheelUnlock);
+    wheelUnlock = setTimeout(() => { wheelLocked = false; }, 180);
+    if (wheelLocked) return;
+    const amount = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(amount) < 8) return;
+    event.preventDefault();
+    wheelLocked = true;
+    step(amount > 0 ? 1 : -1);
+  }, { passive: false });
+
+  pager.addEventListener('keydown', (event) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+    event.preventDefault();
+    autoplay.poke();
+    step(event.key === 'ArrowRight' ? 1 : -1);
+  });
 
   function syncFromScroll() {
     const list = filtered();

@@ -118,6 +118,8 @@ html, body { margin: 0; background: #fff; }
   scroll-snap-type: x mandatory;
   scroll-behavior: auto;
   scrollbar-width: none;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
 }
 .picker-pager::-webkit-scrollbar { display: none; }
 .picker-page {
