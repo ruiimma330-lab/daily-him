@@ -147,6 +147,10 @@ test('a reply spends one star, a failed reply is returned, and an empty balance 
   });
   assert.equal(failed.status, 200);
   assert.equal(calls > beforeFail, true);
+  assert.equal(failed.json.messages[0].fallback, true);
+  const textFallbacks = require('../lib/fallbacks').loadLines('baekhyun', 'text').map((line) => line.ko);
+  assert.ok(textFallbacks.includes(failed.json.messages[0].ko));
+  assert.equal(store.getHistory(fan.json.user.id, 'baekhyun').at(-1).fallback, true);
   const refunded = await request('/api/starlight', { cookie: fan.cookie });
   assert.equal(refunded.json.balance, 99);
   await starlight.reserve({
@@ -222,4 +226,21 @@ test('chat voice uses the same charge, and Turso never falls back to the file le
   assert.equal(short.json.messages[0].audioUrl, null);
   assert.match(short.json.starlight.notice, /15 星光/);
   assert.equal(global.voiceCalls, voices);
+});
+
+test('the starlight station is the only recharge UI and keeps redemption folded below unavailable packages', () => {
+  const station = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'starlight.html'), 'utf8');
+  const legacy = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'recharge.html'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+  const loading = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'loading.html'), 'utf8');
+  assert.match(station, /充值尚未开通，星光可每日领取或使用兑换码。/);
+  assert.match(station, /充值（即将开通）/);
+  assert.match(station, /id="redeem-panel" hidden/);
+  assert.ok(station.indexOf('id="packages"') < station.indexOf('id="redeem-section"'));
+  assert.match(station, /alert\('测试环境，暂未开通'\)/);
+  assert.doesNotMatch(station, /class="price">¥/);
+  assert.match(legacy, /location\.replace\('\/shell\/starlight\.html#recharge'\)/);
+  assert.doesNotMatch(legacy, /\/api\/wallet\/purchase/);
+  assert.doesNotMatch(app, /\/shell\/recharge\.html/);
+  assert.doesNotMatch(loading, /\/shell\/recharge\.html/);
 });

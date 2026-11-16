@@ -939,15 +939,15 @@ function createApp() {
     });
   });
 
-  // Read-only: an account may always reopen its own existing chats, even after the
-  // character is hidden or closed. Without history, closed characters still 404.
-  // Writing (PUT/DELETE history, chat, TTS) keeps requireAvailable.
+  // Read-only: an account may always reopen or delete its own existing chats after
+  // the character closes. Without history, closed characters still 404. Continuing
+  // a chat (PUT history, chat, TTS) keeps requireAvailable.
   app.get('/api/history', requireUser, requireCharacter, function allowHistoryRead(req, res, next) {
     if (store.getHistory(req.userId, req.characterId).length) return next();
     return requireAvailable(req, res, next);
   }, (req, res) => {
     const messages = store.getHistory(req.userId, req.characterId);
-    res.json({ messages });
+    res.json({ messages, readOnly: !characters.isAvailable(req.characterId) });
   });
 
   app.put('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
@@ -955,7 +955,10 @@ function createApp() {
     res.json({ messages });
   });
 
-  app.delete('/api/history', requireUser, requireCharacter, requireAvailable, async (req, res) => {
+  app.delete('/api/history', requireUser, requireCharacter, function allowHistoryDelete(req, res, next) {
+    if (characters.isAvailable(req.characterId) || store.getHistory(req.userId, req.characterId).length) return next();
+    return requireAvailable(req, res, next);
+  }, async (req, res) => {
     store.deleteHistory(req.userId, req.characterId);
     if (req.query.summary === '1') await memory.clearSummary(req.userId, req.characterId);
     res.json({ messages: [], summaryCleared: req.query.summary === '1' });
@@ -1345,7 +1348,7 @@ function createApp() {
     ];
     const file = candidates.find((candidate) => fs.existsSync(candidate));
     if (!file) return res.status(404).end();
-    res.set('Cache-Control', req.query.v === 'dh-pwa-13'
+    res.set('Cache-Control', req.query.v === characters.ASSET_VERSION
       ? 'public, max-age=31536000, immutable'
       : 'public, max-age=300, must-revalidate');
     return res.sendFile(file);
@@ -1364,7 +1367,7 @@ function createApp() {
     const file = wantsWebp && fs.existsSync(webp) ? webp : original;
     if (!fs.existsSync(file)) return res.status(404).end();
     res.vary('Accept');
-    res.set('Cache-Control', req.query.v === 'dh-pwa-13'
+    res.set('Cache-Control', req.query.v === characters.ASSET_VERSION
       ? 'public, max-age=31536000, immutable'
       : 'public, max-age=300, must-revalidate');
     return res.sendFile(file);
@@ -1445,7 +1448,12 @@ function createApp() {
     const already = chatContext.savedTurn(priorHistory, turnId);
     if (already) {
       const messages = already.map((item) => ({
-        ko: item.text, zh: item.zh || '', mood: item.mood || '', audioUrl: item.audioUrl || null, ttsFailed: Boolean(item.ttsFailed),
+        ko: item.text,
+        zh: item.zh || '',
+        mood: item.mood || '',
+        audioUrl: item.audioUrl || null,
+        ttsFailed: Boolean(item.ttsFailed),
+        fallback: Boolean(item.fallback),
       }));
       return res.json({
         messages,
@@ -1558,6 +1566,8 @@ function createApp() {
       const line = pickFallback(
         req.characterId,
         priorHistory.filter((item) => item.role === 'assistant').slice(-5).map((item) => item.text),
+        Math.random,
+        'text',
       );
       usedFallback = true;
       items = [{ raw: line.ko, ko: line.ko, zh: line.zh, mood: 'soft', fallback: true }];
@@ -1627,7 +1637,14 @@ function createApp() {
     }));
     if (ttsChars) console.log(`TTS chars this turn: ${ttsChars}`);
     const displayBubbles = items.map((it) => it.ko);
-    const outMessages = items.map((it) => ({ ko: it.ko, zh: it.zh, mood: it.mood, audioUrl: it.audioUrl, ttsFailed: Boolean(it.ttsFailed) }));
+    const outMessages = items.map((it) => ({
+      ko: it.ko,
+      zh: it.zh,
+      mood: it.mood,
+      audioUrl: it.audioUrl,
+      ttsFailed: Boolean(it.ttsFailed),
+      fallback: Boolean(it.fallback),
+    }));
     const audioUrl = outMessages.length && outMessages[0].audioUrl ? outMessages[0].audioUrl : null;
 
     try {
