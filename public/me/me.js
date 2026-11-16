@@ -509,7 +509,7 @@
     const memory = document.createElement('button');
     memory.type = 'button';
     memory.className = 'me-link';
-    memory.textContent = '他记得的事';
+    memory.textContent = '他记得的你';
     memory.addEventListener('click', () => push((host, gen) => renderMemory(host, ch, gen)));
     const clear = document.createElement('button');
     clear.type = 'button';
@@ -538,7 +538,7 @@
   async function clearOne(ch) {
     const ok = await twoStep({
       title: '清空聊天记录',
-      body: `将删除你和${nameOf(ch)}的聊天记录，以及这段聊天的摘要。他记得的事会保留。`,
+      body: `将删除你和${nameOf(ch)}的聊天记录，以及这段聊天的摘要。他记得的你与亲密度会保留。`,
       again: '再确认一次。这一步之后才会删除。',
       confirm: '确认清空',
     });
@@ -571,71 +571,234 @@
     return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
   }
 
+  // 他记得的你 — the single per-character page. Same three sections as the chat menu:
+  // personal fields, memory cards (view/edit/delete), and the summary (view/clear only).
   async function renderMemory(host, ch, gen) {
     host.replaceChildren();
-    host.append(bar('他记得的事'));
-    const block = document.createElement('div');
-    block.className = 'me-block';
-    const tip = document.createElement('p');
-    tip.className = 'me-note';
-    tip.textContent = '这些是他从聊天里记住的事。可以查看，也可以单独删除。';
-    block.append(tip);
-    host.append(block);
-    let data = { cards: [] };
+    host.append(bar('他记得的你'));
+    let data = null;
     try {
       data = await api(`/api/memory?characterId=${encodeURIComponent(ch.id)}`);
     } catch (_) {
       if (gen !== viewGen) return;
+      const tip = document.createElement('p');
+      tip.className = 'me-note';
       tip.textContent = '没有加载出来';
+      host.append(block(tip));
       return;
     }
     if (gen !== viewGen) return;
+    const reload = () => renderMemory(host, ch, viewGen);
+
+    // 1. 关于你 — editable, applied to the next chat turn.
+    const personal = data.personal || {};
+    const callInput = document.createElement('input');
+    callInput.maxLength = 12;
+    callInput.value = personal.callName || '';
+    callInput.placeholder = '还没定';
+    callInput.setAttribute('aria-label', '他怎么叫你');
+    const nickInput = document.createElement('input');
+    nickInput.maxLength = 20;
+    nickInput.value = personal.characterNickname || '';
+    nickInput.placeholder = ch.displayName || ch.name || '备注名';
+    nickInput.setAttribute('aria-label', '备注名');
+    const habitsInput = document.createElement('textarea');
+    habitsInput.maxLength = 200;
+    habitsInput.rows = 3;
+    habitsInput.value = personal.habits || '';
+    habitsInput.placeholder = '例如：晚上容易失眠，喜欢先说累';
+    habitsInput.setAttribute('aria-label', '他记得的习惯');
+    const save = document.createElement('button');
+    save.type = 'button';
+    save.className = 'me-submit';
+    save.textContent = '保存，下一句就生效';
+    save.addEventListener('click', async () => {
+      save.disabled = true;
+      try {
+        const saved = await api(`/api/memory/personal?characterId=${encodeURIComponent(ch.id)}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            callName: callInput.value.trim(),
+            characterNickname: nickInput.value.trim(),
+            habits: habitsInput.value.trim(),
+          }),
+        });
+        state.profiles[ch.id] = { ...(state.profiles[ch.id] || {}), ...(saved.personal || {}) };
+        publish('idol-profile', {
+          characterId: ch.id,
+          characterNickname: (saved.personal && saved.personal.characterNickname) || '',
+        });
+        toast('保存好了，下一句就用上');
+      } catch (_) {
+        toast('没保存上，请重试');
+      } finally { save.disabled = false; }
+    });
+    const about = document.createElement('div');
+    about.className = 'me-block';
+    about.append(
+      kicker('关于你'),
+      field('他怎么叫你', callInput),
+      field('你怎么叫他（备注名）', nickInput),
+      field('他记得的习惯', habitsInput),
+      save,
+    );
+    host.append(about);
+
+    // 2. 他记得的事 — grouped by category; every card can be viewed, edited, deleted.
     const cards = data.cards || [];
+    const cardsBlock = document.createElement('div');
+    cardsBlock.className = 'me-block';
+    cardsBlock.append(kicker('他记得的事'));
     if (!cards.length) {
       const empty = document.createElement('p');
       empty.className = 'me-note';
       empty.textContent = '还没有记住什么。';
-      block.append(empty);
-      return;
+      cardsBlock.append(empty);
+    } else {
+      const buckets = new Map();
+      for (const card of cards) {
+        const key = card.category || 'recent';
+        if (!buckets.has(key)) buckets.set(key, { label: card.categoryLabel || '', cards: [] });
+        buckets.get(key).cards.push(card);
+      }
+      ['preference', 'recent', 'promise', 'address'].forEach((key) => {
+        const bucket = buckets.get(key);
+        if (!bucket) return;
+        const heading = document.createElement('p');
+        heading.className = 'me-kicker';
+        heading.textContent = `${bucket.label} · ${bucket.cards.length}`;
+        cardsBlock.append(heading);
+        bucket.cards.forEach((card) => cardsBlock.append(memoryCardNode(card, ch, reload)));
+      });
     }
-    cards.forEach((card) => {
-      const item = document.createElement('article');
-      item.className = 'me-card';
-      const text = document.createElement('p');
-      text.textContent = card.text;
-      const kind = document.createElement('p');
-      kind.className = 'me-note';
-      kind.textContent = [card.categoryLabel, card.statusLabel, card.date].filter(Boolean).join(' · ');
-      const time = document.createElement('time');
-      time.textContent = fmt(card.updatedAt || card.createdAt);
-      const actions = document.createElement('div');
-      actions.className = 'me-card-actions';
-      const view = document.createElement('button');
-      view.type = 'button';
-      view.textContent = '查看';
-      view.addEventListener('click', () => ask({ title: '他记得的事', body: card.text, confirm: '关闭' }));
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'is-delete';
-      del.textContent = '删除';
-      del.addEventListener('click', async () => {
+    const clear = document.createElement('button');
+    clear.type = 'button';
+    clear.className = 'me-textbtn';
+    clear.textContent = '清空全部记忆';
+    clear.addEventListener('click', async () => {
+      const ok = await twoStep({
+        title: '清空全部记忆',
+        body: '记忆卡片会被清空，聊天记录和亲密度都不动。',
+        again: '再确认一次。清空后他会重新开始记。',
+        confirm: '确认清空',
+      });
+      if (!ok) return;
+      try {
+        await api(`/api/memory?characterId=${encodeURIComponent(ch.id)}`, {
+          method: 'DELETE',
+          body: JSON.stringify({ confirm: 'CLEAR' }),
+        });
+        toast('记忆已清空');
+        reload();
+      } catch (_) { toast('清空失败'); }
+    });
+    if (cards.length) cardsBlock.append(clear);
+    host.append(cardsBlock);
+
+    // 3. 之前聊过的 — summary is view/clear only and never touches cards or intimacy.
+    const summaryBlock = document.createElement('div');
+    summaryBlock.className = 'me-block';
+    summaryBlock.append(kicker('之前聊过的（摘要）'));
+    const summaryText = document.createElement('p');
+    summaryText.className = 'me-note';
+    summaryText.textContent = data.summary || '还没有摘要。';
+    summaryBlock.append(summaryText);
+    if (data.summary) {
+      const clearSummary = document.createElement('button');
+      clearSummary.type = 'button';
+      clearSummary.className = 'me-textbtn';
+      clearSummary.textContent = '清空摘要';
+      clearSummary.addEventListener('click', async () => {
         const ok = await twoStep({
-          title: '删除这条记忆',
-          body: card.text,
-          again: '删除后，他不会再记起这件事。',
-          confirm: '确认删除',
+          title: '清空摘要',
+          body: '只清空这段聊天的摘要，记忆卡片和亲密度都保留。',
+          again: '再确认一次。',
+          confirm: '确认清空',
         });
         if (!ok) return;
         try {
-          await api(`/api/memory/${encodeURIComponent(card.id)}?characterId=${encodeURIComponent(ch.id)}`, { method: 'DELETE' });
-          toast('已删除');
-          renderMemory(host, ch, gen);
-        } catch (_) { toast('删除失败'); }
+          await api(`/api/memory/summary?characterId=${encodeURIComponent(ch.id)}`, { method: 'DELETE' });
+          toast('摘要已清空');
+          reload();
+        } catch (_) { toast('清空失败'); }
       });
-      actions.append(view, del);
-      item.append(text, kind, time, actions);
-      block.append(item);
+      summaryBlock.append(clearSummary);
+    }
+    host.append(summaryBlock);
+  }
+
+  function field(label, control) {
+    const wrap = document.createElement('label');
+    wrap.className = 'me-field';
+    const span = document.createElement('span');
+    span.textContent = label;
+    wrap.append(span, control);
+    return wrap;
+  }
+
+  function block(node) {
+    const box = document.createElement('div');
+    box.className = 'me-block';
+    box.append(node);
+    return box;
+  }
+
+  function memoryCardNode(card, ch, reload) {
+    const item = document.createElement('article');
+    item.className = 'me-card';
+    const text = document.createElement('p');
+    text.textContent = card.text;
+    const kind = document.createElement('p');
+    kind.className = 'me-note';
+    const bits = [card.categoryLabel, card.statusLabel, card.date].filter(Boolean);
+    kind.textContent = bits.join(' · ') + (card.edited ? ' · 你改过' : '');
+    const time = document.createElement('time');
+    time.textContent = fmt(card.updatedAt || card.createdAt);
+    const actions = document.createElement('div');
+    actions.className = 'me-card-actions';
+    const view = document.createElement('button');
+    view.type = 'button';
+    view.textContent = '查看';
+    view.addEventListener('click', () => ask({ title: '他记得的事', body: card.text, confirm: '关闭' }));
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.textContent = '修改';
+    edit.addEventListener('click', () => {
+      ask({ title: '修改这条记忆', body: '改过的内容会直接作为他记住的事。', input: true, placeholder: '一句话就好', confirm: '保存' })
+        .then(async (next) => {
+          // ask() resolves true when no input; only a non-empty string is a real edit.
+          if (typeof next !== 'string' || !next.trim()) return;
+          try {
+            await api(`/api/memory/${encodeURIComponent(card.id)}?characterId=${encodeURIComponent(ch.id)}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ text: next.trim() }),
+            });
+            toast('改好了');
+            reload();
+          } catch (_) { toast('没保存上'); }
+        });
     });
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'is-delete';
+    del.textContent = '删除';
+    del.addEventListener('click', async () => {
+      const ok = await twoStep({
+        title: '删除这条记忆',
+        body: card.text,
+        again: '删除后，他不会再记起这件事。',
+        confirm: '确认删除',
+      });
+      if (!ok) return;
+      try {
+        await api(`/api/memory/${encodeURIComponent(card.id)}?characterId=${encodeURIComponent(ch.id)}`, { method: 'DELETE' });
+        toast('已删除');
+        reload();
+      } catch (_) { toast('删除失败'); }
+    });
+    actions.append(view, edit, del);
+    item.append(text, kind, time, actions);
+    return item;
   }
 
   function renderPassword(host) {

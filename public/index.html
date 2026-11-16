@@ -87,7 +87,6 @@
           <button type="button" class="room-title" id="profile-btn" aria-haspopup="dialog" aria-controls="profile-sheet">
             <span class="title-text">
               <span class="name"><span data-char-label="title" id="room-name">백현 🐶</span><span class="spark" id="spark" hidden></span></span>
-              <span class="sub" id="room-sub" hidden>입력 중...</span>
             </span>
           </button>
           <a class="icon-btn star-link" href="/shell/starlight.html" aria-label="星光"><img src="/icons/starlight.svg" width="24" height="24" alt="" /></a>
@@ -126,7 +125,7 @@
         </button>
         <button type="button" class="menu-row" id="moments-open-menu"><span>朋友圈 ✨</span></button>
         <button type="button" class="menu-row" id="recharge-open"><span>星光补给站</span></button>
-        <button type="button" class="menu-row" id="memory-open-menu"><span>他记得的事 💭</span></button>
+        <button type="button" class="menu-row" id="memory-open-menu"><span>他记得的你 💭</span></button>
         <button type="button" class="menu-row pwa-install-entry" id="install-open" data-pwa-install><span>添加到桌面</span></button>
         <button type="button" class="danger" id="clear-btn">清空聊天记录</button>
         <button type="button" class="danger" id="logout-btn">로그아웃</button>
@@ -175,7 +174,7 @@
           <p class="profile-status">심심하면 말 걸어줘 🐶</p>
         </div>
         <button type="button" class="sheet-close mem-entry" id="moments-open-profile">朋友圈 ✨</button>
-        <button type="button" class="sheet-close mem-entry" id="memory-open-profile">他记得的事 💭</button>
+        <button type="button" class="sheet-close mem-entry" id="memory-open-profile">他记得的你 💭</button>
         
         <button type="button" class="sheet-close" id="profile-close">닫기</button>
       </div>
@@ -205,7 +204,7 @@
     <div class="modal-back" id="modal" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <h2 id="modal-title">清空聊天记录</h2>
-        <p id="modal-body">将删除聊天记录和摘要。他记得的事与亲密度会保留。</p>
+        <p id="modal-body">将删除聊天记录和摘要。他记得的你与亲密度会保留。</p>
         <div class="modal-actions">
           <button type="button" class="btn-ghost" id="modal-cancel">取消</button>
           <button type="button" class="btn-danger" id="modal-confirm">继续</button>
@@ -231,18 +230,43 @@
     <section class="mem-panel" id="mem-panel" hidden aria-labelledby="mem-title">
       <header class="mem-head">
         <button type="button" class="mem-back" id="mem-back" aria-label="返回">‹</button>
-        <h2 id="mem-title">他记得的事</h2>
+        <h2 id="mem-title">他记得的你</h2>
         <span class="mem-head-pad"></span>
       </header>
       <div class="mem-body">
-        <p class="mem-tip">这些是他从聊天里记住的、关于你的事。删掉的不会再被记回来。</p>
+        <p class="mem-tip">这些是他从聊天里记住的、关于你的事。改过的会按你写的记，删掉的不会再记回来。</p>
+
+        <h3 class="mem-section" id="mem-me-title">关于你</h3>
+        <div class="mem-form" id="mem-personal">
+          <label class="mem-field">
+            <span>他怎么叫你</span>
+            <input id="mem-call-name" type="text" maxlength="12" autocomplete="off" placeholder="还没定" />
+          </label>
+          <label class="mem-field">
+            <span>你怎么叫他（备注名）</span>
+            <input id="mem-nickname" type="text" maxlength="20" autocomplete="off" placeholder="用原来的名字" />
+          </label>
+          <label class="mem-field">
+            <span>他记得的习惯</span>
+            <textarea id="mem-habits" maxlength="200" rows="3" placeholder="例如：晚上容易失眠，喜欢先说累"></textarea>
+          </label>
+          <button type="button" class="mem-save" id="mem-personal-save">保存，下一句就生效</button>
+        </div>
+
+        <h3 class="mem-section" id="mem-cards-title">他记得的事</h3>
         <div class="mem-summary" id="mem-summary" hidden>
           <p class="mem-label">之前聊过的（摘要）</p>
           <p class="mem-summary-text" id="mem-summary-text"></p>
+          <button type="button" class="mem-summary-clear" id="mem-summary-clear">清空摘要</button>
         </div>
+        <div class="mem-groups" id="mem-groups"></div>
         <ul class="mem-list" id="mem-list"></ul>
         <p class="mem-empty" id="mem-empty" hidden>还没有记住什么，多聊聊吧 🐶</p>
         <button type="button" class="mem-clear" id="mem-clear" hidden>清空全部记忆</button>
+        <details class="mem-forgot" id="mem-forgot" hidden>
+          <summary>已忘记的事（不会再被记回来）</summary>
+          <ul class="mem-forgot-list" id="mem-forgot-list"></ul>
+        </details>
       </div>
     </section>
 
@@ -295,6 +319,7 @@
     </svg>
   </template>
   <script src="/sw-heal.js"></script>
+  <script src="/playback.js"></script>
   <script src="/account-cache.js"></script>
   <script src="/app.js"></script>
   <script src="/memory.js"></script>

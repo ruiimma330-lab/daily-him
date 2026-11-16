@@ -62,7 +62,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   const listTime = document.getElementById('list-time');
   const listPreview = document.getElementById('list-preview');
   const listBadge = document.getElementById('list-badge');
-  const roomSub = document.getElementById('room-sub');
   const themeMeta = document.querySelector('meta[name="theme-color"]');
 
   let messages = [];
@@ -70,7 +69,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let roomOpen = false;
   let menuOpen = false;
   let typing = false;
-  let recording = false;
   let busy = false;
   let animateLast = false;
   let generation = 0;
@@ -141,14 +139,26 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return charDefault.emoji ? `${shownName()} ${charDefault.emoji}` : shownName();
   }
 
+  // While a reply is on the way the NAME line itself becomes 「正在输入…」, keeping the
+  // avatar and the spark. No second typing bubble is drawn in the thread.
+  const TYPING_TITLE = '正在输入…';
+
+  function paintRoomTitle() {
+    const nameNode = document.getElementById('room-name');
+    if (!nameNode) return;
+    nameNode.textContent = typing ? TYPING_TITLE : shownTitle();
+    nameNode.classList.toggle('is-typing', Boolean(typing));
+  }
+
   function applyCharacterLabels() {
     document.querySelectorAll('[data-char-label]').forEach((node) => {
       node.textContent = node.getAttribute('data-char-label') === 'title' ? shownTitle() : shownName();
     });
     document.title = `Daily Him · ${shownName()}`;
+    paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-15`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-16`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -515,6 +525,26 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return svg;
   }
 
+  // Ring with a gap: the "voice is still arriving" state, never a ready play icon.
+  function spinnerIcon() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '14');
+    svg.setAttribute('height', '14');
+    svg.setAttribute('aria-hidden', 'true');
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', '12');
+    circle.setAttribute('cy', '12');
+    circle.setAttribute('r', '7');
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('stroke', 'currentColor');
+    circle.setAttribute('stroke-width', '2.4');
+    circle.setAttribute('stroke-linecap', 'round');
+    circle.setAttribute('stroke-dasharray', '30 14');
+    svg.append(circle);
+    return svg;
+  }
+
   function setSpeakIcon(button, playing) {
     const want = playing ? 'pause' : 'play';
     if (button.dataset.icon === want) return;
@@ -524,26 +554,24 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     button.setAttribute('aria-label', playing ? '일시정지' : '음성 재생');
   }
 
-  function syncSpeakState() {
-    document.querySelectorAll('.bubble.reply').forEach((bubble) => {
-      const audio = bubble.querySelector('audio');
-      const button = bubble.querySelector('.speak');
-      const playing = Boolean(audio && audio.getAttribute('src') && !audio.paused && !audio.ended);
-      bubble.classList.toggle('playing', playing);
-      if (button && !button.classList.contains('busy')) setSpeakIcon(button, playing);
-    });
-  }
-
-  function stopAllAudio() {
-    document.querySelectorAll('audio').forEach((audio) => audio.pause());
-    syncSpeakState();
-  }
-
-  function playExclusive(audio) {
-    document.querySelectorAll('audio').forEach((other) => {
-      if (other !== audio) other.pause();
-    });
-    return audio.play();
+  function setSpeakLoading(button, loading) {
+    if (!button) return;
+    button.classList.toggle('busy', loading);
+    if (loading) {
+      if (button.dataset.icon !== 'loading') {
+        button.dataset.icon = 'loading';
+        button.replaceChildren(spinnerIcon());
+      }
+      button.setAttribute('aria-busy', 'true');
+      button.setAttribute('aria-pressed', 'false');
+      button.setAttribute('aria-label', '음성 준비 중');
+      return;
+    }
+    button.removeAttribute('aria-busy');
+    if (button.dataset.icon === 'loading') {
+      button.dataset.icon = '';
+      setSpeakIcon(button, false);
+    }
   }
 
   const SILENCE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
@@ -567,78 +595,169 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (message.voiceFallback) render();
   }
 
-  async function playMessageAudio(message, bubble) {
-    unlockAudio();
-    const button = bubble.querySelector('.speak');
-    const audio = bubble.querySelector('audio');
-    if (!button || !audio || button.classList.contains('busy')) return;
-    if (audio.getAttribute('src') && !audio.paused && !audio.ended) {
-      audio.pause();
-      syncSpeakState();
+  function voiceFailed(message) {
+    message.ttsFailed = true;
+    message.ttsPending = false;
+    message.voiceToken = null;
+    message.voiceFallback = message.voiceFallback || pickClientFallback('voice');
+    paintPlayer(playback.playerFor(message));
+    saveLocalHistory();
+    if (message.voiceFallback) render();
+  }
+
+  function applyStarlightDenied(data) {
+    showToast(`${(data && data.notice) || '这条语音需要 15 星光'} · 去领取`);
+    const bar = document.getElementById('star-bar');
+    if (!bar) return;
+    bar.hidden = false;
+    bar.textContent = '先看文字';
+    bar.onclick = () => { bar.hidden = true; };
+  }
+
+  // One clip per message, one request per clip. The overlap/rewind rules live in
+  // public/playback.js so they can be tested without a browser.
+  const VOICE_WAIT_BUDGET_MS = 2000; // how long the chat request may hold text for voice
+  const VOICE_WAIT_TIMEOUT_MS = 8000; // after this the spinner gives up and the fallback shows
+  let autoplayedTick = 0;
+  const playback = window.DailyPlayback.createPlayback({
+    createAudio: () => {
+      const audio = el('audio');
+      audio.preload = 'none';
+      audio.setAttribute('playsinline', '');
+      audio.setAttribute('webkit-playsinline', '');
+      return audio;
+    },
+    cachedSource: (message) => safeAudioUrl(message && message.audioUrl),
+    requestSource: (message) => requestVoice(message),
+    onChange: (player) => paintPlayer(player),
+    onAudioError: (message, player) => {
+      // A broken cached URL gets one silent retry through the normal TTS path.
+      const audio = player.audio;
+      if (audio.dataset.retried === '1') {
+        showToast('음성을 재생하지 못했어요');
+        voiceFailed(message);
+        return;
+      }
+      audio.dataset.retried = '1';
+      message.audioUrl = null;
+      message.ttsFailed = false;
+      try { audio.removeAttribute('src'); audio.load(); } catch (_) { /* ignore */ }
+      requestVoice(message);
+    },
+  });
+
+  function paintPlayer(player) {
+    if (!player || !player.message) return;
+    const button = player.button;
+    if (!button || !button.isConnected) return;
+    const playing = playback.isPlaying(player);
+    const loading = !playing && (playback.isLoading(player) || player.message.ttsPending === true);
+    if (loading) {
+      setSpeakLoading(button, true);
+      if (player.bubble) player.bubble.classList.remove('playing');
       return;
     }
-    if (!audio.getAttribute('src')) {
-      const cached = safeAudioUrl(message.audioUrl);
-      if (cached) {
-        audio.src = cached;
-      } else if (!message.text || !String(message.text).trim()) {
+    setSpeakLoading(button, false);
+    setSpeakIcon(button, playing);
+    if (player.bubble) player.bubble.classList.toggle('playing', playing);
+  }
+
+  function stopAllAudio() {
+    if (!window.DailyPlayback) return;
+    playback.stopAll();
+    messages.forEach((message) => paintPlayer(playback.playerFor(message)));
+  }
+
+  // Speaker tap: second tap stops and rewinds; a tap while loading plays once when ready.
+  function playMessageAudio(message) {
+    unlockAudio();
+    const player = playback.playerFor(message);
+    if (message.starlightDenied) {
+      applyStarlightDenied({ notice: message.starlightNotice });
+      return Promise.resolve();
+    }
+    return playback.toggle(message).then((result) => {
+      if (result && result.action === 'blocked' && !message.text) {
         showToast('음성은 이번엔 못 보냈어요');
         attachVoiceFallback(message);
-        return;
-      } else {
-        button.classList.add('busy');
-        button.setAttribute('aria-busy', 'true');
-        try {
-          const response = await fetch(withChar('/api/tts'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: message.text, mood: message.mood || '' }),
-          });
-          if (response.status === 401) {
-            location.href = '/login';
-            return;
-          }
-          const data = await response.json().catch(() => ({}));
-          const url = safeAudioUrl(data && data.audioUrl);
-          if (response.status === 402 && data && data.error === 'starlight') {
-            showToast(`${data.notice || '这条语音需要 15 星光'} · 去领取`);
-            const bar = document.getElementById('star-bar');
-            if (bar) {
-              bar.hidden = false;
-              bar.textContent = '先看文字';
-              bar.onclick = () => { bar.hidden = true; };
-            }
-            return;
-          }
-          if (!response.ok || !url) {
-            showToast(data && data.audioError === 'Voice is not configured'
-              ? '음성은 아직 준비되지 않았어요'
-              : '음성은 이번엔 못 보냈어요');
-            attachVoiceFallback(message);
-            return;
-          }
-          message.audioUrl = url;
-          message.ttsFailed = false;
-          saveHistory();
-          audio.src = url;
-        } catch (err) {
-          showToast('음성은 이번엔 못 보냈어요');
-          attachVoiceFallback(message);
-          return;
-        } finally {
-          button.classList.remove('busy');
-          button.removeAttribute('aria-busy');
-        }
       }
-    }
-    if (!audio.getAttribute('src')) return;
-    try {
-      await playExclusive(audio);
-      syncSpeakState();
-    } catch (err) {
-      showToast('点一下喇叭再听');
-      syncSpeakState();
-    }
+      paintPlayer(player);
+      return result;
+    });
+  }
+
+  // Resolves to a playable URL for one message, or null. Shares the pending job, so a
+  // tap during loading never sends a second request.
+  function requestVoice(message) {
+    if (message.voicePromise) return message.voicePromise;
+    message.voicePromise = (async () => {
+      try {
+        const response = await fetch(withChar('/api/tts'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: message.text,
+            mood: message.mood || '',
+            // Joins the clip the chat request already started: same audio, one charge.
+            voiceToken: message.voiceToken || undefined,
+          }),
+        });
+        if (response.status === 401) {
+          location.href = '/login';
+          return null;
+        }
+        const data = await response.json().catch(() => ({}));
+        const url = safeAudioUrl(data && data.audioUrl);
+        if (response.status === 402 && data && data.error === 'starlight') {
+          applyStarlightDenied(data);
+          message.starlightDenied = true;
+          message.starlightNotice = data.notice || '';
+          voiceFailed(message);
+          return null;
+        }
+        if (!response.ok || !url) {
+          showToast(data && data.audioError === 'Voice is not configured'
+            ? '음성은 아직 준비되지 않았어요'
+            : '음성은 이번엔 못 보냈어요');
+          voiceFailed(message);
+          return null;
+        }
+        message.audioUrl = url;
+        message.ttsFailed = false;
+        message.ttsPending = false;
+        message.voiceToken = null;
+        saveHistory();
+        playback.refresh(message);
+        return url;
+      } catch (_) {
+        showToast('음성은 이번엔 못 보냈어요');
+        voiceFailed(message);
+        return null;
+      } finally {
+        message.voicePromise = null;
+        paintPlayer(playback.playerFor(message));
+      }
+    })();
+    return message.voicePromise;
+  }
+
+  // Text is already on screen: collect the clip, but never let the spinner run past ~8s.
+  async function waitForVoice(message) {
+    const player = playback.playerFor(message);
+    paintPlayer(player);
+    const timer = setTimeout(() => {
+      if (safeAudioUrl(message.audioUrl) || !message.ttsPending) return;
+      message.ttsPending = false;
+      voiceFailed(message);
+    }, VOICE_WAIT_TIMEOUT_MS);
+    const url = await requestVoice(message);
+    clearTimeout(timer);
+    if (!url) return;
+    message.ttsPending = false;
+    message.voiceFallback = null;
+    message.ttsFailed = false;
+    paintPlayer(player);
+    scheduleAutoplay();
   }
 
   // Character reply: Korean text, speaker (TTS on tap), Chinese collapsed underneath.
@@ -658,37 +777,27 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
 
     const zhText = typeof message.zh === 'string' ? message.zh.trim() : '';
-    const canSpeak = Boolean(safeAudioUrl(message.audioUrl))
+    const canSpeak = Boolean(safeAudioUrl(message.audioUrl)) || message.ttsPending === true
       || (!writesBlocked() && /[\p{L}\p{N}]/u.test(text));
     if (canSpeak) {
+      const player = playback.playerFor(message);
       const button = el('button', 'speak');
       button.type = 'button';
       setSpeakIcon(button, false);
-      const audio = el('audio');
-      audio.preload = 'none';
-      audio.setAttribute('playsinline', '');
-      audio.addEventListener('play', syncSpeakState);
-      audio.addEventListener('pause', syncSpeakState);
-      audio.addEventListener('ended', syncSpeakState);
-      audio.addEventListener('error', () => {
-        if (!audio.getAttribute('src')) return;
-        if (audio.dataset.retried === '1') {
-          showToast('음성을 재생하지 못했어요');
-          attachVoiceFallback(message);
-          syncSpeakState();
-          return;
-        }
-        audio.dataset.retried = '1';
-        message.audioUrl = null;
-        audio.removeAttribute('src');
-        playMessageAudio(message, bubble);
-      });
+      player.button = button;
+      player.bubble = bubble;
+      const audio = player.audio;
+      // The audio node outlives the bubble; only the registry stops a detached clip.
+      if (audio.parentNode && audio.parentNode !== bubble) audio.parentNode.removeChild(audio);
+      const src = safeAudioUrl(message.audioUrl);
+      if (src && audio.getAttribute('src') !== src) audio.src = src;
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        playMessageAudio(message, bubble);
+        playMessageAudio(message);
       });
       bubble.append(button, audio);
+      paintPlayer(player);
     }
 
     if (zhText) {
@@ -734,11 +843,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function render() {
+    // A rebuild tears down the bubbles, so stop anything still sounding first.
+    stopAllAudio();
     messagesEl.replaceChildren();
-    if (roomSub) {
-      roomSub.textContent = typing ? (recording ? '녹음 중...' : '입력 중...') : '';
-      roomSub.hidden = !typing;
-    }
+    paintRoomTitle();
     if (historyError && !messages.length && !typing) {
       const box = el('div', 'history-miss');
       const note = el('p', 'history-miss-text');
@@ -777,8 +885,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       index = end;
     }
 
-    if (typing) messagesEl.append(renderTyping());
-    else if (showRetry) messagesEl.append(renderRetry());
+    if (showRetry) messagesEl.append(renderRetry());
     if (characterVoiceUnavailable) voiceNote = '语音暂不可用';
     if (voiceNote && !typing) messagesEl.append(renderVoiceNote());
     animateLast = false;
@@ -792,6 +899,21 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       });
     }
     updateList();
+    scheduleAutoplay();
+  }
+
+  // Autoplay only starts once the speaker is genuinely ready: a real URL and no
+  // request in flight. One attempt per new bubble, so a rebuild cannot fire twice.
+  function scheduleAutoplay() {
+    if (settings.playback !== 'auto' || !roomOpen || writesBlocked() || typing) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant' || !String(last.text || '').trim()) return;
+    if (!last.voice || autoplayedTick === last.time) return;
+    if (last.ttsFailed || last.voiceFallback || last.starlightDenied) return;
+    const player = playback.playerFor(last);
+    if (!player || !safeAudioUrl(last.audioUrl) || playback.isLoading(player)) return;
+    autoplayedTick = last.time;
+    playMessageAudio(last);
   }
 
   function applyRoomSearch() {
@@ -881,23 +1003,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return wrap;
   }
 
-  function renderTyping() {
-    const wrap = el('div', 'group in');
-    const stack = el('div', 'stack');
-    const line = el('div', 'line');
-    const bubble = el('div', 'bubble typing sharp');
-    const typingText = recording ? '녹음 중...' : '입력 중...';
-    bubble.setAttribute('aria-label', typingText);
-    for (let i = 0; i < 3; i += 1) bubble.append(el('span', 'dot'));
-    const label = el('span', 'typing-label');
-    label.textContent = typingText;
-    bubble.append(label);
-    line.append(bubble);
-    stack.append(line);
-    wrap.append(makeAvatar('sm'), stack);
-    return wrap;
-  }
-
   function renderRetry() {
     const wrap = el('div', `group in named${retryFresh ? ' fresh' : ''}`);
     retryFresh = false;
@@ -974,15 +1079,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const label = voiceBtn.querySelector('span');
       if (label) label.textContent = auto ? '自动播放' : '点了才播';
     }
-  }
-
-  function maybeAutoplay() {
-    if (settings.playback !== 'auto' || !roomOpen || writesBlocked()) return;
-    const last = messages[messages.length - 1];
-    if (!last || last.role !== 'assistant' || !String(last.text || '').trim()) return;
-    const bubbles = messagesEl.querySelectorAll('.bubble.reply');
-    const bubble = bubbles[bubbles.length - 1];
-    if (bubble) playMessageAudio(last, bubble);
   }
 
   function applyPrefs(next) {
@@ -1166,7 +1262,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const confirm = document.getElementById('modal-confirm');
     title.textContent = step === 1 ? '清空聊天记录' : '再次确认';
     body.textContent = step === 1
-      ? `将删除你和${shownName()}的聊天记录，以及这段聊天的摘要。他记得的事与亲密度会保留。`
+      ? `将删除你和${shownName()}的聊天记录，以及这段聊天的摘要。他记得的你与亲密度会保留。`
       : '再确认一次。这一步之后才会删除，且无法恢复。';
     confirm.textContent = step === 1 ? '继续' : '确认清空';
   }
@@ -1284,7 +1380,14 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const response = await fetch(withChar('/api/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: currentUserText(), voice: false, sceneId: pendingSceneId || undefined, turnId: activeTurnId || undefined }),
+        body: JSON.stringify({
+          text: currentUserText(),
+          // Voice now rides with the reply by default. The server answers as soon as the
+          // clip is ready or after this short budget, so text is never held back for long.
+          voiceWaitMs: VOICE_WAIT_BUDGET_MS,
+          sceneId: pendingSceneId || undefined,
+          turnId: activeTurnId || undefined,
+        }),
         signal: controller.signal,
       });
       clearTimeout(timer);
@@ -1332,27 +1435,30 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           const item = voiceItems[i];
           if (myGen !== generation) return;
           typing = true;
-          recording = false;
           render();
           await sleep(i === 0 ? Math.min(900, 320 + item.ko.length * 18) : bubbleDelay(item.ko));
           if (myGen !== generation) return;
           typing = false;
-          messages.push({
+          // Text is revealed now. Voice rides along when it is already ready; otherwise
+          // the speaker shows a spinner and the single follow-up request below fills it in.
+          const message = {
             role: 'assistant',
             text: item.ko.trim(),
             zh: String(item.zh || ''),
             mood: String(item.mood || ''),
             time: Date.now(),
             audioUrl: safeAudioUrl(item.audioUrl),
+            ttsPending: item.ttsPending === true && !safeAudioUrl(item.audioUrl),
             voice: true,
             fallback: item.fallback === true,
             voiceFallback: item.ttsFailed === true ? pickClientFallback('voice') : null,
-          });
+          };
+          messages.push(message);
           saveHistory();
           animateLast = true;
           render();
+          if (message.ttsPending) waitForVoice(message);
         }
-        maybeAutoplay();
         return;
       }
       if (!bubbles.length) throw new Error('chat failed');
@@ -1369,7 +1475,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         animateLast = true;
         render();
       }
-      maybeAutoplay();
     } catch (err) {
       if (myGen !== generation) return;
       if (err && err.name === 'AbortError' && !timedOut) return;
@@ -1381,6 +1486,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         typing = false;
         busy = false;
         if (stillTyping) render();
+        paintRoomTitle();
       }
     }
   }
@@ -1883,36 +1989,55 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   applyPrefs(settings);
   loadAlias();
 
+  // First entry with an empty history. Copy comes from the pre-stored greetings file
+  // (time of day + optional callName). welcomeKo / askNameKo stay as fallbacks for
+  // characters without a greetings file. Nothing here calls the LLM.
   async function welcomeIfNeeded(remote) {
     try {
       const params = new URLSearchParams(location.search);
       if (params.get('welcome') !== '1' || remote.length) return remote;
-      const response = await fetch('/api/characters');
-      if (!response.ok) return remote;
-      const data = await response.json();
-      const ch = (data.characters || []).find((item) => item.id === CHARACTER_ID);
-      let named = null;
+      let saved = {};
       try {
         const profileResponse = await fetch(withChar('/api/profile'));
-        if (profileResponse.ok) named = await profileResponse.json();
-      } catch (_) { named = null; }
-      const saved = named && named.profile ? named.profile : {};
-      if (saved.callNameStatus === 'pending' && ch && ch.askNameKo) {
+        if (profileResponse.ok) {
+          const named = await profileResponse.json();
+          saved = (named && named.profile) || {};
+        }
+      } catch (_) { saved = {}; }
+      const naming = saved.callNameStatus === 'pending' || saved.callNameStatus === 'confirming';
+      const mode = naming ? 'ask' : 'welcome';
+      let greeting = null;
+      try {
+        const response = await fetch(withChar(`/api/greeting?mode=${mode}`));
+        if (response.ok) {
+          const data = await response.json();
+          greeting = (data && data.greeting) || null;
+        }
+      } catch (_) { greeting = null; }
+      if (greeting && greeting.ko) {
+        return [{
+          role: 'assistant',
+          text: greeting.ko,
+          time: Date.now(),
+          audioUrl: safeAudioUrl(greeting.audioUrl),
+          zh: greeting.zh || '',
+        }];
+      }
+      let ch = null;
+      try {
+        const response = await fetch('/api/characters');
+        if (response.ok) {
+          const data = await response.json();
+          ch = (data.characters || []).find((item) => item.id === CHARACTER_ID) || null;
+        }
+      } catch (_) { ch = null; }
+      if (naming && ch && ch.askNameKo) {
         return [{
           role: 'assistant',
           text: ch.askNameKo,
           time: Date.now(),
           audioUrl: null,
           zh: ch.askNameZh || '',
-        }];
-      }
-      if (saved.callName && saved.callNameSource === 'user') {
-        return [{
-          role: 'assistant',
-          text: `${saved.callName} 왔구나. 오늘 뭐 하고 있었어?`,
-          time: Date.now(),
-          audioUrl: null,
-          zh: `${saved.callName}，来了呀。今天在做什么？`,
         }];
       }
       const text = ch && typeof ch.welcomeKo === 'string' ? ch.welcomeKo.trim() : '';
