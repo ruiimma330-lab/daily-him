@@ -12,6 +12,7 @@ delete process.env.TURSO_AUTH_TOKEN;
 delete process.env.APP_PASSWORD;
 
 const store = require('../lib/store');
+const relationship = require('../lib/relationship');
 const { createApp } = require('../server');
 
 let base;
@@ -108,6 +109,8 @@ test('age gate, prefs, history summary, and account deletion', async () => {
     openings: [],
   });
   store.putDoc('moments', userId, 'baekhyun', { liked: { a: true }, comments: [{ id: 'c1', text: '好看' }], lastReplyAt: 0 });
+  relationship.recordTurn(userId, 'baekhyun', Date.parse('2026-11-16T03:00:00Z'));
+  const relationBeforeClear = relationship.load(userId, 'baekhyun');
   const cleared = await request('/api/history?characterId=baekhyun&summary=1', { method: 'DELETE', cookie });
   assert.equal(cleared.status, 200);
   assert.deepEqual(cleared.json.messages, []);
@@ -115,6 +118,7 @@ test('age gate, prefs, history summary, and account deletion', async () => {
   assert.equal(memory.summary, '');
   assert.equal(memory.cards.length, 1);
   assert.equal(memory.pending.length, 0);
+  assert.deepEqual(relationship.load(userId, 'baekhyun'), relationBeforeClear);
 
   const stranger = await request('/api/memory/abc123abc123?characterId=baekhyun', { method: 'DELETE', cookie: other.cookie });
   assert.equal(stranger.status, 404);

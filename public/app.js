@@ -81,11 +81,56 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let retryFresh = false;
   let retryAt = 0;
   let characterVoiceUnavailable = false;
+  let characterReadOnly = false;
+  let characterAccessKnown = false;
   let voiceNote = '';
   let charRemark = '';
   let userNickname = '';
   let aiNoticeAccountId = '';
+  let fallbackScenes = { offline: [], voice: [] };
+  const FALLBACK_CACHE_KEY = `dh_fallbacks_v1:${CHARACTER_ID}`;
+  const FALLBACK_RECENT_PREFIX = `dh_fallback_recent_v1:${CHARACTER_ID}:`;
   const charDefault = { name: '백현', emoji: '🐶' };
+
+  function normalizeFallbackLines(lines) {
+    if (!Array.isArray(lines)) return [];
+    return lines
+      .filter((line) => line && typeof line.ko === 'string' && line.ko.trim() && typeof line.zh === 'string' && line.zh.trim())
+      .map((line) => ({ ko: line.ko.trim(), zh: line.zh.trim() }));
+  }
+
+  function cacheFallbackScenes(raw) {
+    fallbackScenes = {
+      offline: normalizeFallbackLines(raw && raw.offline),
+      voice: normalizeFallbackLines(raw && raw.voice),
+    };
+    try { localStorage.setItem(FALLBACK_CACHE_KEY, JSON.stringify(fallbackScenes)); } catch (_) { /* optional */ }
+  }
+
+  function restoreFallbackScenes() {
+    try { cacheFallbackScenes(JSON.parse(localStorage.getItem(FALLBACK_CACHE_KEY) || '{}')); } catch (_) { /* optional */ }
+  }
+
+  function pickClientFallback(scene) {
+    const lines = fallbackScenes[scene] || [];
+    if (!lines.length) return null;
+    const key = FALLBACK_RECENT_PREFIX + scene;
+    let remembered = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+      remembered = Array.isArray(parsed) ? parsed.filter((text) => typeof text === 'string') : [];
+    } catch (_) { remembered = []; }
+    const visible = new Set(messages.filter((item) => item && item.fallback).map((item) => item.text));
+    let pool = lines.filter((line) => !remembered.includes(line.ko) && !visible.has(line.ko));
+    if (!pool.length) pool = lines.filter((line) => !remembered.includes(line.ko));
+    if (!pool.length) pool = lines;
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    remembered = [...remembered, picked.ko].slice(-Math.max(1, lines.length - 1));
+    try { localStorage.setItem(key, JSON.stringify(remembered)); } catch (_) { /* optional */ }
+    return picked;
+  }
+
+  restoreFallbackScenes();
 
   function shownName() {
     const nick = String(charRemark || '').trim();
@@ -103,7 +148,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     document.title = `Daily Him · ${shownName()}`;
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-13`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-14`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -145,6 +190,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     applyUserAvatar,
     logout,
     applyPrefs: (next) => applyPrefs(next),
+    isReadOnly: () => writesBlocked(),
   };
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -192,6 +238,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         zh: typeof item.zh === 'string' ? item.zh : '',
         mood: typeof item.mood === 'string' ? item.mood : '',
         ttsFailed: item.ttsFailed === true,
+        fallback: item.fallback === true,
         failed: item.failed === true,
       }));
   }
@@ -221,7 +268,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   let historySyncing = false;
 
   function historySnapshot() {
-    return messages.map((item) => ({
+    return messages.filter((item) => !item.ephemeral).map((item) => ({
       role: item.role,
       text: item.text,
       time: item.time,
@@ -231,6 +278,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       zh: item.zh || undefined,
       mood: item.mood || undefined,
       ttsFailed: item.ttsFailed || undefined,
+      fallback: item.fallback || undefined,
       failed: item.failed || undefined,
     }));
   }
@@ -246,12 +294,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   function saveHistory() {
     saveLocalHistory();
+    if (writesBlocked()) return;
     clearTimeout(historySyncTimer);
     historySyncTimer = setTimeout(syncHistoryToServer, 250);
   }
 
   async function syncHistoryToServer() {
-    if (!historyReady) return;
+    if (!historyReady || writesBlocked()) return;
     if (historySyncing) {
       clearTimeout(historySyncTimer);
       historySyncTimer = setTimeout(syncHistoryToServer, 250);
@@ -346,6 +395,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
     if (!response.ok) throw new Error('history failed');
     const data = await response.json();
+    setCharacterReadOnly(data && data.readOnly === true);
     return normalizeHistoryList(data && data.messages);
   }
 
@@ -367,6 +417,35 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  }
+
+  function writesBlocked() {
+    return !characterAccessKnown || characterReadOnly;
+  }
+
+  function applyCharacterAccessUi() {
+    const blocked = writesBlocked();
+    document.documentElement.dataset.characterReadOnly = characterReadOnly ? 'true' : 'false';
+    const banner = document.getElementById('readonly-bar');
+    const composer = document.querySelector('.composer-wrap');
+    const sceneBar = document.getElementById('scene-bar');
+    if (banner) banner.hidden = !characterReadOnly;
+    if (composer) composer.hidden = blocked;
+    input.disabled = blocked;
+    sendBtn.disabled = blocked;
+    if (sceneBar) sceneBar.hidden = blocked || !sceneBar.children.length;
+    ['voice-toggle', 'remark-open', 'moments-open-menu', 'moments-open-profile', 'tab-moments'].forEach((id) => {
+      const node = document.getElementById(id);
+      if (node) node.hidden = blocked;
+    });
+  }
+
+  function setCharacterReadOnly(readOnly) {
+    characterReadOnly = Boolean(readOnly);
+    characterAccessKnown = true;
+    applyCharacterAccessUi();
+    document.dispatchEvent(new CustomEvent('idol-character-readonly', { detail: { readOnly: characterReadOnly } }));
+    render();
   }
 
   function bubbleDelay(text) {
@@ -483,6 +562,11 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
   document.addEventListener('pointerdown', unlockAudio, { passive: true });
 
+  function attachVoiceFallback(message) {
+    if (!message.voiceFallback) message.voiceFallback = pickClientFallback('voice');
+    if (message.voiceFallback) render();
+  }
+
   async function playMessageAudio(message, bubble) {
     unlockAudio();
     const button = bubble.querySelector('.speak');
@@ -499,6 +583,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         audio.src = cached;
       } else if (!message.text || !String(message.text).trim()) {
         showToast('음성은 이번엔 못 보냈어요');
+        attachVoiceFallback(message);
         return;
       } else {
         button.classList.add('busy');
@@ -529,6 +614,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
             showToast(data && data.audioError === 'Voice is not configured'
               ? '음성은 아직 준비되지 않았어요'
               : '음성은 이번엔 못 보냈어요');
+            attachVoiceFallback(message);
             return;
           }
           message.audioUrl = url;
@@ -537,6 +623,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           audio.src = url;
         } catch (err) {
           showToast('음성은 이번엔 못 보냈어요');
+          attachVoiceFallback(message);
           return;
         } finally {
           button.classList.remove('busy');
@@ -557,6 +644,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   // Character reply: Korean text, speaker (TTS on tap), Chinese collapsed underneath.
   function buildReplyBubble(message) {
     const bubble = el('div', 'bubble reply');
+    if (message.fallback) {
+      bubble.classList.add('is-fallback');
+      bubble.dataset.fallback = 'true';
+    }
     const text = typeof message.text === 'string' ? message.text : '';
     if (text) {
       const ko = el('p', 'ko-text');
@@ -567,7 +658,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
 
     const zhText = typeof message.zh === 'string' ? message.zh.trim() : '';
-    const canSpeak = Boolean(safeAudioUrl(message.audioUrl)) || /[\p{L}\p{N}]/u.test(text);
+    const canSpeak = Boolean(safeAudioUrl(message.audioUrl))
+      || (!writesBlocked() && /[\p{L}\p{N}]/u.test(text));
     if (canSpeak) {
       const button = el('button', 'speak');
       button.type = 'button';
@@ -582,6 +674,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         if (!audio.getAttribute('src')) return;
         if (audio.dataset.retried === '1') {
           showToast('음성을 재생하지 못했어요');
+          attachVoiceFallback(message);
           syncSpeakState();
           return;
         }
@@ -616,6 +709,20 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         toggle.textContent = open ? '翻译 ▴' : '翻译 ▾';
       });
       bubble.append(toggle, zh);
+    }
+    if (message.fallback) {
+      const label = el('small', 'fallback-label');
+      label.textContent = message.fallbackScene === 'offline' ? '离线备用回复' : '备用回复';
+      bubble.append(label);
+    }
+    if (message.voiceFallback) {
+      const note = el('div', 'voice-fallback');
+      const ko = el('span', 'ko');
+      const zh = el('span', 'zh');
+      ko.textContent = message.voiceFallback.ko;
+      zh.textContent = message.voiceFallback.zh;
+      note.append(ko, zh);
+      bubble.append(note);
     }
     return bubble;
   }
@@ -870,7 +977,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function maybeAutoplay() {
-    if (settings.playback !== 'auto' || !roomOpen) return;
+    if (settings.playback !== 'auto' || !roomOpen || writesBlocked()) return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== 'assistant' || !String(last.text || '').trim()) return;
     const bubbles = messagesEl.querySelectorAll('.bubble.reply');
@@ -978,7 +1085,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   });
   const meRecharge = document.getElementById('me-recharge');
   if (meRecharge) meRecharge.addEventListener('click', () => {
-    location.href = '/shell/recharge.html?c=' + encodeURIComponent(CHARACTER_ID) + '&from=chat';
+    location.href = '/shell/starlight.html#recharge';
   });
   const meMemory = document.getElementById('me-memory');
   if (meMemory) meMemory.addEventListener('click', () => {
@@ -1011,7 +1118,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     saveSettings();
     themeMeta.setAttribute('content', '#B2C7D9');
     render();
-    input.focus();
+    if (!writesBlocked()) input.focus();
   }
 
   function closeRoom() {
@@ -1050,41 +1157,58 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (roomOpen) document.getElementById('profile-btn').focus();
   }
 
+  let clearConfirmStep = 0;
+
+  function paintClearConfirmation(step) {
+    clearConfirmStep = step;
+    const title = document.getElementById('modal-title');
+    const body = document.getElementById('modal-body');
+    const confirm = document.getElementById('modal-confirm');
+    title.textContent = step === 1 ? '清空聊天记录' : '再次确认';
+    body.textContent = step === 1
+      ? `将删除你和${shownName()}的聊天记录，以及这段聊天的摘要。他记得的事与亲密度会保留。`
+      : '再确认一次。这一步之后才会删除，且无法恢复。';
+    confirm.textContent = step === 1 ? '继续' : '确认清空';
+  }
+
   function openModal() {
     setMenu(false);
+    paintClearConfirmation(1);
     modal.hidden = false;
     document.getElementById('modal-cancel').focus();
   }
 
   function closeModal() {
     modal.hidden = true;
+    clearConfirmStep = 0;
   }
 
   async function clearHistory() {
     generation += 1;
     if (chatAbort) chatAbort.abort('cancel');
-    messages = [];
-    typing = false;
-    busy = false;
-    showRetry = false;
-    retryFresh = false;
-    retryAt = 0;
-    voiceNote = '';
-    settings.seen = 0;
-    saveLocalHistory();
-    saveSettings();
-    closeModal();
-    setMenu(false);
-    render();
     try {
-      const response = await fetch(withChar('/api/history'), { method: 'DELETE' });
+      const response = await fetch(withChar('/api/history?summary=1'), { method: 'DELETE' });
       if (response.status === 401) {
         location.href = '/login';
         return;
       }
       if (!response.ok) throw new Error('clear failed');
+      messages = [];
+      typing = false;
+      busy = false;
+      showRetry = false;
+      retryFresh = false;
+      retryAt = 0;
+      voiceNote = '';
+      settings.seen = 0;
+      saveLocalHistory();
+      saveSettings();
+      closeModal();
+      setMenu(false);
+      render();
+      showToast('聊天记录已清空');
     } catch (err) {
-      showToast('서버 대화 기록을 지우지 못했어요');
+      showToast('没有清空');
     }
   }
 
@@ -1136,7 +1260,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   async function requestReply() {
-    if (busy) return;
+    if (busy || writesBlocked()) return;
     const hasUser = messages.some((item) => item.role === 'user' && item.text && item.text.trim());
     if (!hasUser) return;
 
@@ -1221,6 +1345,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
             time: Date.now(),
             audioUrl: safeAudioUrl(item.audioUrl),
             voice: true,
+            fallback: item.fallback === true,
+            voiceFallback: item.ttsFailed === true ? pickClientFallback('voice') : null,
           });
           saveHistory();
           animateLast = true;
@@ -1266,8 +1392,33 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   }
 
+  function appendOfflineFallback() {
+    const line = pickClientFallback('offline');
+    if (!line) {
+      showToast('网络断开了，连上后再发送');
+      return false;
+    }
+    messages.push({
+      role: 'assistant',
+      text: line.ko,
+      zh: line.zh,
+      time: Date.now(),
+      audioUrl: null,
+      fallback: true,
+      fallbackScene: 'offline',
+      ephemeral: true,
+    });
+    animateLast = true;
+    render();
+    return true;
+  }
+
   async function sendScene(scene) {
-    if (!scene || !scene.messageKo) return;
+    if (!scene || !scene.messageKo || writesBlocked()) return;
+    if (navigator.onLine === false) {
+      appendOfflineFallback();
+      return;
+    }
     if (busy) {
       showToast('답장을 기다리는 중이에요');
       return;
@@ -1307,13 +1458,21 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         btn.addEventListener('click', () => sendScene(sc));
         bar.appendChild(btn);
       }
-      bar.hidden = false;
+      bar.hidden = writesBlocked();
     } catch (_) { bar.hidden = true; }
   }
 
   async function send() {
     const text = input.value.trim();
     if (!text) return;
+    if (writesBlocked()) {
+      showToast('该角色暂未开放，当前仅可查看');
+      return;
+    }
+    if (navigator.onLine === false) {
+      appendOfflineFallback();
+      return;
+    }
     if (busy) {
       showToast('답장을 기다리는 중이에요');
       return;
@@ -1330,7 +1489,11 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function retryLast() {
-    if (busy) return;
+    if (busy || writesBlocked()) return;
+    if (navigator.onLine === false) {
+      appendOfflineFallback();
+      return;
+    }
     let lastUser = null;
     for (let i = messages.length - 1; i >= 0; i -= 1) {
       if (messages[i].role === 'user' && messages[i].text && messages[i].text.trim()) {
@@ -1344,6 +1507,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     requestReply();
   }
 
+  applyCharacterAccessUi();
   loadScenes();
   document.getElementById('open-chat').addEventListener('click', openRoom);
   document.getElementById('back-btn').addEventListener('click', closeRoom);
@@ -1360,7 +1524,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   });
   document.getElementById('clear-btn').addEventListener('click', openModal);
   document.getElementById('modal-cancel').addEventListener('click', closeModal);
-  document.getElementById('modal-confirm').addEventListener('click', () => { clearHistory(); });
+  document.getElementById('modal-confirm').addEventListener('click', () => {
+    if (clearConfirmStep === 1) paintClearConfirmation(2);
+    else if (clearConfirmStep === 2) clearHistory();
+  });
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) logoutBtn.addEventListener('click', logout);
   modal.addEventListener('click', (event) => {
@@ -1480,10 +1647,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         const history = historyRes.ok ? await historyRes.json() : {};
         const ch = [...(chars.characters || []), ...(history.conversations || [])].find((item) => item.id === CHARACTER_ID);
         if (ch) {
+          setCharacterReadOnly(ch.available === false);
+          cacheFallbackScenes(ch.fallbacks);
           characterVoiceUnavailable = !ch.voiceAvailable;
           if (characterVoiceUnavailable) { voiceNote = '语音暂不可用'; render(); }
           if (ch.displayName || ch.name) charDefault.name = ch.displayName || ch.name;
           if (typeof ch.displayEmoji === 'string') charDefault.emoji = ch.displayEmoji;
+          if (typeof ch.avatar === 'string' && ch.avatar.startsWith('/characters/')) characterAvatarUrl = ch.avatar;
         }
       }
       if (profRes.ok) {
@@ -1513,6 +1683,11 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       if (event.target === remarkModal) closeRemark();
     });
   }
+
+  const rechargeOpen = document.getElementById('recharge-open');
+  if (rechargeOpen) rechargeOpen.addEventListener('click', () => {
+    location.href = '/shell/starlight.html#recharge';
+  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;

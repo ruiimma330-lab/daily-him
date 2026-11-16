@@ -359,6 +359,7 @@ button, input { -webkit-tap-highlight-color: transparent; }
 }
 
 .room-top {
+  flex: none;
   background: var(--chat-bg);
   padding-top: env(safe-area-inset-top);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -368,6 +369,15 @@ button, input { -webkit-tap-highlight-color: transparent; }
 .star-bar {
   display: block; width: calc(100% - 24px); margin: 8px 12px 0; border: 0; border-radius: 10px;
   background: #fff6d8; color: #6a5200; padding: 8px 12px; text-align: center; font: inherit; cursor: pointer;
+}
+.readonly-bar {
+  margin: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #5f646b;
+  padding: 9px 12px;
+  text-align: center;
+  font-size: 13px;
 }
 .room-header {
   min-height: 52px;
@@ -709,6 +719,24 @@ button, input { -webkit-tap-highlight-color: transparent; }
   color: #6b7280;
   white-space: pre-wrap;
 }
+
+.bubble.reply.is-fallback { border: 1px dashed rgba(70, 80, 90, 0.2); }
+.fallback-label {
+  display: block;
+  margin-top: 5px;
+  color: #8a8f98;
+  font-size: 10px;
+}
+.voice-fallback {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #d8dde2;
+  color: #4f5862;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.voice-fallback span { display: block; }
+.voice-fallback .zh { margin-top: 3px; color: #7d858d; }
 
 .meta {
   display: flex;

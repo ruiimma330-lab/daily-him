@@ -13,20 +13,27 @@
       <button type="button" id="back" aria-label="返回">‹</button>
       <h1><img src="/icons/starlight.svg" width="24" height="24" alt="" /> 星光补给站</h1>
     </div>
+    <p class="availability-note">充值尚未开通，星光可每日领取或使用兑换码。</p>
     <div class="balance">
       <div class="l">星光 · 별빛</div>
       <div class="n"><img src="/icons/starlight.svg" width="24" height="24" alt="" /> <span id="balance">0</span></div>
     </div>
     <button type="button" class="btn" id="claim" style="margin-top:16px">领取今日星光</button>
     <p class="lead" id="streak">连续领取</p>
-    <section id="recharge" aria-label="充值与兑换">
-    <div class="field">
-      <label for="code">兑换码</label>
-      <input id="code" autocomplete="off" />
-    </div>
-    <button type="button" class="btn btn-ghost" id="redeem">兑换</button>
-    <div class="pkg-list" id="packages"></div>
-    <p class="lead" id="notice"></p>
+    <section id="recharge" aria-label="充值">
+      <h2 class="section-title">充值（即将开通）</h2>
+      <div class="pkg-list" id="packages"></div>
+      <p class="lead" id="notice"></p>
+    </section>
+    <section id="redeem-section" aria-label="兑换码">
+      <button type="button" class="btn btn-ghost" id="redeem-toggle" aria-expanded="false" aria-controls="redeem-panel">我有兑换码</button>
+      <div id="redeem-panel" hidden>
+        <div class="field">
+          <label for="code">兑换码</label>
+          <input id="code" autocomplete="off" />
+        </div>
+        <button type="button" class="btn btn-ghost" id="redeem">兑换</button>
+      </div>
     </section>
     <section id="ledger" aria-label="星光明细"></section>
     <form id="admin" hidden>
@@ -62,14 +69,15 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'pkg';
-        button.innerHTML = `<span><span class="name">${item.amount} 星光</span><span class="coins">${item.priceYuan} 元</span></span><span class="price">¥${item.priceYuan}</span>`;
+        button.innerHTML = `<span><span class="name">${item.priceYuan} 元档 · ${item.amount} 星光</span></span><span class="unavailable">暂未开通</span>`;
         button.addEventListener('click', async () => {
-          const result = await Shell.api('/api/starlight/purchase', {
-            method: 'POST',
-            body: JSON.stringify({ packageId: item.id }),
-          });
-          alert(result.message || '充值即将开放');
-          document.getElementById('code').focus();
+          try {
+            await Shell.api('/api/starlight/purchase', {
+              method: 'POST',
+              body: JSON.stringify({ packageId: item.id }),
+            });
+          } catch (_) { /* the demo notice is the same offline */ }
+          alert('测试环境，暂未开通');
         });
         packagesEl.append(button);
       });
@@ -101,6 +109,13 @@
         if (err.status !== 409) Shell.toast('今天先领过了');
       }
       load();
+    };
+    document.getElementById('redeem-toggle').onclick = () => {
+      const panel = document.getElementById('redeem-panel');
+      const open = panel.hidden;
+      panel.hidden = !open;
+      document.getElementById('redeem-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) document.getElementById('code').focus();
     };
     document.getElementById('redeem').onclick = async () => {
       try {

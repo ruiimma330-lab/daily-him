@@ -4,8 +4,8 @@ html, body { margin: 0; min-height: 100dvh; background: #fff; color: #191919;
 .shell { min-height: 100dvh; display: flex; flex-direction: column; max-width: 560px; margin: 0 auto;
   padding: calc(20px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom)); box-sizing: border-box; }
 .shell-main { flex: 1; display: flex; flex-direction: column; justify-content: center; width: min(360px, 100%); margin: 0 auto; }
-.mark { width: 96px; height: 96px; margin: 0 auto 18px; border-radius: 50%; background: #f4f4f4;
-  display: grid; place-items: center; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); overflow: hidden; }
+.mark { width: 96px; height: 96px; margin: 0 auto 18px; border-radius: 22px; background: #13213f;
+  display: grid; place-items: center; box-shadow: none; overflow: hidden; }
 .mark img, .mark svg { width: 100%; height: 100%; display: block; }
 h1 { margin: 0 0 8px; font-size: 22px; font-weight: 400; letter-spacing: 0.18em; text-align: center; }
 .shell-main h1 { font-weight: 400; }
@@ -36,6 +36,7 @@ h1 { margin: 0 0 8px; font-size: 22px; font-weight: 400; letter-spacing: 0.18em;
 .pkg .name { font-weight: 700; font-size: 15px; }
 .pkg .coins { font-size: 13px; color: #8d8d8d; margin-top: 2px; }
 .pkg .price { font-size: 18px; font-weight: 800; color: #e5484d; }
+.pkg .unavailable { font-size: 13px; font-weight: 600; color: #777; }
 .pkg .tag { position: absolute; top: -8px; right: 12px; background: #fee500; font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 999px; }
 .balance { text-align: center; padding: 18px; border-radius: 16px; background: linear-gradient(135deg,#fff4e8,#ffe8c8); }
@@ -56,3 +57,7 @@ h1 { margin: 0 0 8px; font-size: 22px; font-weight: 400; letter-spacing: 0.18em;
 
 .topbar h1 img, .balance .n img { vertical-align: -4px; }
 #claim, #recharge, #ledger { scroll-margin-top: 20px; }
+.availability-note { margin: 0 0 16px; padding: 10px 12px; border-radius: 10px; background: #fff8dc; color: #64531c; font-size: 13px; line-height: 1.5; text-align: center; }
+.section-title { margin: 24px 0 0; font-size: 16px; font-weight: 600; }
+#redeem-panel { margin-top: 14px; }
+#ledger { margin-top: 24px; }

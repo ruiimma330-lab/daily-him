@@ -104,6 +104,7 @@
           </div>
         </header>
         <button type="button" class="star-bar" id="star-bar" hidden>星光不够啦 · 去领取</button>
+        <div class="readonly-bar" id="readonly-bar" hidden>该角色暂未开放，当前仅可查看。</div>
         <div class="room-search" id="room-search" hidden>
           <input id="room-search-input" type="search" placeholder="搜索对话" aria-label="搜索对话" autocomplete="off" />
         </div>
@@ -124,9 +125,9 @@
           <span class="menu-val" id="remark-menu-value" data-char-label="name">백현</span>
         </button>
         <button type="button" class="menu-row" id="moments-open-menu"><span>朋友圈 ✨</span></button>
-        <button type="button" class="menu-row" id="recharge-open"><span>充值（演示）</span></button>
+        <button type="button" class="menu-row" id="recharge-open"><span>星光补给站</span></button>
         <button type="button" class="menu-row" id="memory-open-menu"><span>他记得的事 💭</span></button>
-        <button type="button" class="danger" id="clear-btn">대화 기록 삭제</button>
+        <button type="button" class="danger" id="clear-btn">清空聊天记录</button>
         <button type="button" class="danger" id="logout-btn">로그아웃</button>
       </div>
 
@@ -202,11 +203,11 @@
 
     <div class="modal-back" id="modal" hidden>
       <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <h2 id="modal-title">대화 기록 삭제</h2>
-        <p>이 계정의 대화 기록이 서버와 이 기기에서 모두 지워져요.</p>
+        <h2 id="modal-title">清空聊天记录</h2>
+        <p id="modal-body">将删除聊天记录和摘要。他记得的事与亲密度会保留。</p>
         <div class="modal-actions">
-          <button type="button" class="btn-ghost" id="modal-cancel">취소</button>
-          <button type="button" class="btn-danger" id="modal-confirm">삭제</button>
+          <button type="button" class="btn-ghost" id="modal-cancel">取消</button>
+          <button type="button" class="btn-danger" id="modal-confirm">继续</button>
         </div>
       </div>
     </div>

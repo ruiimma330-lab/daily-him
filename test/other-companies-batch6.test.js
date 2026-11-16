@@ -28,7 +28,7 @@ test('batch6 packs remain complete (zhanghao open for launch, the rest deferred)
     assert.equal(info.available, isLaunch(id), id);
     assert.equal(info.availabilityLabel, isLaunch(id) ? '' : '暂未开放');
     assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
-    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-13`);
+    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-14`);
     for (const asset of ['avatar.jpg','portrait.jpg']) {
       const file = path.join(dir, asset);
       assert.ok(fs.existsSync(file), `${id}/${asset}`);
@@ -111,10 +111,11 @@ test('real route guards reject batch6 and batch1 packs without opening a listeni
     // character is closed, and otherwise falls back to requireAvailable (see group-picker.test.js).
     const history = app._router.stack.find(l => l.route && l.route.path === '/api/history' && l.route.methods.get).route;
     assert.ok(history.stack.some(l => l.handle.name === 'allowHistoryRead'));
-    for (const method of ['put','delete']) {
-      const write = app._router.stack.find(l => l.route && l.route.path === '/api/history' && l.route.methods[method]).route;
-      assert.ok(write.stack.some(l => l.handle.name === 'requireAvailable'), method);
-    }
+    const put = app._router.stack.find(l => l.route && l.route.path === '/api/history' && l.route.methods.put).route;
+    assert.ok(put.stack.some(l => l.handle.name === 'requireAvailable'));
+    const del = app._router.stack.find(l => l.route && l.route.path === '/api/history' && l.route.methods.delete).route;
+    assert.ok(del.stack.some(l => l.handle.name === 'allowHistoryDelete'));
+    assert.equal(del.stack.some(l => l.handle.name === 'requireAvailable'), false);
     for (const id of ['kai','mark']) assert.equal(chars.publicInfo(id).availabilityLabel,'');
   } finally {
     if (previous === undefined) delete process.env.STORE_DATA_DIR; else process.env.STORE_DATA_DIR=previous;

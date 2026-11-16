@@ -27,6 +27,9 @@ const summary = (model) => Object.fromEntries(model.groups.map((g) => [g.name, {
 
 test('exactly the 10 launch characters are open in the public roster', () => {
   assert.deepEqual(roster().filter((c) => c.available).map((c) => c.id).sort(), [...LAUNCH].sort());
+  const baekhyun = chars.publicInfo('baekhyun');
+  assert.equal(baekhyun.fallbacks.offline.length, 3);
+  assert.equal(baekhyun.fallbacks.voice.length, 3);
   assert.equal(chars.loadMeta('baekhyun').available, true);
   for (const id of ['giselle', 'jennie']) {
     assert.equal(chars.isAvailable(id), false, id);
@@ -152,7 +155,9 @@ test('existing chats with closed characters stay readable, but cannot be continu
   assert.ok(conversations.conversations.some((c) => c.id === 'giselle'));
   const history = await get('/api/history?characterId=giselle');
   assert.equal(history.status, 200);
-  assert.deepEqual((await history.json()).messages, saved);
+  const historyBody = await history.json();
+  assert.deepEqual(historyBody.messages, saved);
+  assert.equal(historyBody.readOnly, true);
 
   for (const route of ['/api/chat', '/api/tts']) {
     const r = await post(route, { characterId: 'giselle', text: 'hello', messages: [], voice: false });
@@ -163,7 +168,41 @@ test('existing chats with closed characters stay readable, but cannot be continu
   assert.equal(put.status, 404);
   assert.deepEqual(store.getHistory(userId, 'giselle'), saved);
 
-  // No history with a closed character: still 404. Launch characters: open.
+  store.putDoc('memory', userId, 'giselle', {
+    cards: [{ id: 'abc123abc123', text: '保留的记忆', createdAt: 1, updatedAt: 1 }],
+    summary: '应删除的摘要',
+    pending: [{ u: '之前的聊天', a: '嗯', t: 1 }],
+    pendingTurns: 1,
+  });
+  store.putDoc('relationship', userId, 'giselle', { totalTurns: 7, score: 12 });
+  const deleted = await fetch(base + '/api/history?characterId=giselle&summary=1', {
+    method: 'DELETE',
+    headers: { Cookie: cookie },
+  });
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(store.getHistory(userId, 'giselle'), []);
+  assert.equal(store.getDoc('memory', userId, 'giselle').summary, '');
+  assert.equal(store.getDoc('memory', userId, 'giselle').cards.length, 1);
+  assert.equal(store.getDoc('relationship', userId, 'giselle').totalTurns, 7);
+
+  // No history with a closed character: read and delete still 404. Launch characters keep existing behavior.
   assert.equal((await get('/api/history?characterId=jennie')).status, 404);
-  assert.equal((await get('/api/history?characterId=karina')).status, 200);
+  assert.equal((await fetch(base + '/api/history?characterId=jennie&summary=1', { method: 'DELETE', headers: { Cookie: cookie } })).status, 404);
+  const openHistory = await get('/api/history?characterId=karina');
+  assert.equal(openHistory.status, 200);
+  assert.equal((await openHistory.json()).readOnly, false);
+});
+
+test('closed-chat UI is read-only while keeping the two-step history deletion action', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(ROOT, 'public/app.js'), 'utf8');
+  const memory = fs.readFileSync(path.join(ROOT, 'public/memory.js'), 'utf8');
+  assert.match(html, /该角色暂未开放，当前仅可查看。/);
+  assert.match(html, /将删除聊天记录和摘要。他记得的事与亲密度会保留。/);
+  assert.match(app, /composer\.hidden = blocked/);
+  assert.match(app, /!writesBlocked\(\) && \/\[\\p\{L\}\\p\{N\}\]\//);
+  assert.match(app, /paintClearConfirmation\(2\)/);
+  assert.match(app, /\/api\/history\?summary=1/);
+  assert.match(memory, /isReadOnly\(\)/);
+  assert.match(memory, /idol-character-readonly/);
 });
