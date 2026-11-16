@@ -49,9 +49,9 @@ test('picker wires horizontal touch, debounced wheel, keyboard, and vertical-pan
   assert.match(js, /autoplay\.interactEnd\(\)/);
 });
 
-test('new mobile guard files are precached in dh-pwa-14', () => {
+test('new mobile guard files are precached in dh-pwa-15', () => {
   const sw = fs.readFileSync(path.join(PUBLIC, 'sw.js'), 'utf8');
-  assert.match(sw, /const VERSION = 'dh-pwa-14';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-15';/);
   assert.match(sw, /'\/mobile-lock\.css'/);
   assert.match(sw, /'\/mobile-lock\.js'/);
 });

@@ -1,8 +1,12 @@
 /* Install, updates, and the offline bar. Does not cache API calls itself. */
 (function () {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  const userAgent = navigator.userAgent || '';
+  const ios = /iphone|ipad|ipod/i.test(userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const wechat = /MicroMessenger/i.test(userAgent);
+  const iosSafari = ios && /Version\/[\d.]+.*Safari\//i.test(userAgent)
+    && !/(CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|FBAV|Instagram|GSA\/|DuckDuckGo|YaBrowser|Twitter)/i.test(userAgent);
   let deferred = null;
   let waitingWorker = null;
 
@@ -47,17 +51,36 @@
   const iosTitle = el('h2');
   iosTitle.textContent = '添加到主屏幕';
   const iosLead = el('p');
-  iosLead.textContent = '用 Safari 打开 Daily Him，然后：';
-  const steps = el('ol');
-  ['点底部的分享按钮', '选择「添加到主屏幕」', '点右上角「添加」'].forEach((text) => {
-    const li = el('li');
-    li.textContent = text;
-    steps.append(li);
+  const steps = el('div', 'pwa-guide-steps');
+  [
+    ['⇧', '1. 点 Safari 的「分享」', '通常在屏幕底部'],
+    ['＋', '2. 选择「添加到主屏幕」', '在分享菜单中向下找'],
+    ['添加', '3. 点右上角「添加」', '完成后从桌面打开'],
+  ].forEach(([symbol, title, detail]) => {
+    const item = el('div', 'pwa-guide-step');
+    const icon = el('span', 'pwa-guide-icon');
+    icon.textContent = symbol;
+    const copy = el('span');
+    const strong = el('strong');
+    strong.textContent = title;
+    const small = el('small');
+    small.textContent = detail;
+    copy.append(strong, small);
+    item.append(icon, copy);
+    steps.append(item);
   });
+  const copyLink = el('button', 'pwa-copy-link');
+  copyLink.type = 'button';
+  copyLink.textContent = '复制链接';
+  copyLink.hidden = true;
+  const copyFallback = el('textarea', 'pwa-copy-fallback');
+  copyFallback.hidden = true;
+  copyFallback.setAttribute('readonly', '');
+  copyFallback.setAttribute('aria-label', 'Daily Him 安装链接');
   const iosOk = el('button');
   iosOk.type = 'button';
   iosOk.textContent = '知道了';
-  iosForm.append(iosTitle, iosLead, steps, iosOk);
+  iosForm.append(iosTitle, iosLead, steps, copyLink, copyFallback, iosOk);
   iosGuide.append(iosForm);
 
   document.body.append(offline, update, install, iosGuide);
@@ -68,19 +91,77 @@
   window.addEventListener('online', paintOnline);
   window.addEventListener('offline', paintOnline);
 
-  function showIos() {
+  function showGuide() {
+    copyLink.hidden = true;
+    copyLink.textContent = '复制链接';
+    copyFallback.hidden = true;
+    steps.hidden = false;
+    if (ios && iosSafari) {
+      iosTitle.textContent = '用 Safari 添加到主屏幕';
+      iosLead.textContent = '按下面三个位置操作：';
+    } else if (ios) {
+      iosTitle.textContent = '请用 Safari 打开';
+      iosLead.textContent = '当前浏览器不能添加到主屏幕。复制链接，用 Safari 打开后再添加。';
+      steps.hidden = true;
+      copyLink.hidden = false;
+    } else {
+      iosTitle.textContent = '从 Chrome 菜单安装';
+      iosLead.textContent = '暂时没有弹出系统安装框。请点 Chrome 右上角菜单，选择「安装应用」或「添加到主屏幕」。';
+      steps.hidden = true;
+    }
     iosGuide.hidden = false;
   }
+
+  async function configuredInstallUrl() {
+    try {
+      const response = await fetch('/api/site-config', { cache: 'no-store' });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && typeof data.installUrl === 'string') return data.installUrl;
+      }
+    } catch (_) { /* use current page */ }
+    if (window.location && window.location.href) return window.location.href;
+    return 'https://dailyhim.cn/shell/install.html';
+  }
+
+  copyLink.addEventListener('click', async () => {
+    const url = await configuredInstallUrl();
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('clipboard unavailable');
+      await navigator.clipboard.writeText(url);
+      copyLink.textContent = '已复制，请到 Safari 粘贴';
+    } catch (_) {
+      const input = el('textarea');
+      input.value = url;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.append(input);
+      if (input.select) input.select();
+      const copied = document.execCommand && document.execCommand('copy');
+      if (input.remove) input.remove();
+      if (copied) {
+        copyLink.textContent = '已复制，请到 Safari 粘贴';
+      } else {
+        copyFallback.value = url;
+        copyFallback.hidden = false;
+        if (copyFallback.focus) copyFallback.focus();
+        if (copyFallback.select) copyFallback.select();
+        copyLink.textContent = '请长按下方链接复制';
+      }
+    }
+  });
+
   iosOk.addEventListener('click', () => {
     iosGuide.hidden = true;
     try { localStorage.setItem('dh_ios_guide', '1'); } catch (_) { /* ignore */ }
   });
 
   function maybeIosGuide() {
-    if (standalone || !ios) return;
+    if (standalone || !ios || wechat) return;
     let seen = false;
     try { seen = localStorage.getItem('dh_ios_guide') === '1'; } catch (_) { seen = false; }
-    if (!seen) showIos();
+    if (!seen) showGuide();
   }
 
   installHide.addEventListener('click', () => {
@@ -89,7 +170,7 @@
   });
 
   async function promptInstall() {
-    if (standalone) return;
+    if (standalone || wechat) return { prompted: false, reason: standalone ? 'standalone' : 'wechat' };
     if (deferred) {
       deferred.prompt();
       const choice = await deferred.userChoice.catch(() => null);
@@ -98,9 +179,10 @@
       if (choice && choice.outcome === 'accepted') {
         try { localStorage.setItem('dh_install_banner', '1'); } catch (_) { /* ignore */ }
       }
-      return;
+      return { prompted: true, outcome: choice && choice.outcome };
     }
-    if (ios) showIos();
+    showGuide();
+    return { prompted: false, reason: ios ? (iosSafari ? 'ios-safari' : 'ios-browser') : 'manual' };
   }
   installBtn.addEventListener('click', promptInstall);
 
@@ -111,6 +193,27 @@
     let seen = false;
     try { seen = localStorage.getItem('dh_install_banner') === '1'; } catch (_) { seen = false; }
     if (!seen) install.hidden = false;
+  });
+
+  function syncInstallEntries(installed = standalone) {
+    if (!document.querySelectorAll) return;
+    document.querySelectorAll('.pwa-install-entry,[data-pwa-install]').forEach((entry) => {
+      entry.hidden = installed || wechat;
+    });
+  }
+  syncInstallEntries();
+  if (document.addEventListener) {
+    document.addEventListener('click', (event) => {
+      const entry = event.target && event.target.closest && event.target.closest('[data-pwa-install]');
+      if (!entry) return;
+      event.preventDefault();
+      promptInstall();
+    });
+  }
+  window.addEventListener('appinstalled', () => {
+    install.hidden = true;
+    iosGuide.hidden = true;
+    syncInstallEntries(true);
   });
 
   let reloading = false;
@@ -151,8 +254,10 @@
 
   window.DailyPwa = {
     isStandalone: () => standalone,
+    canShowInstallEntry: () => !standalone && !wechat,
     install: promptInstall,
-    showIos: showIos,
+    showIos: showGuide,
+    showGuide,
     showUpdate: () => { update.hidden = false; },
     showOffline: () => { offline.hidden = false; },
   };

@@ -8,6 +8,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PUBLIC_SITE_URL
+        value: https://dailyhim.cn
+      - key: MOVED_TO_URL
+        sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: DEEPSEEK_CHAT_API_KEY

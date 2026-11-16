@@ -392,8 +392,9 @@
       ]),
       kicker('关于与合规'),
       group([
-        ...(window.DailyPwa && window.DailyPwa.isStandalone() ? [] : [line('添加到主屏幕', '', () => {
-          location.href = '/shell/install.html';
+        ...(window.DailyPwa && !window.DailyPwa.canShowInstallEntry() ? [] : [line('添加到桌面', '', () => {
+          if (window.DailyPwa) window.DailyPwa.install();
+          else location.href = '/shell/install.html';
         })]),
         line('隐私政策', '', () => { location.href = '/legal/privacy.html'; }),
         line('用户协议', '', () => { location.href = '/legal/terms.html'; }),

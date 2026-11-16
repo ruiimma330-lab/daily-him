@@ -22,7 +22,8 @@
 .offline-bar[hidden],
 .pwa-update[hidden],
 .pwa-install[hidden],
-.pwa-ios[hidden] { display: none; }
+.pwa-ios[hidden],
+.pwa-ios [hidden] { display: none; }
 .pwa-update,
 .pwa-install {
   bottom: calc(12px + var(--tab-h, 58px) + env(safe-area-inset-bottom));
@@ -61,7 +62,23 @@
 }
 .pwa-ios h2 { margin: 0 0 8px; font-size: 16px; font-weight: 400; letter-spacing: 0.08em; }
 .pwa-ios p { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: #3c3c3c; }
-.pwa-ios ol { margin: 0 0 16px; padding-left: 18px; font-size: 14px; line-height: 1.6; }
+.pwa-guide-steps { display: grid; gap: 9px; margin: 14px 0 18px; }
+.pwa-guide-step { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 11px; text-align: left; }
+.pwa-guide-step strong,
+.pwa-guide-step small { display: block; }
+.pwa-guide-step strong { font-size: 13px; font-weight: 500; line-height: 1.45; }
+.pwa-guide-step small { margin-top: 2px; color: #777; font-size: 11px; line-height: 1.35; }
+.pwa-guide-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #d7d7d7;
+  border-radius: 9px;
+  color: #1769d2;
+  font-size: 14px;
+  font-weight: 500;
+}
 .pwa-ios button {
   width: 100%;
   height: 44px;
@@ -71,6 +88,19 @@
   font: inherit;
   letter-spacing: 0.12em;
   cursor: pointer;
+}
+.pwa-ios .pwa-copy-link { margin: 14px 0 8px; background: #1769d2; }
+.pwa-copy-fallback {
+  width: 100%;
+  min-height: 64px;
+  margin: 0 0 10px;
+  padding: 9px;
+  resize: none;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #fff;
+  color: #111;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 .resend {
   border: 0;

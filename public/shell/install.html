@@ -27,8 +27,8 @@
     </div>
     <section class="qr-section" aria-labelledby="scan-title">
       <h2 id="scan-title">用手机扫码打开</h2>
-      <img class="qr" src="/shell/install-qr.svg" width="222" height="222" alt="安装页二维码，指向下方链接" />
-      <a class="site-url" href="https://idol-chat.onrender.com/shell/install.html">idol-chat.onrender.com/shell/install.html</a>
+      <img class="qr" src="/api/install-qr.svg" width="222" height="222" alt="安装页二维码，指向下方链接" />
+      <a class="site-url" id="site-url" href="/shell/install.html">dailyhim.cn/shell/install.html</a>
       <p>扫码后会打开本站安装页，再按手机类型安装。</p>
     </section>
     <section class="os-install" id="android" aria-labelledby="android-title">
@@ -39,7 +39,7 @@
         <li>选择「安装应用」或「添加到主屏幕」</li>
         <li>按提示确认安装</li>
       </ol>
-      <button id="install-pwa" type="button">添加到主屏幕</button>
+      <button id="install-pwa" class="pwa-install-entry" type="button">添加到桌面</button>
       <p id="install-status" class="hint" role="status">若未弹出安装提示，请在 Chrome 菜单中选择「安装应用」或「添加到主屏幕」。</p>
       <a id="apk-download" class="button secondary" href="/downloads/daily-him.apk" download="daily-him.apk" hidden>下载安卓安装包</a>
       <button id="apk-pending" class="secondary" disabled type="button">安卓安装包暂未提供</button>
@@ -47,9 +47,18 @@
     </section>
     <section class="os-install" id="ios" aria-labelledby="ios-title">
       <h2 id="ios-title">iPhone / iPad</h2>
-      <p>请务必用 <strong>Safari</strong> 打开本页。</p>
-      <ol><li>点 Safari 的「分享」按钮</li><li>选择「添加到主屏幕」</li><li>点「添加」</li></ol>
-      <p class="hint">iOS 不提供 IPA 一键下载，也无需前往 App Store。如果正在其他应用的内置浏览器中，请复制本页链接到 Safari。</p>
+      <p>请用 <strong>Safari</strong> 打开本页，再按图操作：</p>
+      <div class="ios-steps" aria-label="Safari 添加到主屏幕步骤">
+        <div><span class="ios-step-icon">⇧</span><p><strong>1. 点「分享」</strong><small>Safari 底部的方框上箭头</small></p></div>
+        <div><span class="ios-step-icon">＋</span><p><strong>2. 添加到主屏幕</strong><small>在分享菜单中向下查找</small></p></div>
+        <div><span class="ios-step-icon text">添加</span><p><strong>3. 点「添加」</strong><small>在右上角确认</small></p></div>
+      </div>
+      <div id="ios-browser-warning" hidden>
+        <p>当前不是 Safari。请复制链接，用 Safari 打开后再添加。</p>
+        <button id="copy-site-link" class="secondary" type="button">复制链接</button>
+        <textarea id="copy-site-fallback" class="copy-site-fallback" readonly aria-label="Daily Him 安装链接" hidden></textarea>
+      </div>
+      <p class="hint">iOS 不提供 IPA 一键下载，也无需前往 App Store。</p>
     </section>
     <footer><a href="/shell/cover.html">继续使用网页版 →</a><p>Daily Him · 每天见</p></footer>
     <noscript><p>请开启 JavaScript 以使用安装按钮。iPhone / iPad 可直接按上方 Safari 步骤添加到主屏幕。</p></noscript>
