@@ -81,6 +81,57 @@ sudo bash /opt/dailyhim/deploy/hk/update.sh
 脚本只接受 main 的 fast-forward 更新，随后以 `dailyhim` 用户运行 `npm ci --omit=dev`，
 通过 PM2 cluster 模式平滑 reload，并等待本机健康接口就绪。
 
+`setup.sh` 与 `update.sh` 都以 `umask 077` 执行，因此 root 执行 `git clone` / `git pull`
+得到的源码树默认是目录 `700`、文件 `600`。低权限用户 `dailyhim` 会因此读不到
+`package-lock.json`，`npm ci` 会误报「缺少 package-lock.json or npm-shrinkwrap.json」。
+两个脚本在同步代码之后、安装依赖之前都会调用 `fix_app_tree`，把源码树放宽为
+目录 `755`、文件 `644`（保留原有可执行位），**不给** group/other 写权限；`.git`、
+`node_modules`、`cache`、`data` 以及 `.env`、`*.pem`、`*.key`、`*.p12` 等私钥文件
+一律跳过，保持原来的严格权限。
+
+如果已经卡在这一步（`npm error code EUSAGE`），代码其实已经 clone 成功，只是权限不对。
+先执行下面的临时命令，再重新运行 `setup.sh`（它同时会拉取包含本修复的最新 main）：
+
+```bash
+sudo chmod -R a+rX /opt/dailyhim && sudo bash /opt/dailyhim/deploy/hk/setup.sh
+```
+
+`a+rX` 只加读权限，`X` 仅对目录和原本可执行的文件生效，不会授予任何写权限。
+
+## 全局 Node / PM2 权限
+
+同一个 `umask 077` 也会影响全局安装：root 执行 `apt-get install nodejs` 或
+`npm install --global pm2` 后，`/usr/bin/pm2`、`/usr/lib/node_modules/pm2/bin/pm2`
+会变成 `700`，`dailyhim` 启动应用时报：
+
+```
+env: 'pm2': Permission denied
+```
+
+因此 `setup.sh` 在安装 Node.js 与 PM2 时用子 shell 临时切到 `umask 022`
+（`( umask 022; ... )`，不影响脚本其余部分的严格权限），安装后再调用
+`relax_global_paths` 对以下范围补一次 `a+rX`：
+
+- npm 全局包树：`/usr/lib/node_modules`、`/usr/local/lib/node_modules`、`$(npm root -g)`；
+- 可执行入口：`node`、`npm`、`npx`、`pm2`（在 `/usr/bin`、`/usr/local/bin`、`/usr/sbin`
+  和 `$(npm prefix -g)/bin` 下）。
+
+只补读/执行位，不授予写权限，也不会对整个 `/usr/bin` 递归 `chmod`。
+`update.sh` 在调用 `pm2 reload` 之前同样会执行一次 `relax_global_paths`，这样
+历史上已经被锁成 `700` 的机器（包括用户手动 `chmod` 过、但重跑 `setup.sh`
+又被 npm 改回 `700` 的情况）也能被修好——在已是 `700` 的目录上重装 npm 包
+不会自动恢复权限，所以必须显式修。
+
+如果已经在启动阶段卡在这里，可以先执行：
+
+```bash
+sudo chmod -R a+rX /usr/lib/node_modules /usr/local/lib/node_modules
+sudo chmod a+rX /usr/bin/pm2 /usr/local/bin/pm2 2>/dev/null
+sudo bash /opt/dailyhim/deploy/hk/setup.sh
+```
+
+之后重跑 `setup.sh` / `update.sh` 都不会再把权限改回 `700`。
+
 ## 修改环境变量
 
 ```bash

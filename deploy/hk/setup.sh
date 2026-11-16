@@ -34,6 +34,69 @@ run_as_app() {
   runuser --preserve-environment -u "$APP_USER" -- env HOME="$APP_HOME" PATH="$PATH" "$@"
 }
 
+# git 以 root 运行且本脚本设了 umask 077，clone/pull 出来的目录是 700、文件是 600。
+# dailyhim 因此读不到 package-lock.json，npm ci 会误报
+# “can only install with an existing package-lock.json”。
+# 这里只把源码树放宽成“其他人可读可进入”（目录 755、文件 644、原有可执行位保留），
+# 不给任何人写权限；.git、node_modules、cache、data 以及 .env/证书私钥
+# 一律跳过，保持原有归属与严格权限，避免密钥泄露。
+fix_app_tree() {
+  local dir="$1"
+  local prune=(
+    -mindepth 1
+    \( -name .git -o -name node_modules -o -name cache -o -name data
+    -o -name '.env' -o -name '.env.*'
+    -o -name '*.pem' -o -name '*.key' -o -name '*.jks'
+    -o -name '*.keystore' -o -name '*.p12' \)
+    -prune -o
+  )
+  [[ -d "$dir" ]] || return 0
+  chmod 755 "$dir"
+  find "$dir" "${prune[@]}" -type d -exec chmod 755 {} +
+  find "$dir" "${prune[@]}" -type f -perm -u+x -exec chmod 755 {} +
+  find "$dir" "${prune[@]}" -type f ! -perm -u+x -exec chmod 644 {} +
+}
+
+# 全局安装（NodeSource/apt、npm -g）同样受脚本开头的 umask 077 影响：
+# /usr/bin/pm2、/usr/lib/node_modules/pm2/bin/pm2 会变成 700，dailyhim 执行时报
+# “env: 'pm2': Permission denied”。安装时临时切回 umask 022，并在安装后补一次
+# a+rX：既保证新装的文件可读可执行，也修复历史上已被锁成 700 的树
+# （在已是 700 的目录上重装 npm 包不会自动把权限改回来）。
+# 只加读/执行位；范围限定在 npm 全局包树和具体的可执行文件，
+# 不对整个 /usr/bin 做递归 chmod。
+GLOBAL_NODE_MODULES_DIRS=("/usr/lib/node_modules" "/usr/local/lib/node_modules")
+GLOBAL_BIN_DIRS=("/usr/bin" "/usr/local/bin" "/usr/sbin")
+GLOBAL_EXECUTABLES=("node" "npm" "npx" "pm2")
+
+relax_global_paths() {
+  local dir name path failed=0
+
+  # npm 全局包树：目录 755、文件 644、原有可执行位保留为 755。
+  for dir in "${GLOBAL_NODE_MODULES_DIRS[@]}" "$(npm root -g 2>/dev/null)"; do
+    [[ -n "$dir" && -d "$dir" ]] || continue
+    chmod -R a+rX "$dir" 2>/dev/null || failed=1
+  done
+
+  # 可执行入口（/usr/bin 等系统目录与 npm prefix 下的 bin）。
+  # 目录本身也要可进入，否则 dailyhim 连 stat 都做不到（/usr/bin 本身已是 755，
+  # a+rX 幂等，只补读/执行位）。
+  for dir in "${GLOBAL_BIN_DIRS[@]}" "$(npm prefix -g 2>/dev/null)/bin"; do
+    [[ -n "$dir" && -d "$dir" ]] || continue
+    chmod a+rX "$dir" 2>/dev/null || failed=1
+    for name in "${GLOBAL_EXECUTABLES[@]}"; do
+      path="$dir/$name"
+      [[ -e "$path" ]] || continue
+      chmod a+rX "$path" 2>/dev/null || failed=1
+    done
+  done
+
+  # 权限修不干净时给出警告而不是直接中断部署：后续 wait_for_health 会暴露真正问题。
+  if [[ "$failed" -ne 0 ]]; then
+    echo "警告：部分全局路径权限未能修正，若启动报 Permission denied 请手动检查。" >&2
+  fi
+  return 0
+}
+
 wait_for_health() {
   local url="$1" attempts="${2:-30}"
   for ((i = 1; i <= attempts; i += 1)); do
@@ -153,11 +216,15 @@ fi
 if [[ "$current_node_major" -ne "$NODE_MAJOR" ]]; then
   log "安装 Node.js ${NODE_MAJOR} LTS"
   curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
-  apt-get install -y nodejs
+  # apt 也继承 umask 077：解出来的 /usr/bin/node 等可能是 700。
+  ( umask 022; apt-get install -y nodejs )
+  relax_global_paths
 fi
 
 log "安装 PM2"
-npm install --global pm2@latest --no-audit --no-fund
+# 用子 shell 局部放开 umask，避免污染脚本其余部分的严格权限。
+( umask 022; npm install --global pm2@latest --no-audit --no-fund )
+relax_global_paths
 
 if ! id "$APP_USER" >/dev/null 2>&1; then
   useradd --system --home-dir "$APP_HOME" --create-home --shell /usr/sbin/nologin "$APP_USER"
@@ -187,6 +254,7 @@ else
 fi
 chown root:root "$APP_DIR"
 chmod 755 "$APP_DIR"
+fix_app_tree "$APP_DIR"
 
 log "安装生产依赖"
 rm -rf "$APP_DIR/node_modules"
