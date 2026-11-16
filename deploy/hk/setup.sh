@@ -34,6 +34,29 @@ run_as_app() {
   runuser --preserve-environment -u "$APP_USER" -- env HOME="$APP_HOME" PATH="$PATH" "$@"
 }
 
+# git 以 root 运行且本脚本设了 umask 077，clone/pull 出来的目录是 700、文件是 600。
+# dailyhim 因此读不到 package-lock.json，npm ci 会误报
+# “can only install with an existing package-lock.json”。
+# 这里只把源码树放宽成“其他人可读可进入”（目录 755、文件 644、原有可执行位保留），
+# 不给任何人写权限；.git、node_modules、cache、data 以及 .env/证书私钥
+# 一律跳过，保持原有归属与严格权限，避免密钥泄露。
+fix_app_tree() {
+  local dir="$1"
+  local prune=(
+    -mindepth 1
+    \( -name .git -o -name node_modules -o -name cache -o -name data
+    -o -name '.env' -o -name '.env.*'
+    -o -name '*.pem' -o -name '*.key' -o -name '*.jks'
+    -o -name '*.keystore' -o -name '*.p12' \)
+    -prune -o
+  )
+  [[ -d "$dir" ]] || return 0
+  chmod 755 "$dir"
+  find "$dir" "${prune[@]}" -type d -exec chmod 755 {} +
+  find "$dir" "${prune[@]}" -type f -perm -u+x -exec chmod 755 {} +
+  find "$dir" "${prune[@]}" -type f ! -perm -u+x -exec chmod 644 {} +
+}
+
 wait_for_health() {
   local url="$1" attempts="${2:-30}"
   for ((i = 1; i <= attempts; i += 1)); do
@@ -187,6 +210,7 @@ else
 fi
 chown root:root "$APP_DIR"
 chmod 755 "$APP_DIR"
+fix_app_tree "$APP_DIR"
 
 log "安装生产依赖"
 rm -rf "$APP_DIR/node_modules"

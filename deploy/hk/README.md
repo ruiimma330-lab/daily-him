@@ -81,6 +81,23 @@ sudo bash /opt/dailyhim/deploy/hk/update.sh
 脚本只接受 main 的 fast-forward 更新，随后以 `dailyhim` 用户运行 `npm ci --omit=dev`，
 通过 PM2 cluster 模式平滑 reload，并等待本机健康接口就绪。
 
+`setup.sh` 与 `update.sh` 都以 `umask 077` 执行，因此 root 执行 `git clone` / `git pull`
+得到的源码树默认是目录 `700`、文件 `600`。低权限用户 `dailyhim` 会因此读不到
+`package-lock.json`，`npm ci` 会误报「缺少 package-lock.json or npm-shrinkwrap.json」。
+两个脚本在同步代码之后、安装依赖之前都会调用 `fix_app_tree`，把源码树放宽为
+目录 `755`、文件 `644`（保留原有可执行位），**不给** group/other 写权限；`.git`、
+`node_modules`、`cache`、`data` 以及 `.env`、`*.pem`、`*.key`、`*.p12` 等私钥文件
+一律跳过，保持原来的严格权限。
+
+如果已经卡在这一步（`npm error code EUSAGE`），代码其实已经 clone 成功，只是权限不对。
+先执行下面的临时命令，再重新运行 `setup.sh`（它同时会拉取包含本修复的最新 main）：
+
+```bash
+sudo chmod -R a+rX /opt/dailyhim && sudo bash /opt/dailyhim/deploy/hk/setup.sh
+```
+
+`a+rX` 只加读权限，`X` 仅对目录和原本可执行的文件生效，不会授予任何写权限。
+
 ## 修改环境变量
 
 ```bash

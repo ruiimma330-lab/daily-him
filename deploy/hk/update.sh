@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+umask 077
+
 APP_DIR="${APP_DIR:-/opt/dailyhim}"
 ENV_FILE="${ENV_FILE:-/etc/dailyhim.env}"
 BRANCH="${BRANCH:-main}"
@@ -10,6 +12,27 @@ APP_HOME="${APP_HOME:-/var/lib/dailyhim}"
 
 run_as_app() {
   runuser --preserve-environment -u "$APP_USER" -- env HOME="$APP_HOME" PATH="$PATH" "$@"
+}
+
+# git 由 root 执行，继承的 umask 可能让 pull 出来的新文件是 600，
+# 导致 dailyhim 读不到 package-lock.json、npm ci 误报缺少 lockfile。
+# 只放宽到“其他人可读可进入”（目录 755、文件 644，保留可执行位），不加写权限；
+# .git、node_modules、cache、data 与 .env/证书私钥跳过，保持原有归属与严格权限。
+fix_app_tree() {
+  local dir="$1"
+  local prune=(
+    -mindepth 1
+    \( -name .git -o -name node_modules -o -name cache -o -name data
+    -o -name '.env' -o -name '.env.*'
+    -o -name '*.pem' -o -name '*.key' -o -name '*.jks'
+    -o -name '*.keystore' -o -name '*.p12' \)
+    -prune -o
+  )
+  [[ -d "$dir" ]] || return 0
+  chmod 755 "$dir"
+  find "$dir" "${prune[@]}" -type d -exec chmod 755 {} +
+  find "$dir" "${prune[@]}" -type f -perm -u+x -exec chmod 755 {} +
+  find "$dir" "${prune[@]}" -type f ! -perm -u+x -exec chmod 644 {} +
 }
 
 wait_for_health() {
@@ -45,6 +68,7 @@ fi
 git -C "$APP_DIR" fetch origin "$BRANCH"
 git -C "$APP_DIR" checkout "$BRANCH"
 git -C "$APP_DIR" pull --ff-only origin "$BRANCH"
+fix_app_tree "$APP_DIR"
 rm -rf "$APP_DIR/node_modules"
 install -d -o "$APP_USER" -g "$APP_USER" -m 755 "$APP_DIR/node_modules"
 run_as_app npm --prefix "$APP_DIR" ci --omit=dev --no-audit --no-fund
