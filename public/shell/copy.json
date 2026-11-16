@@ -28,18 +28,14 @@
     "displayNameLabel": "你的昵称（可选）",
     "displayNamePlaceholder": "只在自己这边显示",
     "next": "进入聊天",
-    "rechargeLink": "先看看充值页（演示）"
+    "rechargeLink": "打开星光补给站"
   },
   "recharge": {
-    "title": "充值",
-    "balanceLabel": "当前余额",
-    "unit": "钻石",
-    "demoNotice": "演示，未开通支付",
+    "title": "星光补给站",
+    "balanceLabel": "星光余额",
+    "unit": "星光",
+    "demoNotice": "测试环境，暂未开通",
     "backChat": "返回聊天",
-    "packages": [
-      { "id": "p1", "name": "小试一下", "coins": 60, "priceLabel": "¥6" },
-      { "id": "p2", "name": "常用套餐", "coins": 300, "priceLabel": "¥30", "tag": "推荐" },
-      { "id": "p3", "name": "囤一点", "coins": 680, "priceLabel": "¥68" }
-    ]
+    "packages": []
   }
 }

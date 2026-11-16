@@ -33,7 +33,7 @@
       clearInterval(timer);
       if (next === 'chat') Shell.go('/', { c });
       else if (next === 'onboard') Shell.go('/shell/onboard.html', { c });
-      else if (next === 'recharge') Shell.go('/shell/recharge.html', { c });
+      else if (next === 'recharge') location.href = '/shell/starlight.html#recharge';
       else Shell.go('/shell/pick.html', { c });
     })();
   </script>
