@@ -72,7 +72,9 @@ function movedToUrl() {
 function movedSiteMiddleware(req, res, next) {
   const destination = movedToUrl();
   if (!destination || req.path === '/api/health' || !['GET', 'HEAD'].includes(req.method)) return next();
-  const isPage = req.path === '/' || req.path === '/login' || req.path.endsWith('.html');
+  let requestPath = req.path;
+  try { requestPath = decodeURIComponent(requestPath); } catch (_) { /* malformed paths are not pages */ }
+  const isPage = requestPath === '/' || requestPath === '/login' || requestPath.endsWith('.html');
   if (!isPage) return next();
   const hostname = new URL(destination).hostname;
   res.set('Cache-Control', 'no-store');

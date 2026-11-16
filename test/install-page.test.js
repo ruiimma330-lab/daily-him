@@ -123,6 +123,9 @@ test('move mode replaces pages but leaves health available', async () => {
     assert.equal(page.status, 200);
     assert.match(page.text(), /Daily Him 已搬家到 dailyhim\.cn/);
     assert.match(page.text(), /href="https:\/\/dailyhim\.cn"/);
+    const encodedPage = await request('/shell/cover%2ehtml');
+    assert.equal(encodedPage.status, 200);
+    assert.match(encodedPage.text(), /Daily Him 已搬家到 dailyhim\.cn/);
     const health = await request('/api/health');
     assert.equal(health.status, 200);
     assert.equal(health.json().ok, true);

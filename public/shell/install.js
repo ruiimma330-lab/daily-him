@@ -5,7 +5,8 @@
   const userAgent = navigator.userAgent || '';
   const ios = /iphone|ipad|ipod/i.test(userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const safari = ios && /Safari/i.test(userAgent) && !/(CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger)/i.test(userAgent);
+  const safari = ios && /Version\/[\d.]+.*Safari\//i.test(userAgent)
+    && !/(CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|FBAV|Instagram|GSA\/|DuckDuckGo|YaBrowser|Twitter)/i.test(userAgent);
   if (document.body && document.body.dataset) document.body.dataset.installOs = ios ? 'ios' : 'android';
   if (document.body && document.body.dataset) document.body.dataset.installBrowser = safari ? 'safari' : 'other';
 
@@ -25,6 +26,7 @@
   const warning = document.getElementById('ios-browser-warning');
   if (warning) warning.hidden = !ios || safari;
   const copyLink = document.getElementById('copy-site-link');
+  const copyFallback = document.getElementById('copy-site-fallback');
   if (copyLink) {
     copyLink.addEventListener('click', async () => {
       try {
@@ -41,7 +43,17 @@
         input.select();
         const copied = document.execCommand && document.execCommand('copy');
         input.remove();
-        copyLink.textContent = copied ? '已复制，请到 Safari 粘贴' : installUrl;
+        if (copied) {
+          copyLink.textContent = '已复制，请到 Safari 粘贴';
+        } else if (copyFallback) {
+          copyFallback.value = installUrl;
+          copyFallback.hidden = false;
+          copyFallback.focus();
+          copyFallback.select();
+          copyLink.textContent = '请长按下方链接复制';
+        } else {
+          copyLink.textContent = installUrl;
+        }
       }
     });
   }

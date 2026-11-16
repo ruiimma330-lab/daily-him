@@ -9,6 +9,8 @@ REPO_URL="${REPO_URL:-}"
 BRANCH="${BRANCH:-main}"
 APP_NAME="${APP_NAME:-dailyhim}"
 APP_PORT="${APP_PORT:-3000}"
+APP_USER="${APP_USER:-dailyhim}"
+APP_HOME="${APP_HOME:-/var/lib/dailyhim}"
 NODE_MAJOR=22
 ENV_TMP=""
 
@@ -26,6 +28,23 @@ fi
 
 log() {
   printf '\n==> %s\n' "$1"
+}
+
+run_as_app() {
+  runuser --preserve-environment -u "$APP_USER" -- env HOME="$APP_HOME" PATH="$PATH" "$@"
+}
+
+wait_for_health() {
+  local url="$1" attempts="${2:-30}"
+  for ((i = 1; i <= attempts; i += 1)); do
+    if curl -fsS "$url"; then
+      printf '\n'
+      return 0
+    fi
+    sleep 2
+  done
+  echo "健康检查超时：$url" >&2
+  return 1
 }
 
 append_env() {
@@ -69,7 +88,7 @@ create_env_file() {
 
   append_env "$ENV_TMP" NODE_ENV production
   append_env "$ENV_TMP" PORT "$APP_PORT"
-  append_env "$ENV_TMP" STORE_DATA_DIR /var/lib/dailyhim
+  append_env "$ENV_TMP" STORE_DATA_DIR "$APP_HOME"
 
   read_hidden "站点网址 PUBLIC_SITE_URL [https://dailyhim.cn]：" "https://dailyhim.cn" 1
   append_env "$ENV_TMP" PUBLIC_SITE_URL "$REPLY"
@@ -140,6 +159,11 @@ fi
 log "安装 PM2"
 npm install --global pm2@latest --no-audit --no-fund
 
+if ! id "$APP_USER" >/dev/null 2>&1; then
+  useradd --system --home-dir "$APP_HOME" --create-home --shell /usr/sbin/nologin "$APP_USER"
+fi
+install -d -o "$APP_USER" -g "$APP_USER" -m 700 "$APP_HOME"
+
 log "同步代码到 $APP_DIR"
 if [[ -z "$REPO_URL" ]]; then
   if [[ -d "$APP_DIR/.git" ]]; then
@@ -161,26 +185,35 @@ else
   rm -rf "$APP_DIR"
   git clone --branch "$BRANCH" --single-branch "$REPO_URL" "$APP_DIR"
 fi
+chown root:root "$APP_DIR"
+chmod 755 "$APP_DIR"
 
 log "安装生产依赖"
-npm --prefix "$APP_DIR" ci --omit=dev --no-audit --no-fund
+rm -rf "$APP_DIR/node_modules"
+install -d -o "$APP_USER" -g "$APP_USER" -m 755 "$APP_DIR/node_modules"
+run_as_app npm --prefix "$APP_DIR" ci --omit=dev --no-audit --no-fund
+install -d -o "$APP_USER" -g "$APP_USER" -m 700 "$APP_DIR/cache" "$APP_DIR/cache/audio"
 
 create_env_file
-install -d -o root -g root -m 700 /var/lib/dailyhim
+install -d -o "$APP_USER" -g "$APP_USER" -m 700 "$APP_HOME"
 
 log "启动 Daily Him"
 set -a
 # shellcheck disable=SC1090
 source "$ENV_FILE"
 set +a
-if pm2 describe "$APP_NAME" >/dev/null 2>&1; then
-  pm2 reload "$APP_NAME" --update-env
-else
-  pm2 start "$APP_DIR/server.js" --name "$APP_NAME" --cwd "$APP_DIR" --time
+if [[ -S /root/.pm2/rpc.sock ]] && pm2 describe "$APP_NAME" >/dev/null 2>&1; then
+  pm2 delete "$APP_NAME" >/dev/null
+  pm2 save --force >/dev/null
 fi
-pm2 startup systemd -u root --hp /root >/dev/null
-pm2 save --force >/dev/null
-systemctl enable --now pm2-root
+systemctl disable --now pm2-root >/dev/null 2>&1 || true
+run_as_app pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
+run_as_app pm2 start "$APP_DIR/server.js" --name "$APP_NAME" --cwd "$APP_DIR" \
+  --instances 1 --exec-mode cluster --time
+pm2 startup systemd -u "$APP_USER" --hp "$APP_HOME" >/dev/null
+run_as_app pm2 save --force >/dev/null
+systemctl enable --now "pm2-${APP_USER}"
+wait_for_health "http://127.0.0.1:${APP_PORT}/api/health"
 
 log "配置 Nginx"
 cat >/etc/nginx/sites-available/dailyhim <<NGINX
@@ -231,5 +264,4 @@ certbot --nginx --non-interactive --agree-tos --register-unsafely-without-email 
 systemctl enable --now certbot.timer
 
 log "部署完成，健康检查"
-curl -fsS --retry 5 --retry-delay 2 https://dailyhim.cn/api/health
-printf '\n'
+wait_for_health "https://dailyhim.cn/api/health" 10

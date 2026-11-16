@@ -5,7 +5,8 @@
   const ios = /iphone|ipad|ipod/i.test(userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const wechat = /MicroMessenger/i.test(userAgent);
-  const iosSafari = ios && /Safari/i.test(userAgent) && !/(CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger)/i.test(userAgent);
+  const iosSafari = ios && /Version\/[\d.]+.*Safari\//i.test(userAgent)
+    && !/(CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger|Line\/|FBAN|FBAV|Instagram|GSA\/|DuckDuckGo|YaBrowser|Twitter)/i.test(userAgent);
   let deferred = null;
   let waitingWorker = null;
 
@@ -72,10 +73,14 @@
   copyLink.type = 'button';
   copyLink.textContent = '复制链接';
   copyLink.hidden = true;
+  const copyFallback = el('textarea', 'pwa-copy-fallback');
+  copyFallback.hidden = true;
+  copyFallback.setAttribute('readonly', '');
+  copyFallback.setAttribute('aria-label', 'Daily Him 安装链接');
   const iosOk = el('button');
   iosOk.type = 'button';
   iosOk.textContent = '知道了';
-  iosForm.append(iosTitle, iosLead, steps, copyLink, iosOk);
+  iosForm.append(iosTitle, iosLead, steps, copyLink, copyFallback, iosOk);
   iosGuide.append(iosForm);
 
   document.body.append(offline, update, install, iosGuide);
@@ -88,6 +93,8 @@
 
   function showGuide() {
     copyLink.hidden = true;
+    copyLink.textContent = '复制链接';
+    copyFallback.hidden = true;
     steps.hidden = false;
     if (ios && iosSafari) {
       iosTitle.textContent = '用 Safari 添加到主屏幕';
@@ -133,7 +140,15 @@
       if (input.select) input.select();
       const copied = document.execCommand && document.execCommand('copy');
       if (input.remove) input.remove();
-      copyLink.textContent = copied ? '已复制，请到 Safari 粘贴' : url;
+      if (copied) {
+        copyLink.textContent = '已复制，请到 Safari 粘贴';
+      } else {
+        copyFallback.value = url;
+        copyFallback.hidden = false;
+        if (copyFallback.focus) copyFallback.focus();
+        if (copyFallback.select) copyFallback.select();
+        copyLink.textContent = '请长按下方链接复制';
+      }
     }
   });
 

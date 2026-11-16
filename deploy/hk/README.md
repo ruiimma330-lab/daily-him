@@ -1,9 +1,9 @@
 # Daily Him 香港服务器部署
 
 目标环境：腾讯云香港轻量服务器，Ubuntu 22.04，域名 `dailyhim.cn` 与
-`www.dailyhim.cn`。`setup.sh` 必须用 root 运行，可重复执行；它会安装 Node.js 22 LTS、
-Git、Nginx、Certbot、PM2，同步代码到 `/opt/dailyhim`，配置 HTTPS 与开机自启，最后请求
-`https://dailyhim.cn/api/health`。
+`www.dailyhim.cn`。`setup.sh` 必须用 root 执行系统配置，但依赖安装和应用进程使用专用的
+`dailyhim` 低权限用户。脚本可重复执行；它会安装 Node.js 22 LTS、Git、Nginx、Certbot、
+PM2，同步代码到 `/opt/dailyhim`，配置 HTTPS 与开机自启，最后请求健康接口。
 
 ## 部署前准备
 
@@ -24,10 +24,14 @@ sudo cat /root/.ssh/id_ed25519.pub
 ```
 
 把输出的公钥添加到 GitHub 仓库的 **Settings → Deploy keys → Add deploy key**，不要勾选写权限。
-然后记录 GitHub 主机指纹并执行一行部署命令：
+下面固定写入 GitHub 官方 Ed25519 主机公钥，并核验官方公布的
+[`SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU`](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints)
+指纹；不要用未经核验的 `ssh-keyscan` 结果代替：
 
 ```bash
-sudo ssh-keyscan -H github.com | sudo tee -a /root/.ssh/known_hosts >/dev/null
+printf '%s\n' 'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl' | sudo tee -a /root/.ssh/known_hosts >/dev/null
+sudo chmod 600 /root/.ssh/known_hosts
+sudo ssh-keygen -lf /root/.ssh/known_hosts -E sha256 | grep -F 'SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU'
 sudo env REPO_URL=git@github.com:ruiimma330-lab/idol-chat.git bash -c 'rm -rf /tmp/dailyhim-deploy && git clone --depth 1 "$REPO_URL" /tmp/dailyhim-deploy && bash /tmp/dailyhim-deploy/deploy/hk/setup.sh'
 ```
 
@@ -74,14 +78,14 @@ Render 服务需要设置 `MOVED_TO_URL=https://dailyhim.cn`。
 sudo bash /opt/dailyhim/deploy/hk/update.sh
 ```
 
-脚本只接受 main 的 fast-forward 更新，随后运行 `npm ci --omit=dev`、带新环境变量平滑 reload
-PM2，并检查本机健康接口。
+脚本只接受 main 的 fast-forward 更新，随后以 `dailyhim` 用户运行 `npm ci --omit=dev`，
+通过 PM2 cluster 模式平滑 reload，并等待本机健康接口就绪。
 
 ## 修改环境变量
 
 ```bash
 sudoedit /etc/dailyhim.env
-sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; pm2 reload dailyhim --update-env; pm2 save --force >/dev/null'
+sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 reload dailyhim --update-env; runuser -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 save --force >/dev/null'
 ```
 
 不要把该文件复制到仓库，不要把密钥粘贴到命令参数、Issue、PR 或日志中。
@@ -89,8 +93,8 @@ sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; pm2 reload dailyhim --up
 ## 查看状态与日志
 
 ```bash
-sudo pm2 status
-sudo pm2 logs dailyhim
+sudo -u dailyhim env HOME=/var/lib/dailyhim pm2 status
+sudo -u dailyhim env HOME=/var/lib/dailyhim pm2 logs dailyhim
 sudo journalctl -u nginx -n 100 --no-pager
 sudo certbot certificates
 curl -fsS https://dailyhim.cn/api/health
@@ -103,8 +107,10 @@ curl -fsS https://dailyhim.cn/api/health
 ```bash
 sudo git -C /opt/dailyhim log --oneline -20
 sudo git -C /opt/dailyhim checkout --detach <提交SHA>
-sudo npm --prefix /opt/dailyhim ci --omit=dev --no-audit --no-fund
-sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; pm2 reload dailyhim --update-env; pm2 save --force >/dev/null'
+sudo rm -rf /opt/dailyhim/node_modules
+sudo install -d -o dailyhim -g dailyhim -m 755 /opt/dailyhim/node_modules
+sudo -u dailyhim env HOME=/var/lib/dailyhim npm --prefix /opt/dailyhim ci --omit=dev --no-audit --no-fund
+sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 reload dailyhim --update-env; runuser -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 save --force >/dev/null'
 curl -fsS https://dailyhim.cn/api/health
 ```
 

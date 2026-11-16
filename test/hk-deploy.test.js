@@ -9,22 +9,30 @@ const setupPath = path.join(root, 'deploy/hk/setup.sh');
 const updatePath = path.join(root, 'deploy/hk/update.sh');
 const setup = fs.readFileSync(setupPath, 'utf8');
 const update = fs.readFileSync(updatePath, 'utf8');
+const docs = fs.readFileSync(path.join(root, 'deploy/hk/README.md'), 'utf8');
 
-test('Hong Kong deployment scripts are valid, executable, and repeatable', () => {
+test('Hong Kong deployment scripts are valid, executable, and contain idempotent service controls', () => {
   for (const file of [setupPath, updatePath]) {
     const syntax = spawnSync('bash', ['-n', file], { encoding: 'utf8' });
     assert.equal(syntax.status, 0, syntax.stderr);
     assert.ok(fs.statSync(file).mode & 0o111, `${path.basename(file)} must be executable`);
   }
   assert.match(setup, /NODE_MAJOR=22/);
-  assert.match(setup, /npm --prefix "\$APP_DIR" ci --omit=dev/);
+  assert.match(setup, /useradd --system[\s\S]*\/usr\/sbin\/nologin/);
+  assert.match(setup, /run_as_app npm --prefix "\$APP_DIR" ci --omit=dev/);
+  assert.match(setup, /run_as_app pm2 start[\s\S]*--exec-mode cluster/);
   assert.match(setup, /pm2 startup systemd[\s\S]*pm2 save/);
+  assert.match(setup, /wait_for_health "http:\/\/127\.0\.0\.1/);
   assert.match(setup, /server_name www\.dailyhim\.cn[\s\S]*301 https:\/\/dailyhim\.cn/);
   assert.match(setup, /server_name dailyhim\.cn/);
   assert.match(setup, /certbot --nginx[\s\S]*-d dailyhim\.cn -d www\.dailyhim\.cn/);
   assert.match(setup, /curl -fsS[\s\S]*https:\/\/dailyhim\.cn\/api\/health/);
   assert.match(update, /git -C "\$APP_DIR" pull --ff-only origin "\$BRANCH"/);
-  assert.match(update, /pm2 reload "\$APP_NAME" --update-env/);
+  assert.match(update, /run_as_app npm --prefix "\$APP_DIR" ci --omit=dev/);
+  assert.match(update, /run_as_app pm2 reload "\$APP_NAME" --update-env/);
+  assert.match(update, /wait_for_health "http:\/\/127\.0\.0\.1/);
+  assert.match(docs, /github\.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl/);
+  assert.match(docs, /SHA256:\+DiY3wvvV6TuJJhbpZisF\/zLDA0zPMSvHdkr4UvCOqU/);
 });
 
 test('first-run environment setup covers production configuration without echoing input', () => {
