@@ -198,7 +198,7 @@ test('closed-chat UI is read-only while keeping the two-step history deletion ac
   const app = fs.readFileSync(path.join(ROOT, 'public/app.js'), 'utf8');
   const memory = fs.readFileSync(path.join(ROOT, 'public/memory.js'), 'utf8');
   assert.match(html, /该角色暂未开放，当前仅可查看。/);
-  assert.match(html, /将删除聊天记录和摘要。他记得的事与亲密度会保留。/);
+  assert.match(html, /将删除聊天记录和摘要。他记得的你与亲密度会保留。/);
   assert.match(app, /composer\.hidden = blocked/);
   assert.match(app, /!writesBlocked\(\) && \/\[\\p\{L\}\\p\{N\}\]\//);
   assert.match(app, /paintClearConfirmation\(2\)/);

@@ -24,6 +24,7 @@ const voicePack = require('./lib/voice-pack');
 const voiceExec = require('./lib/voice-exec');
 const starlight = require('./lib/starlight');
 const callName = require('./lib/call-name');
+const greetings = require('./lib/greetings');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -286,8 +287,31 @@ function isSpeakable(text) {
   return /[\p{L}\p{N}]/u.test(text);
 }
 
+function delayMs(ms) {
+  const wait = Number.isFinite(ms) && ms > 0 ? ms : 0;
+  return new Promise((resolve) => setTimeout(resolve, wait));
+}
+
+// Short-lived handle for a clip the chat request started but did not wait for.
+function makeVoiceToken(userId, hash) {
+  prunePendingVoice();
+  return `${userId.slice(0, 8)}.${hash.slice(0, 24)}.${crypto.randomBytes(6).toString('hex')}`;
+}
+
 function voiceReady(voiceId) {
   return Boolean(voiceId) && voiceId !== 'PLACEHOLDER';
+}
+
+// Shared shape for 「他记得的你」 personal fields (memory page + profile routes).
+function personalView(saved) {
+  const profileDoc = saved || {};
+  return {
+    callName: profileDoc.callName || '',
+    callNameStatus: profileDoc.callNameStatus || '',
+    callNameSource: profileDoc.callNameSource || '',
+    characterNickname: profileDoc.characterNickname || '',
+    habits: profileDoc.habits || '',
+  };
 }
 
 function llmTimeoutMs() {
@@ -671,6 +695,16 @@ function normalizeMessages(input) {
 }
 
 const synthInflight = new Map();
+// Clips a chat request started but did not wait for, keyed by a one-turn token the
+// client echoes back. /api/tts joins that job so the same audio is never charged twice.
+const pendingVoice = new Map();
+const PENDING_VOICE_TTL_MS = 60 * 1000;
+
+function prunePendingVoice(now = Date.now()) {
+  for (const [token, entry] of pendingVoice) {
+    if (!entry || now - entry.createdAt > PENDING_VOICE_TTL_MS) pendingVoice.delete(token);
+  }
+}
 
 function clipReady(hash) {
   const filePath = path.join(AUDIO_DIR, `${hash}.mp3`);
@@ -1065,7 +1099,54 @@ function createApp() {
   });
 
   app.get('/api/memory', requireUser, requireCharacter, (req, res) => {
-    res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
+    const saved = profile.load(req.userId, req.characterId);
+    res.json({
+      ok: true,
+      ...memory.publicView(memory.load(req.userId, req.characterId)),
+      personal: personalView(saved),
+    });
+  });
+
+  // 「他记得的你」 personal fields. Everything here is per account × character and
+  // feeds the next chat turn; storing a value never touches intimacy or history.
+  app.put('/api/memory/personal', requireUser, requireCharacter, (req, res) => {
+    const body = req.body || {};
+    const patch = {};
+    if (typeof body.characterNickname === 'string') patch.characterNickname = body.characterNickname;
+    if (typeof body.habits === 'string') patch.habits = body.habits;
+    if (typeof body.callName === 'string') {
+      const next = callName.sanitize(body.callName);
+      if (!next && body.callName.trim()) return res.status(400).json({ error: 'bad callName' });
+      patch.callName = next;
+      patch.callNameStatus = next ? 'done' : '';
+      patch.callNameSource = next ? 'user' : '';
+      patch.callNameCandidate = '';
+    }
+    if (!Object.keys(patch).length) return res.status(400).json({ error: 'nothing to update' });
+    const saved = profile.save(req.userId, req.characterId, patch);
+    return res.json({ ok: true, personal: personalView(saved) });
+  });
+
+  // Clearing the summary keeps cards, personal fields, history, and intimacy.
+  app.delete('/api/memory/summary', requireUser, requireCharacter, async (req, res) => {
+    await memory.clearSummary(req.userId, req.characterId);
+    return res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
+  });
+
+  app.patch('/api/memory/:id', requireUser, requireCharacter, async (req, res) => {
+    if (!/^[a-f0-9]{12}$/.test(req.params.id)) return res.status(400).json({ error: 'bad id' });
+    const body = req.body || {};
+    if (typeof body.text !== 'string' || !body.text.trim()) return res.status(400).json({ error: 'text required' });
+    if (body.category !== undefined && !require('./lib/memory-cards').CATEGORIES.includes(body.category)) {
+      return res.status(400).json({ error: 'bad category' });
+    }
+    const card = await memory.editCard(req.userId, req.characterId, req.params.id, {
+      text: body.text,
+      category: body.category,
+      date: body.date,
+    });
+    if (!card) return res.status(404).json({ error: 'not found' });
+    return res.json({ ok: true, card, ...memory.publicView(memory.load(req.userId, req.characterId)) });
   });
 
   app.delete('/api/memory/:id', requireUser, requireCharacter, async (req, res) => {
@@ -1079,6 +1160,20 @@ function createApp() {
     if (!req.body || req.body.confirm !== 'CLEAR') return res.status(400).json({ error: 'confirm required' });
     await memory.clearAll(req.userId, req.characterId);
     return res.json({ ok: true, ...memory.publicView(memory.load(req.userId, req.characterId)) });
+  });
+
+  // Pre-stored greeting copy. Text only: this route never calls the LLM or TTS.
+  app.get('/api/greeting', requireUser, requireCharacter, (req, res) => {
+    const mode = req.query.mode === 'ask' ? 'ask' : 'welcome';
+    const saved = profile.load(req.userId, req.characterId);
+    const status = callName.statusOf(saved);
+    if (mode === 'welcome' && (status === 'pending' || status === 'confirming')) {
+      return res.json({ ok: true, greeting: null, reason: 'naming' });
+    }
+    const useName = status === 'done' ? (saved.callName || '') : '';
+    const greeting = greetings.pick(req.characterId, { mode, callName: useName });
+    if (!greeting) return res.json({ ok: true, greeting: null, reason: 'none' });
+    return res.json({ ok: true, greeting });
   });
 
   app.get('/api/moments', requireUser, requireCharacter, requireAvailable, (req, res) => {
@@ -1428,6 +1523,19 @@ function createApp() {
     return res.sendFile(file);
   });
 
+  // Optional pre-stored greeting clips. A character without a greetings folder
+  // simply 404s here and the client falls back to normal (billed) synthesis.
+  app.get('/characters/:id/greetings/:file', requireUser, (req, res) => {
+    const id = characters.resolveId(req.params.id);
+    if (!id) return res.status(404).end();
+    const name = path.basename(String(req.params.file || ''));
+    if (!/^[a-z0-9][a-z0-9_-]{0,38}\.mp3$/.test(name)) return res.status(404).end();
+    const file = path.join(characters.CHAR_DIR, id, 'greetings', name);
+    if (!fs.existsSync(file)) return res.status(404).end();
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.sendFile(file);
+  });
+
   app.get(['/characters/:id/portrait.svg', '/characters/:id/portrait.jpg', '/characters/:id/portrait.webp'], requireUser, (req, res) => {
     const id = characters.resolveId(req.params.id);
     if (!id) return res.status(404).end();
@@ -1465,7 +1573,8 @@ function createApp() {
     });
   });
 
-  // On-demand TTS. Chat sends voice:false and keeps its own synthesize() path.
+  // On-demand TTS. Chat synthesizes voice inline by default (or with a short wait);
+  // this route covers a clip that was still pending, and older clients that pass voice:false.
   // A locked character is spoken only from characters/<id>/voice/. A missing or
   // broken package turns voice off for that character and leaves chat up.
   app.post('/api/tts', requireUser, requireCharacter, requireAvailable, async (req, res) => {
@@ -1487,6 +1596,23 @@ function createApp() {
     const mood = req.body && typeof req.body.mood === 'string' ? req.body.mood : '';
     if (!pack.canSpeak(rawText)) {
       return res.status(400).json({ error: 'nothing to speak' });
+    }
+    // This bubble may already be synthesizing from the chat request that just answered.
+    // Join that job: same audio, and never a second voice charge for one clip.
+    const voiceToken = req.body && typeof req.body.voiceToken === 'string' ? req.body.voiceToken.trim() : '';
+    if (voiceToken) {
+      prunePendingVoice();
+      const pending = pendingVoice.get(voiceToken);
+      if (pending && pending.userId === req.userId) {
+        try {
+          const joined = await pending.task;
+          if (joined && joined.audioUrl) {
+            pendingVoice.delete(voiceToken);
+            return res.json({ audioUrl: joined.audioUrl, cached: false, joined: true });
+          }
+        } catch (_) { /* fall through to a normal attempt below */ }
+        pendingVoice.delete(voiceToken);
+      }
     }
     const spokenText = [...rawText].slice(0, starlight.loadConfig().voiceMaxChars).join('');
     const request = voicePack.buildRequest(pack, spokenText, mood);
@@ -1670,15 +1796,22 @@ function createApp() {
     }
 
     const voiceOff = Boolean(req.body && req.body.voice === false);
+    // Text must not wait for slow voice: synthesize in this request, but answer once
+    // the clip is ready or this budget is spent, whichever comes first. The client then
+    // continues with exactly one background /api/tts call, which reuses the cached clip.
+    const voiceWaitMs = Number.isFinite(Number(req.body && req.body.voiceWaitMs))
+      ? Math.min(8000, Math.max(0, Math.floor(Number(req.body.voiceWaitMs))))
+      : 2000;
     let audioError;
     let voiceDenied = null;
     let ttsChars = 0;
+    let ttsPending = false;
     const chatVoicePack = voicePack.load(req.characterId);
     const placeholder = characters.loadMeta(req.characterId).placeholderVoice;
     const voiceOk = placeholder ? Boolean(chatVoicePack && chatVoicePack.ok && chatVoicePack.enabled) : voiceReady(config.voiceId);
     if (!voiceOff && !voiceOk) audioError = 'Voice is not configured';
     // One TTS clip per message, in parallel; each with its own mood tag.
-    await Promise.all(items.map(async (item) => {
+    const voiceTasks = items.map(async (item) => {
       item.audioUrl = null;
       const speech = toSpeechText([item.raw]);
       if (voiceOff || !voiceOk || !isSpeakable(speech)) return;
@@ -1687,28 +1820,54 @@ function createApp() {
       ttsChars += ttsText.length;
       const lockedRequest = placeholder && voiceOk ? voicePack.buildRequest(chatVoicePack, capped, item.mood) : null;
       const hash = lockedRequest ? lockedRequest.cacheKey : audioFileHash(config.voiceId, config.ttsModel, ttsText);
+      const job = billVoice({
+        userId: req.userId,
+        requestId: `chat-voice:${req.userId}:${hash}`,
+        cached: clipReady(hash),
+        speak: () => lockedRequest ? voiceExec.synthesize(lockedRequest, keys.voiceKey) : synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings),
+      });
+      if (clipReady(hash)) {
+        // Cached: resolve without reserving, and still report the URL.
+        try {
+          const ready = await job;
+          item.audioUrl = ready && ready.audioUrl ? ready.audioUrl : null;
+          item.voiceToken = null;
+        } catch (_) {
+          item.ttsFailed = false;
+        }
+        return;
+      }
+      const token = makeVoiceToken(req.userId, hash);
+      item.voiceToken = token;
+      pendingVoice.set(token, { userId: req.userId, task: job, createdAt: Date.now() });
       try {
-        const voiced = await billVoice({
-          userId: req.userId,
-          requestId: `chat-voice:${req.userId}:${hash}`,
-          cached: clipReady(hash),
-          speak: () => lockedRequest ? voiceExec.synthesize(lockedRequest, keys.voiceKey) : synthesize(config.voiceId, config.ttsModel, ttsText, keys.voiceKey, config.voiceSettings),
-        });
+        const voiced = await job;
         if (voiced.denied) {
           voiceDenied = voiced;
           item.ttsFailed = true;
+          if (item.voiceToken) pendingVoice.delete(item.voiceToken);
+          item.voiceToken = null;
           return;
         }
         item.audioUrl = voiced.audioUrl;
+        item.voiceToken = null;
       } catch (err) {
         const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
         const vk = keys.voiceKey || '';
         const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
         console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${vk.length})`);
         item.ttsFailed = true;
+        if (item.voiceToken) pendingVoice.delete(item.voiceToken);
+        item.voiceToken = null;
         audioError = 'TTS failed';
       }
-    }));
+    });
+    // A denial is decided before any synthesis, so a poor balance answers right away.
+    // Otherwise answer as soon as the clip is ready, or after the short wait budget:
+    // the loser of the race keeps running and caches the clip for the follow-up call.
+    const allVoice = Promise.all(voiceTasks).catch(() => {});
+    await Promise.race([allVoice, delayMs(voiceWaitMs)]);
+    ttsPending = !voiceOff && voiceOk && items.some((item) => !item.audioUrl && !item.ttsFailed);
     if (ttsChars) console.log(`TTS chars this turn: ${ttsChars}`);
     const displayBubbles = items.map((it) => it.ko);
     const outMessages = items.map((it) => ({
@@ -1717,6 +1876,9 @@ function createApp() {
       mood: it.mood,
       audioUrl: it.audioUrl,
       ttsFailed: Boolean(it.ttsFailed),
+      ttsPending: Boolean(ttsPending) && !it.audioUrl && !it.ttsFailed,
+      // Only present while that clip is still synthesizing; /api/tts joins it.
+      voiceToken: it.voiceToken || undefined,
       fallback: Boolean(it.fallback),
     }));
     const audioUrl = outMessages.length && outMessages[0].audioUrl ? outMessages[0].audioUrl : null;

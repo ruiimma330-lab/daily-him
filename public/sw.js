@@ -1,7 +1,7 @@
 /* Daily Him shell. Bump VERSION when the precache list changes.
    Code (html/js/css/json) is network-first and only read from THIS version's cache, so an old
    worker or old cache can never pair a stale script with a newer page (the empty-picker bug). */
-const VERSION = 'dh-pwa-15';
+const VERSION = 'dh-pwa-16';
 const SHELL = `dh-shell-${VERSION}`;
 const MEDIA = `dh-media-${VERSION}`;
 
@@ -20,6 +20,7 @@ const PRECACHE = [
   '/brand/wordmark-italic.woff2',
   '/brand/mark.svg',
   '/account-cache.js',
+  '/playback.js',
   '/app.js',
   '/memory.js',
   '/moments.js',
