@@ -147,3 +147,122 @@ test('fix_app_tree makes a real umask 077 clone readable without exposing secret
     assert.equal(modeOf(rel) & 0o022, 0, `${rel} must not be group/world writable`);
   }
 });
+
+// setup.sh 开头的 umask 077 也会影响全局安装：root 跑 npm install -g pm2 后
+// /usr/lib/node_modules/pm2 与 /usr/bin/pm2 变成 700，dailyhim 执行时报
+// “env: 'pm2': Permission denied”，且重跑 setup.sh 会再次把它锁回去。
+test('global Node/PM2 installs stay executable for the app user', { skip: process.platform !== 'linux' }, (t) => {
+  for (const [name, script] of [['setup.sh', setup], ['update.sh', update]]) {
+    const fn = extractFunction(script, 'relax_global_paths');
+    assert.match(fn, /a\+rX/, `${name} must relax with a+rX`);
+    assert.match(fn, /GLOBAL_NODE_MODULES_DIRS/, `${name} must cover the npm global tree`);
+    assert.match(fn, /GLOBAL_EXECUTABLES/, `${name} must cover pm2 and the other entry points`);
+    // 不能粗暴地给全局目录加写权限。
+    assert.doesNotMatch(fn, /a\+rwX|a\+w|o\+w/, `${name} must not add write bits`);
+
+    // 目标路径必须包含 npm 全局包树与 pm2 可执行文件。
+    assert.match(script, /GLOBAL_NODE_MODULES_DIRS=\("[^)]*lib\/node_modules/, `${name} must target lib/node_modules`);
+    assert.match(script, /GLOBAL_EXECUTABLES=\([^)]*"pm2"/, `${name} must include pm2 in the executable list`);
+  }
+
+  // setup.sh 必须在安装 Node 与 PM2 时局部放开 umask，并在安装后修复权限。
+  assert.match(setup, /\( umask 022; npm install --global pm2@latest/,
+    'setup.sh must install pm2 under a permissive umask');
+  assert.match(setup, /\( umask 022; apt-get install -y nodejs \)/,
+    'setup.sh must install nodejs under a permissive umask');
+  const pm2Install = setup.indexOf('npm install --global pm2@latest');
+  const pm2Relax = setup.indexOf('relax_global_paths', pm2Install);
+  assert.ok(pm2Relax > pm2Install, 'setup.sh must relax global paths after installing pm2');
+  // 局部 umask 不能泄漏成全局：脚本主体仍必须严格。
+  assert.match(setup, /^umask 077$/m, 'setup.sh must keep the global umask 077');
+
+  // update.sh 同样要能在老机器上修好已锁死的 pm2（它自己没装 pm2）。
+  const updateRelax = update.indexOf('relax_global_paths()');
+  assert.ok(updateRelax > 0, 'update.sh must define relax_global_paths');
+  const updateCall = update.indexOf('relax_global_paths\n');
+  assert.ok(updateCall > updateRelax, 'update.sh must call relax_global_paths');
+  assert.ok(updateCall < update.indexOf('run_as_app pm2 reload'),
+    'update.sh must relax pm2 permissions before invoking pm2 as the app user');
+});
+
+test('relax_global_paths repairs a 700 pm2 tree without granting write access', { skip: process.platform !== 'linux' }, (t) => {
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'dailyhim-global-'));
+  t.after(() => fs.rmSync(sandbox, { recursive: true, force: true }));
+
+  const libDir = path.join(sandbox, 'lib', 'node_modules');
+  const binDir = path.join(sandbox, 'bin');
+  const pm2PkgDir = path.join(libDir, 'pm2');
+  const pm2Entry = path.join(pm2PkgDir, 'bin', 'pm2');
+  const binShim = path.join(binDir, 'pm2');
+
+  // 复现 root + umask 077 安装后的形态：目录 700、可执行文件 700。
+  // 沙箱根目录代表 /usr/lib 这类系统父目录，本来就是 755，不是本函数的处理目标。
+  fs.mkdirSync(path.dirname(pm2Entry), { recursive: true, mode: 0o700 });
+  fs.mkdirSync(binDir, { recursive: true, mode: 0o700 });
+  fs.writeFileSync(pm2Entry, '#!/bin/sh\necho pm2\n', { mode: 0o700 });
+  fs.writeFileSync(path.join(pm2PkgDir, 'package.json'), '{}', { mode: 0o600 });
+  fs.symlinkSync('../lib/node_modules/pm2/bin/pm2', binShim);
+  fs.chmodSync(sandbox, 0o755);
+  for (const dir of [path.join(sandbox, 'lib'), libDir, pm2PkgDir, path.dirname(pm2Entry), binDir]) {
+    fs.chmodSync(dir, 0o700);
+  }
+  fs.chmodSync(pm2Entry, 0o700);
+  fs.chmodSync(path.join(pm2PkgDir, 'package.json'), 0o600);
+
+  const script = [
+    `GLOBAL_NODE_MODULES_DIRS=(${JSON.stringify(libDir)})`,
+    `GLOBAL_BIN_DIRS=(${JSON.stringify(binDir)})`,
+    'GLOBAL_EXECUTABLES=("pm2")',
+    // 让 $(npm root -g) / $(npm prefix -g) 不指向真实全局目录。
+    'npm() { return 0; }',
+    extractFunction(setup, 'relax_global_paths'),
+    'relax_global_paths',
+  ].join('\n');
+  const run = spawnSync('bash', ['-c', script], { encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+
+  const modeOf = (p) => fs.statSync(p).mode & 0o777;
+
+  assert.equal(modeOf(sandbox), 0o755);
+  assert.equal(modeOf(libDir), 0o755);
+  assert.equal(modeOf(pm2PkgDir), 0o755);
+  assert.equal(modeOf(path.dirname(pm2Entry)), 0o755);
+  assert.equal(modeOf(pm2Entry), 0o755, 'pm2 entry must be executable by the app user');
+  assert.equal(modeOf(path.join(pm2PkgDir, 'package.json')), 0o644, 'pm2 package files must be readable');
+  assert.equal(modeOf(binDir), 0o755, 'the bin directory must be traversable');
+
+  // 只加读/执行，绝不授予 group/other 写权限。
+  for (const p of [sandbox, libDir, pm2PkgDir, path.dirname(pm2Entry), binDir,
+    pm2Entry, path.join(pm2PkgDir, 'package.json')]) {
+    assert.equal(modeOf(p) & 0o022, 0, `${p} must not be group/world writable`);
+  }
+
+  // 低权限用户现在真的能读到并执行了。
+  const readable = spawnSync('bash', ['-c', `test -r ${JSON.stringify(pm2Entry)} && echo ok`], { encoding: 'utf8' });
+  assert.equal(readable.stdout.trim(), 'ok');
+});
+
+// set -Eeuo pipefail 下，单个 chmod 失败不应让整个部署脚本中断；
+// 这里故意让 chmod 失败（非 root 碰 root 拥有的 700 文件），断言只告警且继续。
+test('relax_global_paths warns and continues instead of aborting the deploy', { skip: process.platform !== 'linux' || process.getuid?.() === 0 }, (t) => {
+  const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'dailyhim-warn-'));
+  t.after(() => fs.rmSync(sandbox, { recursive: true, force: true }));
+
+  const binDir = path.join(sandbox, 'bin');
+  fs.mkdirSync(binDir, { recursive: true, mode: 0o700 });
+  fs.writeFileSync(path.join(binDir, 'pm2'), '#!/bin/sh\n', { mode: 0o700 });
+
+  const script = [
+    'set -Eeuo pipefail',
+    `GLOBAL_NODE_MODULES_DIRS=(${JSON.stringify(sandbox)})`,
+    `GLOBAL_BIN_DIRS=(${JSON.stringify(binDir)})`,
+    'GLOBAL_EXECUTABLES=("pm2")',
+    extractFunction(setup, 'relax_global_paths'),
+    'relax_global_paths',
+    'echo REACHED_END',
+  ].join('\n');
+
+  const run = spawnSync('bash', ['-c', script], { encoding: 'utf8' });
+  assert.equal(run.status, 0, 'a chmod failure must not abort the script');
+  assert.match(run.stdout, /REACHED_END/, 'execution must continue after a chmod failure');
+});
