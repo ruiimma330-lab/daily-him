@@ -2,9 +2,50 @@
   const pwa = window.DailyPwa;
   const button = document.getElementById('install-pwa');
   const status = document.getElementById('install-status');
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent)
+  const userAgent = navigator.userAgent || '';
+  const ios = /iphone|ipad|ipod/i.test(userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const safari = ios && /Safari/i.test(userAgent) && !/(CriOS|FxiOS|EdgiOS|OPiOS|MicroMessenger)/i.test(userAgent);
   if (document.body && document.body.dataset) document.body.dataset.installOs = ios ? 'ios' : 'android';
+  if (document.body && document.body.dataset) document.body.dataset.installBrowser = safari ? 'safari' : 'other';
+
+  let installUrl = window.location && window.location.href
+    ? window.location.href
+    : 'https://dailyhim.cn/shell/install.html';
+  fetch('/api/site-config', { cache: 'no-store' }).then((response) => response.ok ? response.json() : null).then((config) => {
+    if (!config || typeof config.installUrl !== 'string') return;
+    installUrl = config.installUrl;
+    const link = document.getElementById('site-url');
+    if (link) {
+      link.href = installUrl;
+      link.textContent = installUrl.replace(/^https?:\/\//, '');
+    }
+  }).catch(() => { /* keep same-origin fallback */ });
+
+  const warning = document.getElementById('ios-browser-warning');
+  if (warning) warning.hidden = !ios || safari;
+  const copyLink = document.getElementById('copy-site-link');
+  if (copyLink) {
+    copyLink.addEventListener('click', async () => {
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('clipboard unavailable');
+        await navigator.clipboard.writeText(installUrl);
+        copyLink.textContent = '已复制，请到 Safari 粘贴';
+      } catch (_) {
+        const input = document.createElement('textarea');
+        input.value = installUrl;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand && document.execCommand('copy');
+        input.remove();
+        copyLink.textContent = copied ? '已复制，请到 Safari 粘贴' : installUrl;
+      }
+    });
+  }
+
   function installed() {
     button.disabled = true;
     button.textContent = '已添加到主屏幕';
@@ -18,8 +59,8 @@
   button.addEventListener('click', async () => {
     if (!pwa) return;
     try {
-      await pwa.install();
-      if (!ios && !button.disabled) status.textContent = '若没有弹出提示，请在 Chrome 菜单中选择「安装应用」或「添加到主屏幕」。';
+      const result = await pwa.install();
+      if (!ios && !button.disabled && (!result || !result.prompted)) status.textContent = '若没有弹出提示，请在 Chrome 菜单中选择「安装应用」或「添加到主屏幕」。';
     } catch (_) {
       status.textContent = '请重试，或在 Chrome 菜单中选择「添加到主屏幕」。';
     }

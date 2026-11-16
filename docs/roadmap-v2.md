@@ -12,7 +12,7 @@
 
 做一个像 KakaoTalk 的 AI 爱豆分身聊天产品：以**语音气泡**为主交流，服务端持久保存聊天与记忆，有正式账号，关系会从陌生变熟悉，并逐步补上迷你朋友圈与产品壳，最终迁到微信小程序，方便手机随时用。
 
-当前线上地址：https://idol-chat.onrender.com
+当前线上地址：https://dailyhim.cn
 
 ### 1.2 非目标（明确不做 / 延后）
 
@@ -35,7 +35,7 @@
 
 - KakaoTalk 风格网页聊天；边伯贤风格人设（公开可核实事实 + 标注原创口头禅）
 - LLM：DeepSeek；TTS：ElevenLabs（用户自克隆音色 `zG6oPYFpVjyTj1zUmVTY`，模型 `eleven_v3`）
-- 已部署 Render 免费版：https://idol-chat.onrender.com
+- 已从 Render 免费版迁移到香港服务器：https://dailyhim.cn
 - 当前身份门：环境变量 `APP_PASSWORD` + 签名 Cookie（全站共享一份密码，**不是**每人账号）
 - 密钥仅通过环境变量注入（`DEEPSEEK_CHAT_API_KEY`、`ELEVENLABS_API_KEY` 等），不写进仓库
 

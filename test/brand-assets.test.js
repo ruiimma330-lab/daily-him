@@ -47,7 +47,7 @@ test('all generated app icons and launch images keep their required dimensions',
   }
 });
 
-test('manifest and visible logo containers use the B2 midnight blue while PWA stays on version 14', () => {
+test('manifest and visible logo containers use the B2 midnight blue while PWA stays on version 15', () => {
   const manifest = JSON.parse(fs.readFileSync(path.join(PUBLIC, 'manifest.webmanifest'), 'utf8'));
   assert.equal(manifest.background_color, '#13213F');
   assert.equal(manifest.theme_color, '#13213F');
@@ -56,5 +56,5 @@ test('manifest and visible logo containers use the B2 midnight blue while PWA st
   const sw = fs.readFileSync(path.join(PUBLIC, 'sw.js'), 'utf8');
   assert.match(shell, /\.mark \{[^}]*border-radius: 22px;[^}]*background: #13213f;/);
   assert.match(login, /\.mark \{[\s\S]*?border-radius: 20px;[\s\S]*?background: #13213f;/);
-  assert.match(sw, /const VERSION = 'dh-pwa-14';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-15';/);
 });

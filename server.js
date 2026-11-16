@@ -4,6 +4,7 @@ const path = require('path');
 const express = require('express');
 const compression = require('compression');
 const bcrypt = require('bcryptjs');
+const QRCode = require('qrcode');
 const store = require('./lib/store');
 const relationship = require('./lib/relationship');
 const characters = require('./lib/characters');
@@ -42,6 +43,45 @@ function readEnv(name) {
   const value = process.env[name];
   if (typeof value !== 'string') return '';
   return value.trim();
+}
+
+const DEFAULT_PUBLIC_SITE_URL = 'https://dailyhim.cn';
+
+function normalizeSiteUrl(value, fallback = '') {
+  try {
+    const url = new URL(String(value || fallback));
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return fallback;
+    url.username = '';
+    url.password = '';
+    url.search = '';
+    url.hash = '';
+    return url.toString().replace(/\/+$/, '');
+  } catch (_) {
+    return fallback;
+  }
+}
+
+function publicSiteUrl() {
+  return normalizeSiteUrl(readEnv('PUBLIC_SITE_URL'), DEFAULT_PUBLIC_SITE_URL);
+}
+
+function movedToUrl() {
+  return normalizeSiteUrl(readEnv('MOVED_TO_URL'));
+}
+
+function movedSiteMiddleware(req, res, next) {
+  const destination = movedToUrl();
+  if (!destination || req.path === '/api/health' || !['GET', 'HEAD'].includes(req.method)) return next();
+  const isPage = req.path === '/' || req.path === '/login' || req.path.endsWith('.html');
+  if (!isPage) return next();
+  const hostname = new URL(destination).hostname;
+  res.set('Cache-Control', 'no-store');
+  res.type('html').send(`<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Daily Him 已搬家</title>
+<style>html{color-scheme:light}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f8f7f5;color:#13213f;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}.card{width:min(420px,calc(100% - 40px));text-align:center}.mark{font-family:Georgia,serif;font-size:42px;font-style:italic}h1{margin:24px 0 10px;font-size:22px}p{color:#667085;line-height:1.7}a{display:block;margin-top:26px;padding:14px 18px;background:#13213f;color:#fff;text-decoration:none;border-radius:8px}</style>
+</head><body><main class="card"><div class="mark">Daily Him</div><h1>Daily Him 已搬家到 ${hostname}</h1>
+<p>请从新地址继续使用，并重新添加到桌面。</p><a href="${destination}">前往 ${hostname}</a></main></body></html>`);
 }
 
 function requireKeys() {
@@ -292,6 +332,8 @@ const PUBLIC_PATHS = new Set([
   '/api/auth-config',
   '/api/site-login',
   '/api/health',
+  '/api/site-config',
+  '/api/install-qr.svg',
   '/manifest.webmanifest',
 ]);
 
@@ -529,6 +571,9 @@ function isGatePublicPath(p) {
     || p === '/login.html'
     || p === '/api/site-login'
     || p === '/api/auth-config'
+    || p === '/api/health'
+    || p === '/api/site-config'
+    || p === '/api/install-qr.svg'
     || p === '/manifest.webmanifest'
     || p.startsWith('/icons/')
     || isBrandPath(p)
@@ -705,6 +750,7 @@ function createApp() {
   app.set('strict routing', false);
   app.set('trust proxy', process.env.NODE_ENV === 'production' ? 1 : false);
   app.use(compression());
+  app.use(movedSiteMiddleware);
   app.use(gateMiddleware);
   app.use(express.json({ limit: HISTORY_BODY_LIMIT }));
   app.use((req, res, next) => {
@@ -730,6 +776,32 @@ function createApp() {
   app.get('/manifest.webmanifest', (req, res) => {
     res.type('application/manifest+json');
     res.sendFile(path.join(PUBLIC_DIR, 'manifest.webmanifest'));
+  });
+
+  app.get('/api/site-config', (req, res) => {
+    const siteUrl = publicSiteUrl();
+    res.set('Cache-Control', 'no-store');
+    res.json({
+      siteUrl,
+      installUrl: new URL('/shell/install.html', `${siteUrl}/`).toString(),
+      shareUrl: siteUrl,
+    });
+  });
+
+  app.get('/api/install-qr.svg', async (req, res, next) => {
+    try {
+      const installUrl = new URL('/shell/install.html', `${publicSiteUrl()}/`).toString();
+      const svg = await QRCode.toString(installUrl, {
+        type: 'svg',
+        width: 222,
+        margin: 4,
+        color: { dark: '#111111', light: '#ffffff' },
+      });
+      res.set('Cache-Control', 'no-store');
+      res.type('image/svg+xml').send(svg);
+    } catch (err) {
+      next(err);
+    }
   });
 
   // Optional site-wide password (APP_PASSWORD). Unlock register/login UI.

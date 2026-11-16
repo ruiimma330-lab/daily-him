@@ -1,7 +1,7 @@
 # Daily Him 安卓安装包
 
 这是 TWA 外壳，包名 `com.dailyhim.app`，显示名 **Daily Him**，打开
-`https://idol-chat.onrender.com/shell/cover.html`。网页和账号仍使用现有站点。
+`${PUBLIC_SITE_URL}/shell/cover.html`（未设置时为 `https://dailyhim.cn`）。网页和账号仍使用现有站点。
 需要 Android 6.0+、网络和支持 TWA 的浏览器（推荐 Chrome）；域名验证未完成时会显示浏览器工具栏。
 
 ## 构建
@@ -17,6 +17,7 @@ keytool -genkeypair -keystore /secure/location/daily-him-release.jks \
   -alias daily-him -keyalg RSA -keysize 3072 -validity 10000
 export ANDROID_KEYSTORE_PATH=/secure/location/daily-him-release.jks
 export ANDROID_KEY_ALIAS=daily-him
+export PUBLIC_SITE_URL=https://dailyhim.cn
 # 用本地安全输入提供 ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_PASSWORD，切勿写进仓库。
 bash scripts/build-android.sh
 ```
@@ -35,7 +36,7 @@ bash scripts/build-android.sh
 
 **必须匹配的是签名证书 SHA-256，不能使用 APK 文件的 SHA-256 代替。**
 脚本自动从最终 APK 提取，写入 `sha256_cert_fingerprints` 并打印在构建日志中。
-域名声明必须从 `https://idol-chat.onrender.com/.well-known/assetlinks.json`
+域名声明必须从 `${PUBLIC_SITE_URL}/.well-known/assetlinks.json`
 以 HTTP 200、JSON 内容直接返回，不能要求登录。
 
 当前环境无 JDK/Android SDK，且无法解析 `dl.google.com`，代理连接也不可用，

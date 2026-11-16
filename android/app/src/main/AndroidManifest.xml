@@ -9,7 +9,7 @@
         <activity android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
             android:exported="true" android:label="Daily Him">
             <meta-data android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="https://idol-chat.onrender.com/shell/cover.html" />
+                android:value="${startUrl}" />
             <meta-data android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR" android:resource="@color/dark" />
             <meta-data android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR" android:resource="@color/dark" />
             <intent-filter>

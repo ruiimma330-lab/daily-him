@@ -52,6 +52,8 @@ History is stored **on the server per user** under `data/history/<userId>.json` 
 | `LLM_TIMEOUT_MS` | `90000` |
 | `SESSION_SECRET` | required in production |
 | `APP_PASSWORD` | optional site gate |
+| `PUBLIC_SITE_URL` | `https://dailyhim.cn` |
+| `MOVED_TO_URL` | unset; when set, HTML pages show the move notice |
 
 ### Which chat model to run
 
@@ -81,7 +83,8 @@ Generated mp3 files are cached in `cache/audio/` and served at `/audio/<sha256>.
 
 ## API
 
-- `GET /api/health` → `{ ok, model, voiceId, ttsModel }` (requires login unless you hit it after unlocking)
+- `GET /api/health` → public `{ ok, storage }`; logged-in requests may also include runtime details
+- `GET /api/site-config` → public site, install, and share URLs
 - `GET /api/auth-config` → `{ siteGate, siteUnlocked, loggedIn }`
 - `POST /api/site-login` `{ password }` → optional site gate unlock
 - `POST /api/register` `{ username, password }` → set session
@@ -120,6 +123,8 @@ Register / login are rate-limited (per IP + global failure window).
    - `ELEVENLABS_API_KEY`（必填）
    - `SESSION_SECRET`（必填；自己生成的一长串随机字符）
    - `APP_PASSWORD`（可选；站点总闸，开启后要先输入它再注册/登录账号）
+   - `PUBLIC_SITE_URL`（新站填写 `https://dailyhim.cn`）
+   - `MOVED_TO_URL`（仅旧站填写 `https://dailyhim.cn`，新站留空）
 4. `render.yaml` 里已经把 `NODE_ENV` 设成 `production`。生产环境没设 `SESSION_SECRET` 时，服务会报错退出。
 5. 免费套餐闲置一段时间后会休眠，下次打开网址要等它醒来。`data/` 与 `cache/audio/` 都在实例本地盘上，**休眠 / 重启 / 重新部署后可能被清空**；账号与聊天记录下一步应迁到 Turso 等云库。
 6. 部署完成后打开 Render 给的网址：如开启了 `APP_PASSWORD` 先解锁站点，再 **注册** 用户名密码进入聊天。

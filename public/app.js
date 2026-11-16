@@ -148,7 +148,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     document.title = `Daily Him · ${shownName()}`;
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-14`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-15`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
