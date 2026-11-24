@@ -2,6 +2,7 @@ name: refresh moments
 
 on:
   schedule:
+    # 每天北京时间 09:00（UTC 01:00）拉一次开放角色的公开资讯草稿
     - cron: '0 1 * * *'
   workflow_dispatch:
 
@@ -9,7 +10,7 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Wake the app and refresh official moments
+      - name: Wake the app and refresh moments for all online characters
         env:
           MOMENTS_REFRESH_SECRET: ${{ secrets.MOMENTS_REFRESH_SECRET }}
           APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
@@ -18,7 +19,8 @@ jobs:
             echo "Moments refresh is not configured. Skipping."
             exit 0
           fi
+          # characterId=all → 只刷新当前 available=true 的开放角色（现为 10 位）
           curl -fsS -X POST "${APP_BASE_URL%/}/api/moments/refresh" \
             -H "Authorization: Bearer ${MOMENTS_REFRESH_SECRET}" \
             -H "Content-Type: application/json" \
-            -d '{"characterId":"baekhyun"}'
+            -d '{"characterId":"all"}'

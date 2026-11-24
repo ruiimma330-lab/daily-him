@@ -35,3 +35,27 @@ test('moments UI explains artist news and event previews', () => {
   assert.match(js, /mom-kind/);
   assert.match(css, /\.mom-kind-preview/);
 });
+
+test('daily refresh targets all currently open characters', () => {
+  const refresh = require('../lib/moments-refresh');
+  const workflow = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'moments-refresh.yml'), 'utf8');
+  const ids = refresh.onlineCharacterIds();
+  assert.equal(ids.length, 10);
+  assert.deepEqual(ids, [
+    'baekhyun',
+    'dohoon',
+    'jimin',
+    'jungkook',
+    'karina',
+    'myungjaehyun',
+    'taehyung',
+    'wonbin',
+    'wonyoung',
+    'zhanghao',
+  ]);
+  assert.match(workflow, /"characterId":"all"/);
+  assert.match(
+    fs.readFileSync(path.join(__dirname, '..', 'deploy', 'hk', 'README.md'), 'utf8'),
+    /朋友圈如何保证更新/,
+  );
+});
