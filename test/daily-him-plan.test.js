@@ -401,8 +401,8 @@ test('a slow clip is not awaited: the text arrives with ttsPending, and /api/tts
   assert.ok(followUp.json.audioUrl);
   assert.equal(followUp.json.joined, true);
   const balanceAfter = (await request('/api/starlight', { cookie })).json.balance;
-  // One synthesis (15) + one text turn (1) — never a second voice charge.
-  assert.equal(balanceBefore - balanceAfter, 16);
+  // One synthesis (15) + one text turn (3) — never a second voice charge.
+  assert.equal(balanceBefore - balanceAfter, 18);
   assert.equal(elevenCalls, before + 1, 'the follow-up call must not synthesize again');
   elevenMode = 'ok';
 });
@@ -426,7 +426,7 @@ test('an empty balance answers immediately with the 先看文字 notice and no s
   const poor = await request('/api/register', {
     method: 'POST', body: { username: `poor${Date.now().toString(36)}`, password: 'password1', age14: true },
   });
-  await starlight.reserve({ userId: poor.json.user.id, requestId: 'drain-dh', action: 'text', amount: 99 });
+  await starlight.reserve({ userId: poor.json.user.id, requestId: 'drain-dh', action: 'text', amount: 97 });
   await starlight.settle('drain-dh');
   const before = elevenCalls;
   const chat = await request('/api/chat?characterId=baekhyun', {
@@ -451,5 +451,5 @@ test('a cached clip is not charged again when the chat request replays it', asyn
     method: 'POST', cookie, body: { text, turnId: 'turncachevoice2' },
   });
   assert.ok(replay.json.messages[0].audioUrl);
-  assert.equal((await request('/api/starlight', { cookie })).json.balance, charged - 1);
+  assert.equal((await request('/api/starlight', { cookie })).json.balance, charged - 3);
 });

@@ -130,17 +130,19 @@ test.after(async () => {
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
 
-test('a reply spends one star, a failed reply is returned, and an empty balance never calls the model', async () => {
+test('a reply spends three stars, a failed reply is returned, and an empty balance never calls the model', async () => {
   const opened = await request('/api/starlight', { cookie: fan.cookie });
   assert.equal(opened.status, 200);
   assert.equal(opened.json.balance, 100);
+  assert.equal(opened.json.prices.text, 3);
+  assert.equal(opened.json.prices.voice, 15);
   const chat = await request('/api/chat?characterId=baekhyun', {
     method: 'POST', cookie: fan.cookie, body: { text: '안녕', turnId: 'turnstar01', voice: false },
   });
   assert.equal(chat.status, 200);
   assert.equal(calls > 0, true);
   const after = await request('/api/starlight', { cookie: fan.cookie });
-  assert.equal(after.json.balance, 99);
+  assert.equal(after.json.balance, 97);
   const beforeFail = calls;
   const failed = await request('/api/chat?characterId=baekhyun', {
     method: 'POST', cookie: fan.cookie, body: { text: '这次失败', turnId: 'turnstar02', voice: false },
@@ -152,9 +154,9 @@ test('a reply spends one star, a failed reply is returned, and an empty balance 
   assert.ok(textFallbacks.includes(failed.json.messages[0].ko));
   assert.equal(store.getHistory(fan.json.user.id, 'baekhyun').at(-1).fallback, true);
   const refunded = await request('/api/starlight', { cookie: fan.cookie });
-  assert.equal(refunded.json.balance, 99);
+  assert.equal(refunded.json.balance, 97);
   await starlight.reserve({
-    userId: fan.json.user.id, requestId: 'drain', action: 'text', amount: 99,
+    userId: fan.json.user.id, requestId: 'drain', action: 'text', amount: 97,
   });
   await starlight.settle('drain');
   const drained = calls;
@@ -196,7 +198,7 @@ test('chat voice uses the same charge, and Turso never falls back to the file le
   assert.ok(first.json.messages[0].audioUrl);
   assert.equal(global.voiceCalls, before + 1);
   const charged = (await request('/api/starlight', { cookie: speaker.cookie })).json.balance;
-  assert.equal(charged, start - 16);
+  assert.equal(charged, start - 18);
 
   const replay = await request('/api/chat?characterId=baekhyun', {
     method: 'POST', cookie: speaker.cookie, body: { text: `tag${stamp} 다시`, turnId: 'turnvoice02' },
@@ -204,7 +206,7 @@ test('chat voice uses the same charge, and Turso never falls back to the file le
   assert.equal(replay.status, 200);
   assert.ok(replay.json.messages[0].audioUrl);
   assert.equal(global.voiceCalls, before + 1);
-  assert.equal((await request('/api/starlight', { cookie: speaker.cookie })).json.balance, charged - 1);
+  assert.equal((await request('/api/starlight', { cookie: speaker.cookie })).json.balance, charged - 3);
 
   const brokenBefore = (await request('/api/starlight', { cookie: speaker.cookie })).json.balance;
   const broken = await request('/api/chat?characterId=baekhyun', {
@@ -212,10 +214,10 @@ test('chat voice uses the same charge, and Turso never falls back to the file le
   });
   assert.equal(broken.status, 200);
   assert.equal(broken.json.messages[0].audioUrl, null);
-  assert.equal((await request('/api/starlight', { cookie: speaker.cookie })).json.balance, brokenBefore - 1);
+  assert.equal((await request('/api/starlight', { cookie: speaker.cookie })).json.balance, brokenBefore - 3);
 
   const poor = await request('/api/register', { method: 'POST', body: { username: `poor${stamp}`, password: 'password1', age14: true } });
-  await starlight.reserve({ userId: poor.json.user.id, requestId: 'leave-one', action: 'text', amount: 99 });
+  await starlight.reserve({ userId: poor.json.user.id, requestId: 'leave-one', action: 'text', amount: 97 });
   await starlight.settle('leave-one');
   const voices = global.voiceCalls;
   const short = await request('/api/chat?characterId=baekhyun', {
@@ -236,6 +238,8 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
   assert.match(station, /充值尚未开通，星光可每日领取或使用兑换码。/);
   assert.match(station, /充值（即将开通）/);
   assert.match(station, /id="redeem-panel" hidden/);
+  assert.match(station, /id="prices"/);
+  assert.match(station, /id="code-custom"/);
   assert.ok(station.indexOf('id="packages"') < station.indexOf('id="redeem-section"'));
   assert.match(station, /alert\('测试环境，暂未开通'\)/);
   assert.doesNotMatch(station, /class="price">¥/);
@@ -243,4 +247,32 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
   assert.doesNotMatch(legacy, /\/api\/wallet\/purchase/);
   assert.doesNotMatch(app, /\/shell\/recharge\.html/);
   assert.doesNotMatch(loading, /\/shell\/recharge\.html/);
+});
+
+test('seed codes and custom redeem codes work once', async () => {
+  assert.equal(starlight.priceText('hi', 'yo'), 3);
+  assert.equal(starlight.loadConfig().voice, 15);
+  const seeded = await starlight.ensureSeedCodes();
+  assert.equal(seeded.ok, true);
+  const user = 'c'.repeat(32);
+  await starlight.ensure(user);
+  const before = (await starlight.summary(user)).balance;
+  const once = await starlight.redeem(user, 'DH-STAR-100');
+  assert.equal(once.ok, true);
+  assert.equal(once.amount, 100);
+  assert.equal((await starlight.summary(user)).balance, before + 100);
+  assert.equal((await starlight.redeem(user, 'dh-star-100')).code, 'already');
+  const custom = await starlight.createCode({
+    code: 'promo-vip-88', amount: 88, maxUses: 2, createdBy: 'test',
+  });
+  assert.equal(custom.ok, true);
+  assert.equal(custom.code, 'PROMO-VIP-88');
+  const taken = await starlight.createCode({
+    code: 'PROMO-VIP-88', amount: 10, maxUses: 1, createdBy: 'test',
+  });
+  assert.equal(taken.ok, false);
+  assert.equal(taken.code, 'taken');
+  const other = 'd'.repeat(32);
+  await starlight.ensure(other);
+  assert.equal((await starlight.redeem(other, 'PROMO-VIP-88')).ok, true);
 });

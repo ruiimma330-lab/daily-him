@@ -1488,8 +1488,13 @@ function createApp() {
       amount: req.body && req.body.amount,
       maxUses: req.body && req.body.maxUses,
       expiresAt: req.body && req.body.expiresAt,
+      code: req.body && req.body.code,
       createdBy: req.userId,
     });
+    if (!created.ok) {
+      const status = created.code === 'taken' ? 409 : 400;
+      return res.status(status).json({ error: created.code || 'bad-code' });
+    }
     return res.json({ ok: true, ...created });
   });
 
