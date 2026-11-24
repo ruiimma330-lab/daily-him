@@ -1148,7 +1148,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       if (el('me-call')) el('me-call').textContent = p.callName || '—';
       if (typeof p.characterNickname === 'string') charRemark = p.characterNickname;
       applyCharacterLabels();
-      if (el('me-balance')) el('me-balance').textContent = String(wal.balance ?? 0);
+      if (el('me-balance')) el('me-balance').textContent = wal.unlimited ? '无限' : String(wal.balance ?? 0);
     } catch (_) { /* ignore */ }
   }
 

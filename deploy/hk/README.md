@@ -59,7 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/ruiimma330-lab/idol-chat/main/deplo
 - `LLM_EFFORT`
 - `VOICE_ID`
 - `TTS_MODEL`
-- `ADMINS`
+- `ADMINS`（逗号分隔用户名；列表内账号星光无限，并可发放星光 / 生成兑换码）
 - `MOMENTS_ADMINS`
 - `SESSION_SECRET`
 - `MOMENTS_REFRESH_SECRET`
@@ -108,6 +108,19 @@ curl -fsS -X POST 'https://dailyhim.cn/api/moments/refresh' \
   -H 'Content-Type: application/json' \
   -d '{"characterId":"all"}'
 ```
+
+## 管理员无限星光
+
+在 `/etc/dailyhim.env` 设置：
+
+```bash
+ADMINS=你的用户名
+```
+
+多个管理员用逗号分隔。列表内账号对话 / 语音不扣星光，补给站显示「无限」，并可用补给站里的管理员表单发放星光、生成兑换码。  
+朋友圈管理仍用 `MOMENTS_ADMINS`；两个列表可写成同一个用户名。
+
+改完后按下方「修改环境变量」reload PM2。
 
 ## 修改环境变量
 

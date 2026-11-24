@@ -280,9 +280,13 @@
     card.className = 'me-group me-starlight';
     card.setAttribute('aria-label', '星光');
     const data = state.starlight;
-    const balance = data ? `${data.balance ?? 0} 星光` : '余额暂不可用';
+    const balance = data
+      ? (data.unlimited ? '无限星光' : `${data.balance ?? 0} 星光`)
+      : '余额暂不可用';
     const status = data
-      ? (data.claimedToday ? `今日已领取 · 连续 ${data.streak || 0} 天` : '今日可领取')
+      ? (data.unlimited
+        ? '管理员账号'
+        : (data.claimedToday ? `今日已领取 · 连续 ${data.streak || 0} 天` : '今日可领取'))
       : '领取状态暂不可用';
     const row = line(balance, status, () => { location.href = '/shell/starlight.html#claim'; });
     row.querySelector('b').className = 'me-label';

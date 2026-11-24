@@ -240,6 +240,7 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
   assert.match(station, /id="redeem-panel" hidden/);
   assert.match(station, /id="prices"/);
   assert.match(station, /id="code-custom"/);
+  assert.match(station, /data\.unlimited \? '无限'/);
   assert.ok(station.indexOf('id="packages"') < station.indexOf('id="redeem-section"'));
   assert.match(station, /alert\('测试环境，暂未开通'\)/);
   assert.doesNotMatch(station, /class="price">¥/);
@@ -247,6 +248,45 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
   assert.doesNotMatch(legacy, /\/api\/wallet\/purchase/);
   assert.doesNotMatch(app, /\/shell\/recharge\.html/);
   assert.doesNotMatch(loading, /\/shell\/recharge\.html/);
+});
+
+test('ADMINS users get unlimited starlight and can still chat at zero balance', async () => {
+  const stamp = Date.now().toString(36);
+  const username = `adm${stamp}`;
+  const admin = await request('/api/register', {
+    method: 'POST', body: { username, password: 'password1', age14: true },
+  });
+  assert.ok(admin.status === 200 || admin.status === 201);
+  process.env.ADMINS = username;
+  const view = await request('/api/starlight', { cookie: admin.cookie });
+  assert.equal(view.status, 200);
+  assert.equal(view.json.unlimited, true);
+  assert.match(view.json.notice, /星光无限/);
+
+  const balance = view.json.balance;
+  await starlight.reserve({
+    userId: admin.json.user.id, requestId: `drain-admin-${stamp}`, action: 'text', amount: Math.max(1, balance),
+  });
+  // waived: balance untouched even when amount exceeds what a normal wallet would allow
+  const drained = await request('/api/starlight', { cookie: admin.cookie });
+  assert.equal(drained.json.unlimited, true);
+  assert.equal(drained.json.balance, balance);
+
+  const hold = await starlight.reserve({
+    userId: admin.json.user.id, requestId: `waive-${stamp}`, action: 'voice', amount: 15,
+  });
+  assert.equal(hold.ok, true);
+  assert.equal(hold.status, 'waived');
+  assert.equal(hold.unlimited, true);
+
+  const beforeCalls = calls;
+  const chat = await request('/api/chat?characterId=baekhyun', {
+    method: 'POST', cookie: admin.cookie, body: { text: '안녕', turnId: `turnadm${stamp}`, voice: false },
+  });
+  assert.equal(chat.status, 200);
+  assert.equal(calls > beforeCalls, true);
+  assert.equal((await request('/api/starlight', { cookie: admin.cookie })).json.balance, balance);
+  delete process.env.ADMINS;
 });
 
 test('seed codes and custom redeem codes work once', async () => {
