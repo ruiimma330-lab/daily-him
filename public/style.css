@@ -492,6 +492,13 @@ button, input { -webkit-tap-highlight-color: transparent; }
   gap: 12px;
 }
 
+.menu-row small {
+  color: #8a8f98;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
 .menu .danger { color: #e5484d; }
 
 .switch {

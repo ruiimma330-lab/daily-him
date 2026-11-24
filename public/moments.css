@@ -37,6 +37,15 @@
 .mom-back { width: 40px; height: 40px; border: 0; background: none; font-size: 26px; line-height: 1; color: var(--mom-ink); cursor: pointer; }
 .mom-head-pad { width: 40px; }
 .mom-hero { display: none; }
+.mom-lead {
+  margin: 0;
+  padding: 12px 16px 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  color: var(--mom-muted);
+  flex: none;
+}
 .mom-feed { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--mom-bg); }
 .mom-empty { text-align: center; color: var(--mom-muted); font-size: 13px; letter-spacing: 0.06em; margin: 48px 0; }
 
@@ -74,11 +83,46 @@
 .mom-ico { width: 28px; height: 28px; border: 0; background: none; color: var(--mom-ink); padding: 0; display: grid; place-items: center; cursor: pointer; }
 .mom-ico svg { width: 22px; height: 22px; display: block; }
 .mom-ico.on svg { fill: currentColor; }
+.mom-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 14px 2px;
+}
+.mom-kind {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--mom-muted);
+  border: 1px solid var(--mom-line);
+  padding: 2px 7px;
+  line-height: 1.4;
+}
+.mom-kind-preview { color: #1c1c1c; border-color: rgba(28, 28, 28, 0.22); }
+.mom-kind-event { color: #4a463f; }
+.mom-title-line {
+  margin: 0;
+  flex: 1 1 12rem;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
 .mom-likes { margin: 2px 14px 0; font-size: 13px; font-weight: 500; }
 .mom-likes[hidden] { display: none; }
 .mom-caption { margin: 6px 14px 0; font-size: 14px; line-height: 1.45; font-weight: 300; white-space: pre-wrap; word-break: break-word; }
 .mom-caption b { font-weight: 500; margin-right: 6px; }
 .mom-zh { margin: 4px 14px 0; font-size: 13px; line-height: 1.45; font-weight: 300; color: var(--mom-muted); white-space: pre-wrap; }
+.mom-link {
+  display: inline-block;
+  margin: 8px 14px 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--mom-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .mom-view { display: block; margin: 8px 14px 0; padding: 0; border: 0; background: none; color: var(--mom-muted); font-size: 13px; font-weight: 400; cursor: pointer; text-align: left; }
 .mom-thread { margin: 8px 14px 0; }
 .mom-thread[hidden] { display: none; }

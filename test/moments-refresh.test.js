@@ -137,10 +137,14 @@ test('drafts stay hidden, admins can review them, and an unset secret turns refr
     const result = await refresh.refreshCharacter('baekhyun', {
       fetchImpl: global.fetch,
       now: NOW,
-      llm: async () => JSON.stringify({ ko: '오늘 소식 하나 있어.', zh: '今天有一条消息。' }),
+      llm: async () => JSON.stringify({
+        kind: 'preview', title: '새 일정', ko: '오늘 소식 하나 있어.', zh: '今天有一条消息。',
+      }),
     });
     assert.equal(result.enabled, true);
     assert.equal(result.drafted, 2);
+    assert.equal(desk.draftsFor('baekhyun')[0].kind, 'preview');
+    assert.equal(desk.draftsFor('baekhyun')[0].title, '새 일정');
     const again = await refresh.refreshCharacter('baekhyun', {
       fetchImpl: global.fetch,
       now: NOW,

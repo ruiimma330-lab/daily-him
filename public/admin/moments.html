@@ -19,6 +19,7 @@
 <body>
   <main>
     <h1>朋友圈草稿</h1>
+    <p class="note">定位：近况资讯 / 活动预告 / 活动速递。发布后会作为艺人消息出现在朋友圈。</p>
     <p id="note" class="note">正在确认权限…</p>
     <div id="list"></div>
   </main>
@@ -48,6 +49,21 @@
       note.textContent = '这些草稿普通用户看不到。';
       drafts.forEach((draft) => {
         const card = document.createElement('article');
+        const kind = document.createElement('select');
+        [['news', '近况'], ['preview', '预告'], ['event', '活动']].forEach(([value, label]) => {
+          const opt = document.createElement('option');
+          opt.value = value;
+          opt.textContent = label;
+          if ((draft.kind || 'news') === value) opt.selected = true;
+          kind.append(opt);
+        });
+        const title = document.createElement('input');
+        title.type = 'text';
+        title.placeholder = '标题（可选）';
+        title.value = draft.title || '';
+        title.maxLength = 80;
+        title.style.width = '100%';
+        title.style.margin = '8px 0';
         const ko = document.createElement('textarea');
         ko.value = draft.ko || '';
         const zh = document.createElement('textarea');
@@ -61,7 +77,7 @@
         save.addEventListener('click', async () => {
           await api('/api/admin/moments/' + encodeURIComponent(draft.id), {
             method: 'PUT',
-            body: JSON.stringify({ ko: ko.value, zh: zh.value }),
+            body: JSON.stringify({ kind: kind.value, title: title.value, ko: ko.value, zh: zh.value }),
           });
           note.textContent = '已保存';
         });
@@ -79,7 +95,7 @@
           await api('/api/admin/moments/' + encodeURIComponent(draft.id) + '/discard', { method: 'POST' });
           load();
         });
-        card.append(ko, zh, src, save, publish, discard);
+        card.append(kind, title, ko, zh, src, save, publish, discard);
         list.append(card);
       });
     }
