@@ -4,6 +4,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-batch1-'));
 process.env.STORE_DATA_DIR = data;
 process.env.SESSION_SECRET = 'batch1-test-session-secret-123456789';
@@ -30,7 +31,7 @@ test.before(async () => {
   server = require('../server').createApp().listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
   base = `http://127.0.0.1:${server.address().port}`;
-  const r = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'batch1tester', password: 'password123', age14: true }) });
+  const r = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: digitUsername(), password: 'password123', age14: true }) });
   cookie = r.headers.get('set-cookie').match(/sid=[^;]+/)[0];
 
 });
@@ -102,7 +103,7 @@ test('picker lists retained deferred characters and chat/TTS reject them while B
   assert.equal(history.status, 200);
   assert.deepEqual((await history.json()).messages, saved);
   assert.deepEqual(store.getHistory(me.user.id, 'anton'), saved);
-  const registration = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'rosterother', password: 'password123', age14: true }) });
+  const registration = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: digitUsername(), password: 'password123', age14: true }) });
   const other = registration.headers.get('set-cookie').match(/sid=[^;]+/)[0];
   assert.deepEqual((await (await get('/api/conversations', other)).json()).conversations, []);
   assert.equal((await get('/api/history?characterId=anton', other)).status, 404);

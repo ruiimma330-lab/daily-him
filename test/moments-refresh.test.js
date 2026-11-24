@@ -3,6 +3,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 const sources = require('../lib/moments-sources');
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-moments-'));
@@ -92,10 +93,10 @@ test.before(async () => {
   server = createApp().listen(0, '127.0.0.1');
   await new Promise((resolve) => server.once('listening', resolve));
   base = `http://127.0.0.1:${server.address().port}`;
-  const stamp = Date.now().toString(36);
-  fan = await request('/api/register', { method: 'POST', body: { username: `fan${stamp}`, password: 'password1', age14: true } });
-  admin = await request('/api/register', { method: 'POST', body: { username: `adm${stamp}`, password: 'password1', age14: true } });
-  process.env.MOMENTS_ADMINS = `adm${stamp}`;
+  fan = await request('/api/register', { method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true } });
+  const adminName = digitUsername();
+  admin = await request('/api/register', { method: 'POST', body: { username: adminName, password: 'password1', age14: true } });
+  process.env.MOMENTS_ADMINS = adminName;
 });
 
 test.after(async () => {

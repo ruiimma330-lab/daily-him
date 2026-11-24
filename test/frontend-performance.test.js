@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 
 const ROOT = path.join(__dirname, '..');
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-front-performance-'));
@@ -38,7 +39,7 @@ test.before(async () => {
   const registered = await fetch(base + '/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: `front_${Date.now().toString(36)}`, password: 'password123', age14: true }),
+    body: JSON.stringify({ username: digitUsername(), password: 'password123', age14: true }),
   });
   cookie = (registered.headers.get('set-cookie') || '').match(/sid=[^;]+/)[0];
 });

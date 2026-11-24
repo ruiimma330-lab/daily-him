@@ -33,7 +33,9 @@ const AUDIO_DIR = path.join(ROOT, 'cache', 'audio');
 const CONFIG_PATH = path.join(ROOT, 'config.json');
 
 const BCRYPT_ROUNDS = 10;
-const USERNAME_RE = /^[a-zA-Z0-9_]{3,32}$/;
+// New registrations: 8–12 digit account numbers only. Login still accepts legacy usernames.
+const REGISTER_USERNAME_RE = /^\d{8,12}$/;
+const LOGIN_USERNAME_RE = /^[a-zA-Z0-9_]{3,32}$/;
 const PASSWORD_MIN = 8;
 const PASSWORD_MAX = 128;
 const HISTORY_BODY_LIMIT = '1mb';
@@ -667,8 +669,12 @@ function requireAvailable(req, res, next) {
   return next();
 }
 
-function validateUsername(username) {
-  return typeof username === 'string' && USERNAME_RE.test(username.trim());
+function validateRegisterUsername(username) {
+  return typeof username === 'string' && REGISTER_USERNAME_RE.test(username.trim());
+}
+
+function validateLoginUsername(username) {
+  return typeof username === 'string' && LOGIN_USERNAME_RE.test(username.trim());
 }
 
 function validatePassword(password) {
@@ -878,7 +884,7 @@ function createApp() {
     }
     const username = req.body && req.body.username;
     const password = req.body && req.body.password;
-    if (!validateUsername(username) || !validatePassword(password) || !req.body || req.body.age14 !== true) {
+    if (!validateRegisterUsername(username) || !validatePassword(password) || !req.body || req.body.age14 !== true) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
     try {
@@ -913,7 +919,7 @@ function createApp() {
     }
     const username = req.body && req.body.username;
     const password = req.body && req.body.password;
-    if (!validateUsername(username) || typeof password !== 'string' || !password) {
+    if (!validateLoginUsername(username) || typeof password !== 'string' || !password) {
       recordAuthFailure();
       return res.status(401).json({ error: 'Unauthorized' });
     }

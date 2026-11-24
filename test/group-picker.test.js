@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 const data = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-group-picker-'));
 process.env.STORE_DATA_DIR = data;
 process.env.SESSION_SECRET = 'group-picker-test-session-secret-123456';
@@ -134,7 +135,7 @@ test.before(async () => {
   server = require('../server').createApp().listen(0, '127.0.0.1');
   await new Promise((resolve, reject) => { server.once('listening', resolve); server.once('error', reject); });
   base = `http://127.0.0.1:${server.address().port}`;
-  const r = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'grouppicker', password: 'password123', age14: true }) });
+  const r = await fetch(base + '/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: digitUsername(), password: 'password123', age14: true }) });
   cookie = r.headers.get('set-cookie').match(/sid=[^;]+/)[0];
   userId = (await (await fetch(base + '/api/me', { headers: { Cookie: cookie } })).json()).user.id;
 });
