@@ -1,6 +1,6 @@
 {
-  "text": 1,
-  "textLong": 2,
+  "text": 3,
+  "textLong": 4,
   "textLongUser": 800,
   "textLongReply": 400,
   "voice": 15,
@@ -18,5 +18,11 @@
     { "id": "s30", "priceYuan": 30, "amount": 1680 },
     { "id": "s68", "priceYuan": 68, "amount": 4000 },
     { "id": "s128", "priceYuan": 128, "amount": 8000 }
+  ],
+  "seedCodes": [
+    { "code": "DH-STAR-100", "amount": 100, "maxUses": 100 },
+    { "code": "DH-STAR-300", "amount": 300, "maxUses": 50 },
+    { "code": "DH-STAR-500", "amount": 500, "maxUses": 30 },
+    { "code": "DH-STAR-1000", "amount": 1000, "maxUses": 10 }
   ]
 }
