@@ -3,6 +3,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-voice-pack-'));
 process.env.STORE_DATA_DIR = dataDir;
@@ -218,7 +219,7 @@ test.before(async () => {
   await new Promise((resolve) => serverApp.once('listening', resolve));
   base = `http://127.0.0.1:${serverApp.address().port}`;
   const stamp = Date.now().toString(36);
-  fan = await request('/api/register', { method: 'POST', body: { username: `fan${stamp}`, password: 'password1', age14: true } });
+  fan = await request('/api/register', { method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true } });
 });
 
 test.after(async () => {

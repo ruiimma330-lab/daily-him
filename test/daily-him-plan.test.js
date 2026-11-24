@@ -7,6 +7,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-dailyhim-'));
 process.env.STORE_DATA_DIR = dataDir;
@@ -97,7 +98,7 @@ test.before(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
   const created = await request('/api/register', {
     method: 'POST',
-    body: { username: `dh${Date.now().toString(36)}`, password: 'password1', age14: true },
+    body: { username: digitUsername(), password: 'password1', age14: true },
   });
   assert.equal(created.status, 201);
   cookie = created.cookie;
@@ -226,7 +227,7 @@ test('editing rejects unknown ids, empty text, and foreign categories without to
 
 test('another account cannot edit or read this account memory', async () => {
   const other = await request('/api/register', {
-    method: 'POST', body: { username: `dh2${Date.now().toString(36)}`, password: 'password1', age14: true },
+    method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true },
   });
   const stolen = await request('/api/memory/aaaaaaaabbbb?characterId=taehyung', {
     method: 'PATCH', cookie: other.cookie, body: { text: '偷改' },
@@ -424,7 +425,7 @@ test('a voice failure still returns the text and marks ttsFailed so the fallback
 
 test('an empty balance answers immediately with the 先看文字 notice and no synthesis', async () => {
   const poor = await request('/api/register', {
-    method: 'POST', body: { username: `poor${Date.now().toString(36)}`, password: 'password1', age14: true },
+    method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true },
   });
   await starlight.reserve({ userId: poor.json.user.id, requestId: 'drain-dh', action: 'text', amount: 97 });
   await starlight.settle('drain-dh');

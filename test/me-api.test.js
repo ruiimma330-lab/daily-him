@@ -3,6 +3,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-me-'));
 process.env.STORE_DATA_DIR = dataDir;
@@ -56,7 +57,7 @@ test.after(async () => {
 });
 
 test('age gate, prefs, history summary, and account deletion', async () => {
-  const username = `me${Date.now().toString(36)}`;
+  const username = digitUsername();
   const blocked = await request('/api/register', {
     method: 'POST',
     body: { username, password: 'password1' },
@@ -73,7 +74,7 @@ test('age gate, prefs, history summary, and account deletion', async () => {
 
   const other = await request('/api/register', {
     method: 'POST',
-    body: { username: `${username}b`, password: 'password1', age14: true },
+    body: { username: digitUsername(), password: 'password1', age14: true },
   });
   assert.equal(other.status, 201);
 

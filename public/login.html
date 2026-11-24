@@ -216,7 +216,7 @@
         <p class="hint" id="age-links" hidden>注册即表示已阅读 <a href="/legal/terms.html">用户协议</a> 和 <a href="/legal/privacy.html">隐私政策</a></p>
         <button type="submit" id="account-submit">登录</button>
         <p class="error" id="account-error" role="alert"></p>
-        <p class="hint" id="account-hint">用户名为 3–32 位字母、数字或下划线。密码至少 8 位。</p>
+        <p class="hint" id="account-hint">已有账号直接登录。密码至少 8 位。</p>
       </form>
     </div>
     <p class="login-disclaimer" style="margin:24px 0 8px;text-align:center;font-size:11px;color:#9a9a9a;">角色均为 AI 模拟，非本人 · 仅供个人使用</p>
@@ -270,6 +270,15 @@
         lead.textContent = register ? '注册一个账号' : '登录后选择爱豆';
         document.getElementById('age-row').hidden = !register;
         document.getElementById('age-links').hidden = !register;
+        document.getElementById('account-hint').textContent = register
+          ? '账号须为 8–12 位数字，且不可重复。密码至少 8 位。'
+          : '已有账号直接登录（含早期非数字账号）。密码至少 8 位。';
+        username.minLength = register ? 8 : 3;
+        username.maxLength = register ? 12 : 32;
+        username.pattern = register ? '\\d{8,12}' : '[A-Za-z0-9_]{3,32}';
+        username.placeholder = register ? '账号（8–12 位数字）' : '用户名';
+        username.setAttribute('inputmode', register ? 'numeric' : 'text');
+        username.setAttribute('aria-label', register ? '账号（8–12 位数字）' : '用户名');
         accountError.textContent = '';
       }
 
@@ -356,7 +365,9 @@
             return;
           }
           if (response.status === 400) {
-            accountError.textContent = '请检查用户名或密码格式。';
+            accountError.textContent = mode === 'register'
+              ? '账号须为 8–12 位数字，密码至少 8 位。'
+              : '请检查用户名或密码格式。';
             return;
           }
           if (response.status === 401) {

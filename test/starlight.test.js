@@ -15,6 +15,7 @@ delete process.env.MOMENTS_ADMINS;
 process.env.DEEPSEEK_CHAT_API_KEY = 'test-chat-key';
 process.env.ELEVENLABS_API_KEY = 'test-voice-key';
 
+const { digitUsername } = require('./helpers');
 const starlight = require('../lib/starlight');
 const store = require('../lib/store');
 const { createApp } = require('../server');
@@ -120,8 +121,7 @@ test.before(async () => {
   serverApp = createApp().listen(0, '127.0.0.1');
   await new Promise((resolve) => serverApp.once('listening', resolve));
   base = `http://127.0.0.1:${serverApp.address().port}`;
-  const stamp = Date.now().toString(36);
-  fan = await request('/api/register', { method: 'POST', body: { username: `star${stamp}`, password: 'password1', age14: true } });
+  fan = await request('/api/register', { method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true } });
 });
 
 test.after(async () => {
@@ -188,7 +188,7 @@ test('chat voice uses the same charge, and Turso never falls back to the file le
   assert.equal((src.match(/speak: \(\) => voiceExec\.synthesize/g) || []).length, 2);
 
   const stamp = Date.now().toString(36);
-  const speaker = await request('/api/register', { method: 'POST', body: { username: `spk${stamp}`, password: 'password1', age14: true } });
+  const speaker = await request('/api/register', { method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true } });
   const start = (await request('/api/starlight', { cookie: speaker.cookie })).json.balance;
   const before = global.voiceCalls;
   const first = await request('/api/chat?characterId=baekhyun', {
@@ -216,7 +216,7 @@ test('chat voice uses the same charge, and Turso never falls back to the file le
   assert.equal(broken.json.messages[0].audioUrl, null);
   assert.equal((await request('/api/starlight', { cookie: speaker.cookie })).json.balance, brokenBefore - 3);
 
-  const poor = await request('/api/register', { method: 'POST', body: { username: `poor${stamp}`, password: 'password1', age14: true } });
+  const poor = await request('/api/register', { method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true } });
   await starlight.reserve({ userId: poor.json.user.id, requestId: 'leave-one', action: 'text', amount: 97 });
   await starlight.settle('leave-one');
   const voices = global.voiceCalls;
@@ -252,7 +252,7 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
 
 test('ADMINS users get unlimited starlight and can still chat at zero balance', async () => {
   const stamp = Date.now().toString(36);
-  const username = `adm${stamp}`;
+  const username = digitUsername();
   const admin = await request('/api/register', {
     method: 'POST', body: { username, password: 'password1', age14: true },
   });

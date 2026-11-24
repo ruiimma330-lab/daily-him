@@ -3,6 +3,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 const chatContext = require('../lib/chat-context');
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-iso-'));
@@ -76,7 +77,7 @@ test.after(async () => {
 test('missing or unknown character id is rejected', async () => {
   const created = await request('/api/register', {
     method: 'POST',
-    body: { username: `iso${Date.now().toString(36)}`, password: 'password1', age14: true },
+    body: { username: digitUsername(), password: 'password1', age14: true },
   });
   assert.equal(created.status, 201);
   const cookie = created.cookie;
@@ -99,14 +100,13 @@ test('missing or unknown character id is rejected', async () => {
 });
 
 test('two accounts and two characters keep separate histories', async () => {
-  const stamp = Date.now().toString(36);
   const first = await request('/api/register', {
     method: 'POST',
-    body: { username: `a${stamp}`, password: 'password1', age14: true },
+    body: { username: digitUsername(), password: 'password1', age14: true },
   });
   const second = await request('/api/register', {
     method: 'POST',
-    body: { username: `b${stamp}`, password: 'password1', age14: true },
+    body: { username: digitUsername(), password: 'password1', age14: true },
   });
   assert.equal(first.status, 201);
   assert.equal(second.status, 201);

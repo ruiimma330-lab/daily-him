@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { digitUsername } = require('./helpers');
 const bcrypt = require('bcryptjs');
 
 const ROOT = path.join(__dirname, '..');
@@ -66,7 +67,7 @@ test.after(async () => {
 });
 
 test('new registration requires one server-persisted acknowledgement', async () => {
-  const username = `notice_${Date.now().toString(36)}`;
+  const username = digitUsername();
   const registered = await request('/api/register', {
     method: 'POST',
     body: { username, password: 'password123', age14: true },
