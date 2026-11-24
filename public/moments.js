@@ -177,6 +177,7 @@
     const el = document.createElement('article');
     el.className = 'mom-card';
     el.dataset.id = post.id;
+    if (post.kind) el.dataset.kind = post.kind;
 
     const top = document.createElement('div');
     top.className = 'mom-card-top';
@@ -188,7 +189,10 @@
     name.textContent = identity.name;
     const date = document.createElement('p');
     date.className = 'mom-date';
-    date.textContent = fmt(post.publishedAt);
+    const kindText = post.kindLabel || '';
+    date.textContent = kindText
+      ? `${kindText} · ${fmt(post.publishedAt)}`
+      : fmt(post.publishedAt);
     who.append(name, date);
     const moreBtn = document.createElement('button');
     moreBtn.type = 'button';
@@ -196,6 +200,24 @@
     moreBtn.setAttribute('aria-label', '更多');
     moreBtn.textContent = '···';
     top.append(who, moreBtn);
+
+    let meta = null;
+    if (post.kindLabel || post.title) {
+      meta = document.createElement('div');
+      meta.className = 'mom-meta';
+      if (post.kindLabel) {
+        const badge = document.createElement('span');
+        badge.className = `mom-kind mom-kind-${post.kind || 'news'}`;
+        badge.textContent = post.kindLabel;
+        meta.append(badge);
+      }
+      if (post.title) {
+        const title = document.createElement('p');
+        title.className = 'mom-title-line';
+        title.textContent = post.title;
+        meta.append(title);
+      }
+    }
 
     const photos = carousel(post.images);
 
@@ -317,6 +339,7 @@
     });
 
     el.append(top);
+    if (meta) el.append(meta);
     if (photos) el.append(photos);
     el.append(icons, likes, caption);
     if (post.zh) {
@@ -324,6 +347,15 @@
       zh.className = 'mom-zh';
       zh.textContent = post.zh;
       el.append(zh);
+    }
+    if (post.link) {
+      const more = document.createElement('a');
+      more.className = 'mom-link';
+      more.href = post.link;
+      more.target = '_blank';
+      more.rel = 'noopener noreferrer';
+      more.textContent = post.kind === 'preview' ? '查看活动预告' : '了解更多';
+      el.append(more);
     }
     el.append(view, thread);
     return el;

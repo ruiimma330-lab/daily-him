@@ -81,6 +81,34 @@ sudo bash /opt/dailyhim/deploy/hk/update.sh
 脚本只接受 main 的 fast-forward 更新，随后以 `dailyhim` 用户运行 `npm ci --omit=dev`，
 通过 PM2 cluster 模式平滑 reload，并等待本机健康接口就绪。
 
+## 朋友圈如何保证更新（开放角色）
+
+当前聊天开放的是 `character.json` 里 `available` 不为 `false` 且包完整的角色（现为 10 位）。
+朋友圈更新分两层，缺一不可：
+
+1. **自动草稿（每日）**  
+   GitHub Actions `refresh moments` 每天 UTC 01:00（北京时间 09:00）调用  
+   `POST /api/moments/refresh`，`characterId=all`，只给**当前开放**角色抓公开资讯并写成草稿。  
+   需要同时配好：
+   - 服务器 `/etc/dailyhim.env` 的 `MOMENTS_REFRESH_SECRET`
+   - GitHub 仓库 Secrets：`MOMENTS_REFRESH_SECRET`（与服务器一致）、`APP_BASE_URL=https://dailyhim.cn`
+   - 服务器 `MOMENTS_ADMINS=你的用户名`（逗号分隔）
+
+2. **人工发布（才能被粉丝看到）**  
+   草稿默认不可见。用管理员账号打开  
+   `https://dailyhim.cn/admin/moments.html?c=<角色id>`  
+   审改后点「发布」。重大活动预告也可直接改仓库里  
+   `characters/<id>/moments.json`，再跑 `update.sh` 上线。
+
+手动补拉一次全部开放角色：
+
+```bash
+curl -fsS -X POST 'https://dailyhim.cn/api/moments/refresh' \
+  -H "Authorization: Bearer $MOMENTS_REFRESH_SECRET" \
+  -H 'Content-Type: application/json' \
+  -d '{"characterId":"all"}'
+```
+
 ## 修改环境变量
 
 ```bash

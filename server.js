@@ -1216,8 +1216,11 @@ function createApp() {
     const token = header.replace(/^Bearer\s+/i, '').trim();
     if (token !== secret) return res.status(401).json({ error: 'Unauthorized' });
     try {
-      const characterId = req.body && req.body.characterId ? req.body.characterId : 'baekhyun';
-      const result = await momentsRefresh.refreshCharacter(characterId, { fetchImpl: fetch });
+      const raw = req.body && req.body.characterId != null ? String(req.body.characterId).trim() : '';
+      const all = !raw || raw === 'all' || raw === '*';
+      const result = all
+        ? await momentsRefresh.refreshOnline({ fetchImpl: fetch })
+        : await momentsRefresh.refreshCharacter(raw, { fetchImpl: fetch });
       return res.json({ ok: true, ...result });
     } catch (err) {
       console.error('Moments refresh failed');
