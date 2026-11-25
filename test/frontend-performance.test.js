@@ -87,7 +87,7 @@ test('HTML and code revalidate while versioned portraits are immutable WebP', as
   const css = await fetch(base + '/shell/picker.css');
   assert.equal(css.headers.get('cache-control'), 'public, max-age=0, must-revalidate');
 
-  const portrait = await fetch(base + '/characters/baekhyun/portrait.jpg?v=dh-pwa-25', {
+  const portrait = await fetch(base + '/characters/baekhyun/portrait.jpg?v=dh-pwa-26', {
     headers: { Cookie: cookie, Accept: 'image/avif,image/webp,image/*,*/*;q=0.8' },
   });
   assert.equal(portrait.status, 200);
