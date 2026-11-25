@@ -239,12 +239,18 @@
     Shell.setSelectedCharacter(current.id);
     goBtn.disabled = true;
     try {
-      let onboarded = false;
+      let alreadyFriend = false;
       try {
         const profile = await Shell.api('/api/profile?characterId=' + encodeURIComponent(current.id));
-        onboarded = Boolean(profile.profile && profile.profile.onboardedAt);
+        alreadyFriend = Boolean(profile.profile && profile.profile.onboardedAt);
       } catch (_) { /* treat as not set up */ }
-      if (onboarded) {
+      if (!alreadyFriend) {
+        try {
+          const friends = await Shell.api('/api/friends');
+          alreadyFriend = Boolean((friends.friends || []).some((item) => item.id === current.id));
+        } catch (_) { /* ignore */ }
+      }
+      if (alreadyFriend) {
         Shell.go('/', { c: current.id });
         return;
       }

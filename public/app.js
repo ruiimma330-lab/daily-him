@@ -164,7 +164,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-16`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-18`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -1116,10 +1116,15 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   async function loadFriendsList() {
     try {
       const response = await fetch('/api/friends');
-      if (!response.ok) return;
+      if (!response.ok) {
+        if (!friendsCache.length) renderFriendsList([]);
+        return;
+      }
       const data = await response.json();
       renderFriendsList((data && data.friends) || []);
-    } catch (_) { /* keep previous list */ }
+    } catch (_) {
+      if (!friendsCache.length) renderFriendsList([]);
+    }
   }
 
   function updateList() {
@@ -2195,7 +2200,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       return;
     }
     const params = new URLSearchParams(location.search);
-    const wantRoom = params.get('welcome') === '1';
+    // welcome=1: seed the first greeting, then stay on the friends list
+    // (product: after 开始聊天 land on 聊天列表, not auto-open the room).
+    const fromWelcome = params.get('welcome') === '1';
     const seeded = await welcomeIfNeeded(remote);
     messages = window.AccountCache.viewAfterFetch(true, seeded);
     historyError = false;
@@ -2209,20 +2216,19 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         if (payload && payload.appended && Array.isArray(payload.messages)) {
           messages = window.AccountCache.viewAfterFetch(true, payload.messages);
           saveLocalHistory();
-          loadFriendsList();
         }
       }
     } catch (_) { /* check-in is best-effort */ }
-    if (wantRoom) {
+    if (fromWelcome) {
       params.delete('welcome');
       const cleaned = params.toString();
       history.replaceState(null, '', cleaned ? `${location.pathname}?${cleaned}` : location.pathname);
     }
-    if (roomOpen || wantRoom) settings.seen = messages.length;
+    if (roomOpen) settings.seen = messages.length;
     saveSettings();
     render();
+    await loadFriendsList();
     updateList();
-    if (wantRoom) openRoom();
   }
 
   async function bootAccount() {

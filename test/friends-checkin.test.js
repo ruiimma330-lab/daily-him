@@ -94,6 +94,23 @@ test('friends lists onboarded idols even without messages', async () => {
   assert.equal(jimin.characterNickname, '智旻哥');
 });
 
+test('legacy chat history counts as friends and backfills onboardedAt', async () => {
+  store.putHistory(userId, 'jungkook', [
+    { role: 'user', text: 'hi', time: Date.now() - 1000 },
+    { role: 'assistant', text: 'hey', time: Date.now(), zh: '嘿' },
+  ]);
+  assert.equal(profile.load(userId, 'jungkook').onboardedAt, null);
+
+  const friends = await request('/api/friends', { cookie });
+  assert.equal(friends.status, 200);
+  assert.ok(friends.json.friends.some((item) => item.id === 'jungkook'));
+  assert.equal(friends.json.hasFriends, true);
+  assert.ok(profile.load(userId, 'jungkook').onboardedAt);
+
+  const me = await request('/api/me', { cookie });
+  assert.equal(me.json.hasFriends, true);
+});
+
 test('idle check-in appends one proactive line after a quiet stretch', async () => {
   const old = Date.now() - (9 * 60 * 60 * 1000);
   store.putHistory(userId, 'baekhyun', [
@@ -129,11 +146,17 @@ test('cover and chat clients route returning users to the list, not the picker',
   const login = fs.readFileSync(path.join(__dirname, '..', 'public', 'login.html'), 'utf8');
   const picker = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'picker.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(__dirname, '..', 'public', 'manifest.webmanifest'), 'utf8');
+  const sw = fs.readFileSync(path.join(__dirname, '..', 'public', 'sw.js'), 'utf8');
   assert.match(cover, /\/api\/friends/);
   assert.match(cover, /Shell\.go\('\/'/);
   assert.match(app, /renderFriendsList/);
   assert.match(app, /\/api\/checkin/);
+  // After 开始聊天 / onboard, welcome seeds a greeting but must NOT openRoom.
+  assert.match(app, /fromWelcome/);
+  assert.doesNotMatch(app, /if \(wantRoom\) openRoom\(\)/);
+  assert.doesNotMatch(app, /if \(fromWelcome\) openRoom\(\)/);
   assert.match(login, /destinationAfterAuth/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
   assert.match(manifest, /"start_url": "\/"/);
+  assert.match(sw, /dh-pwa-18/);
 });

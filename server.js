@@ -946,7 +946,7 @@ function createApp() {
   app.get('/api/me', requireUser, (req, res) => {
     const avatar = readAccountDoc(store, 'avatar', req.userId);
     const user = store.findUserById(req.userId);
-    const hasFriends = profile.listOnboardedIds(req.userId).length > 0;
+    const hasFriends = profile.listFriendIds(req.userId).length > 0;
     res.json({
       ok: true,
       user: req.user,
@@ -1540,11 +1540,14 @@ function createApp() {
     res.json({ ok: true, conversations });
   });
 
-  // Friends = characters this account has onboarded (开通即好友), including empty chats.
+  // Friends = onboarded idols + characters with existing chat history (legacy accounts).
   app.get('/api/friends', requireUser, (req, res) => {
     const byId = new Map(characters.listAll().map((ch) => [ch.id, ch]));
-    const friends = profile.listOnboardedIds(req.userId).map((id) => {
-      const ch = byId.get(id) || characters.publicInfo(id);
+    const friends = profile.listFriendIds(req.userId).map((id) => {
+      let ch = byId.get(id);
+      if (!ch) {
+        try { ch = characters.publicInfo(id); } catch (_) { ch = { id, name: id, displayName: id, available: false }; }
+      }
       const p = profile.load(req.userId, id);
       const history = store.getHistory(req.userId, id);
       const last = history.length ? history[history.length - 1] : null;

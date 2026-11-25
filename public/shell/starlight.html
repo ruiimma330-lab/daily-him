@@ -58,7 +58,11 @@
     const noticeEl = document.getElementById('notice');
     const packagesEl = document.getElementById('packages');
     const ledgerEl = document.getElementById('ledger');
-    document.getElementById('back').onclick = () => history.back();
+    // PWA / deep-link often has no useful history; always return to the chat list.
+    document.getElementById('back').onclick = () => {
+      const c = Shell.selectedCharacter();
+      Shell.go('/', { c });
+    };
 
     function paint(data) {
       balanceEl.textContent = data.unlimited ? '无限' : String(data.balance || 0);
