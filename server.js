@@ -26,6 +26,7 @@ const starlight = require('./lib/starlight');
 const callName = require('./lib/call-name');
 const greetings = require('./lib/greetings');
 const checkins = require('./lib/checkins');
+const singing = require('./lib/singing');
 const replyParser = require('./lib/reply-parser');
 const PKG = require('./package.json');
 
@@ -1717,6 +1718,20 @@ function createApp() {
     return res.sendFile(file);
   });
 
+  app.get('/singing/:characterId/:file', requireUser, (req, res) => {
+    const id = characters.resolveId(req.params.characterId);
+    if (!id) return res.status(404).end();
+    const file = singing.resolveClipPath(id, req.params.file);
+    if (!file) return res.status(404).end();
+    try {
+      if (!fs.statSync(file).isFile()) return res.status(404).end();
+    } catch (_) {
+      return res.status(404).end();
+    }
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.sendFile(file);
+  });
+
   app.get(['/characters/:id/portrait.svg', '/characters/:id/portrait.jpg', '/characters/:id/portrait.webp'], requireUser, (req, res) => {
     const id = characters.resolveId(req.params.id);
     if (!id) return res.status(404).end();
@@ -1875,6 +1890,37 @@ function createApp() {
       });
     }
 
+    const singIntent = singing.detectIntent(text);
+    const namingPendingEarly = callName.statusOf(profEarly) === 'pending' || callName.statusOf(profEarly) === 'confirming';
+    if (singIntent.sing && singIntent.mode === 'general' && !namingPendingEarly) {
+      const recentAssistantTexts = priorHistory
+        .filter((item) => item && item.role === 'assistant' && typeof item.text === 'string')
+        .slice(-8)
+        .map((item) => item.text);
+      const preset = singing.pickPresetClip(req.characterId, singIntent.occasion, recentAssistantTexts);
+      if (preset) {
+        const presetItems = [{ raw: preset.ko, ko: preset.ko, zh: preset.zh, mood: preset.mood, audioUrl: preset.audioUrl }];
+        try {
+          const committed = chatContext.commitTurn(store.getHistory(req.userId, req.characterId), text, presetItems, turnId);
+          if (!committed.duplicate) store.putHistory(req.userId, req.characterId, committed.messages);
+        } catch (err) {
+          console.error('History update failed');
+        }
+        let rel = null;
+        try { rel = relationship.recordTurn(req.userId, req.characterId); } catch (err) { console.error('Relationship update failed'); }
+        memory.noteOpening(req.userId, req.characterId, preset.ko);
+        return res.json({
+          messages: [{ ko: preset.ko, zh: preset.zh, mood: preset.mood, audioUrl: preset.audioUrl, ttsFailed: false }],
+          bubbles: [preset.ko],
+          audioUrl: preset.audioUrl,
+          mood: preset.mood,
+          ttsChars: 0,
+          singMode: 'preset',
+          relationship: rel,
+        });
+      }
+    }
+
     let keys;
     try {
       keys = requireKeys();
@@ -1902,6 +1948,7 @@ function createApp() {
     const memoryPrompt = (memBlock ? `\n\n${memBlock}` : '')
       + (openings.length ? `\n\n## 반복 피하기\n네 최근 답장 첫머리: ${openings.map((o) => `「${o}」`).join(' ')}\n이번 답장은 이것들과 다른 말로 시작하고, 다른 문장 구조로 말해.` : '')
       + `\n\n## 이번 답장\n이번엔 음성 ${want}개로 보내(상황상 정말 어색하면 ±1).`;
+    const singHint = singIntent.sing ? `\n\n${singing.buildSingingHint(singIntent)}` : '';
     const systemPrompt = characters.buildPrompt(req.characterId, relNow.tier.id, relNow, userName, {
       account: { nickname: accountPrefs.nickname },
       relation: {
@@ -1910,7 +1957,7 @@ function createApp() {
         habits: prof.habits,
       },
       namingPending,
-    }) + memoryPrompt + sceneHint + (namingPending ? `\n\n${callName.promptHint(prof.callNameAsks)}` : '') + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
+    }) + memoryPrompt + sceneHint + singHint + (namingPending ? `\n\n${callName.promptHint(prof.callNameAsks)}` : '') + `\n\n## 현재 시각\n지금은 ${now} (베이징 시간)이고, 지금 시간대는 '${dayPeriod()}'야. 인사, 식사, 잠 이야기, '아침부터/오늘 밤' 같은 표현은 반드시 이 시간대에 맞게 해(예: 저녁에 '아침부터'라고 하지 마). 날짜/요일 계산도 이것을 기준으로 해. 공개 사실 목록 이후의 일은 모른다고 해.`;
     const textCost = starlight.priceText(lastUserText, '');
     const textRequestId = `text:${req.userId}:${turnId || crypto.randomBytes(8).toString('hex')}`;
     const textHold = await starlight.reserve({

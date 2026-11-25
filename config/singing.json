@@ -1,0 +1,4 @@
+{
+  "_note": "Pre-recorded pitch-accurate a cappella clips (Scheme B). Run `node scripts/make-singing-clip.js --help` or drop .mp3 files into characters/<id>/singing/ and register them here.",
+  "characters": {}
+}

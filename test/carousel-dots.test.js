@@ -144,6 +144,6 @@ test('picker loads the dots module and the service worker precaches it under a n
   assert.match(js, /visibilitychange/);
   assert.match(js, /IntersectionObserver/);
   const sw = fs.readFileSync(path.join(ROOT, 'public/sw.js'), 'utf8');
-  assert.match(sw, /const VERSION = 'dh-pwa-27';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-28';/);
   assert.match(sw, /'\/shell\/carousel-dots\.js'/);
 });
