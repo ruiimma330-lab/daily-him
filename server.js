@@ -26,6 +26,7 @@ const starlight = require('./lib/starlight');
 const callName = require('./lib/call-name');
 const greetings = require('./lib/greetings');
 const checkins = require('./lib/checkins');
+const replyParser = require('./lib/reply-parser');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -269,9 +270,7 @@ function parseReply(text, config) {
     const v = String(m || '').toLowerCase().trim();
     return tags[v] ? v : (config && config.defaultMood) || v || '';
   };
-  let data = null;
-  const m = String(text || '').match(/\{[\s\S]*\}/);
-  if (m) { try { data = JSON.parse(m[0]); } catch (_) { data = null; } }
+  const data = replyParser.parseReplyJson(text);
   const list = data && Array.isArray(data.messages) ? data.messages : null;
   if (list) {
     return list.slice(0, 3).map((x) => {
@@ -279,8 +278,44 @@ function parseReply(text, config) {
       return { raw, ko: stripAudioTags(raw), zh: String((x && x.zh) || '').trim().slice(0, 600), mood: pickMood(x && x.mood) };
     }).filter((x) => x.ko);
   }
+  if (replyParser.looksLikeJsonReply(text)) return [];
   const legacy = parseMood(text);
   return splitBubbles(legacy.text).slice(0, 3).map((raw) => ({ raw, ko: stripAudioTags(raw), zh: '', mood: pickMood(legacy.mood) })).filter((x) => x.ko);
+}
+
+function repairHistoryMessages(messages, characterId) {
+  if (!Array.isArray(messages) || !messages.length) {
+    return { messages: Array.isArray(messages) ? messages : [], changed: false };
+  }
+  let changed = false;
+  let config = null;
+  const repaired = [];
+  for (const msg of messages) {
+    if (msg && msg.role === 'assistant' && typeof msg.text === 'string' && replyParser.isMessagesPayload(msg.text)) {
+      if (!config) config = resolveRuntimeConfig(characterId);
+      const parsed = parseReply(msg.text, config);
+      if (parsed.length > 0) {
+        changed = true;
+        for (const item of parsed) {
+          const entry = {
+            role: 'assistant',
+            text: item.ko,
+            zh: item.zh,
+            mood: item.mood,
+            time: msg.time,
+            voice: true,
+            audioUrl: null,
+            ttsFailed: false,
+          };
+          if (typeof msg.turnId === 'string' && msg.turnId) entry.turnId = msg.turnId;
+          repaired.push(entry);
+        }
+        continue;
+      }
+    }
+    repaired.push(msg);
+  }
+  return { messages: repaired, changed };
 }
 
 function splitBubbles(text) {
@@ -797,14 +832,21 @@ async function requestTts(voiceId, model, text, apiKey, voiceSettings, hash, fil
 
   const contentType = response.headers.get('content-type') || '';
   if (!response.ok || contentType.includes('json') || contentType.startsWith('text/')) {
-    console.error(`TTS request failed (${response.status})`);
-    throw new Error('TTS failed');
+    const detail = await voiceExec.readTtsErrorDetail(response);
+    console.error(`TTS request failed (status=${response.status}, detail=${detail || 'none'}, voiceId=${String(voiceId || '').slice(0, 8) || 'unknown'})`);
+    const err = new Error('TTS failed');
+    err.status = response.status;
+    err.detail = detail;
+    throw err;
   }
 
   const audio = Buffer.from(await response.arrayBuffer());
   if (audio.length < 64) {
-    console.error('TTS request failed (empty audio)');
-    throw new Error('TTS failed');
+    console.error(`TTS request failed (status=${response.status}, detail=empty audio, voiceId=${String(voiceId || '').slice(0, 8) || 'unknown'})`);
+    const err = new Error('TTS failed');
+    err.status = response.status;
+    err.detail = 'empty audio';
+    throw err;
   }
 
   fs.mkdirSync(AUDIO_DIR, { recursive: true });
@@ -812,6 +854,15 @@ async function requestTts(voiceId, model, text, apiKey, voiceSettings, hash, fil
   fs.writeFileSync(tempPath, audio);
   fs.renameSync(tempPath, filePath);
   return `/audio/${filename}`;
+}
+
+function logTtsFailure(err, voiceKey) {
+  const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
+  const status = err && err.status ? err.status : 'unknown';
+  const detail = err && err.detail ? err.detail : 'none';
+  const vk = voiceKey || '';
+  const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
+  console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, status=${status}, detail=${detail}, key format ${keyOk}, key length ${vk.length})`);
 }
 
 function createApp() {
@@ -1105,7 +1156,9 @@ function createApp() {
     if (store.getHistory(req.userId, req.characterId).length) return next();
     return requireAvailable(req, res, next);
   }, (req, res) => {
-    const messages = store.getHistory(req.userId, req.characterId);
+    const raw = store.getHistory(req.userId, req.characterId);
+    const { messages: repaired, changed } = repairHistoryMessages(raw, req.characterId);
+    const messages = changed ? store.putHistory(req.userId, req.characterId, repaired) : raw;
     res.json({ messages, readOnly: !characters.isAvailable(req.characterId) });
   });
 
@@ -1755,10 +1808,7 @@ function createApp() {
       }
       return res.json({ audioUrl: voiced.audioUrl, cached: voiceExec.hasClip(request.cacheKey) });
     } catch (err) {
-      const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
-      const vk = keys.voiceKey || '';
-      const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
-      console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${vk.length})`);
+      logTtsFailure(err, keys.voiceKey);
       return res.status(502).json({ error: 'TTS failed', audioError: 'TTS failed' });
     }
   });
@@ -1974,10 +2024,7 @@ function createApp() {
         item.audioUrl = voiced.audioUrl;
         item.voiceToken = null;
       } catch (err) {
-        const code = err && err.cause && err.cause.code ? ` cause=${String(err.cause.code)}` : '';
-        const vk = keys.voiceKey || '';
-        const keyOk = /^[\x21-\x7e]+$/.test(vk) ? 'ascii' : 'has-invalid-chars';
-        console.error(`TTS request failed (${err && err.name ? err.name : 'unknown'}${code}, key format ${keyOk}, key length ${vk.length})`);
+        logTtsFailure(err, keys.voiceKey);
         item.ttsFailed = true;
         if (item.voiceToken) pendingVoice.delete(item.voiceToken);
         item.voiceToken = null;
@@ -2133,6 +2180,7 @@ module.exports = {
   dayPeriod,
   isSpeakable,
   parseReply,
+  repairHistoryMessages,
   resolveRuntimeConfig,
   audioFileHash,
   voiceReady,
