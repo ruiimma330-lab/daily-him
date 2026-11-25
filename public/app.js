@@ -152,7 +152,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-22`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-23`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -1052,6 +1052,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function updateList() {
+    if (!historyReady) return;
     const last = messages[messages.length - 1];
     if (!window.FriendsList) return;
     window.FriendsList.updateCurrent(CHARACTER_ID, {
@@ -2111,12 +2112,14 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     historyReady = true;
     if (seeded !== remote) saveHistory();
     else saveLocalHistory();
+    let checkinAppended = false;
     try {
       const checkin = await fetch(withChar('/api/checkin'), { method: 'POST' });
       if (checkin.ok) {
         const payload = await checkin.json();
         if (payload && payload.appended && Array.isArray(payload.messages)) {
           messages = window.AccountCache.viewAfterFetch(true, payload.messages);
+          checkinAppended = true;
           saveLocalHistory();
         }
       }
@@ -2130,7 +2133,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (roomOpen || wantOpen) settings.seen = messages.length;
     saveSettings();
     render();
-    await loadFriendsList();
+    if (seeded !== remote || checkinAppended || !friendsCache.length) {
+      await loadFriendsList();
+    }
     updateList();
     if (wantOpen) openRoom();
   }
@@ -2142,6 +2147,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       historyError = true;
       messages = [];
       render();
+      await loadFriendsList();
       return;
     }
     settings = loadSettings();

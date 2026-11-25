@@ -242,6 +242,28 @@ button, input { -webkit-tap-highlight-color: transparent; }
   letter-spacing: 0.04em;
 }
 
+.friends-error {
+  margin: 24px 22px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.friends-error .friends-empty {
+  margin: 0;
+}
+
+.friends-retry {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 18px;
+  background: #1c1c1c;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
 .chat-row {
   display: flex;
   align-items: center;

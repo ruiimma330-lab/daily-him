@@ -1,15 +1,24 @@
 /* Chat-entry list (好友 / 聊天). Owns #friends-section only. */
 (function (global) {
   const section = () => document.getElementById('friends-section');
+  let loadSeq = 0;
+  let lastFriends = null;
 
   function label(friend) {
     return (friend && (friend.characterNickname || friend.nameZh || friend.displayName || friend.name || friend.id)) || '';
   }
 
+  function safeDate(ts) {
+    if (ts == null || ts === '' || ts === 0) return null;
+    if (typeof ts !== 'number' && typeof ts !== 'string' && !(ts instanceof Date)) return null;
+    if (typeof ts === 'number' && !Number.isFinite(ts)) return null;
+    const d = ts instanceof Date ? ts : new Date(ts);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
   function formatTime(ts) {
-    if (!ts) return '';
-    const d = new Date(ts);
-    if (Number.isNaN(d.getTime())) return '';
+    const d = safeDate(ts);
+    if (!d) return '';
     const now = new Date();
     const sameDay = d.toDateString() === now.toDateString();
     if (sameDay) {
@@ -18,11 +27,13 @@
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
-  function render(friends, { onOpen } = {}) {
+  function render(friends, opts = {}) {
     const root = section();
     if (!root) return;
+    const { onOpen } = opts || {};
     root.replaceChildren();
     const list = Array.isArray(friends) ? friends : [];
+    lastFriends = list.slice();
     if (!list.length) {
       const empty = document.createElement('p');
       empty.className = 'friends-empty';
@@ -54,9 +65,10 @@
       name.textContent = label(friend);
       const time = document.createElement('time');
       time.className = 'row-time';
-      if (friend.lastAt) {
-        time.dateTime = new Date(friend.lastAt).toISOString();
-        time.textContent = formatTime(friend.lastAt);
+      const d = safeDate(friend.lastAt);
+      if (d) {
+        time.dateTime = d.toISOString();
+        time.textContent = formatTime(d);
       }
       top.append(name, time);
 
@@ -79,28 +91,72 @@
     });
   }
 
-  async function load(opts) {
+  function renderError(opts = {}) {
+    const root = section();
+    if (!root) return;
+    if (Array.isArray(lastFriends) && lastFriends.length > 0) return;
+    root.replaceChildren();
+    const wrap = document.createElement('div');
+    wrap.className = 'friends-error';
+    const msg = document.createElement('p');
+    msg.className = 'friends-empty';
+    msg.textContent = '没能加载聊天列表';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'friends-retry';
+    btn.textContent = '重试';
+    btn.addEventListener('click', () => { load(opts); });
+    wrap.append(msg, btn);
+    root.append(wrap);
+  }
+
+  async function fetchFriendsOnce() {
+    const response = await fetch('/api/friends', { credentials: 'same-origin', cache: 'no-store' });
+    if (response.status === 401) return { status: 401 };
+    if (!response.ok) return { status: response.status };
+    const data = await response.json();
+    if (!data || data.ok === false || !Array.isArray(data.friends)) return { status: response.status };
+    return { status: response.status, friends: data.friends };
+  }
+
+  async function load(opts = {}) {
     const root = section();
     if (!root) return [];
+    const seq = ++loadSeq;
+    let result = null;
     try {
-      const response = await fetch('/api/friends', { credentials: 'same-origin', cache: 'no-store' });
-      if (!response.ok) {
-        render([], opts);
-        return [];
-      }
-      const data = await response.json();
-      const friends = (data && data.friends) || [];
-      render(friends, opts);
-      return friends;
+      result = await fetchFriendsOnce();
     } catch (_) {
-      render([], opts);
-      return [];
+      result = null;
     }
+    if (seq !== loadSeq) return lastFriends || [];
+    if (result && result.status === 401) return lastFriends || [];
+    if ((!result || !Array.isArray(result.friends)) && opts.retry !== false) {
+      const delayMs = opts.retryDelayMs ?? 400;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      if (seq !== loadSeq) return lastFriends || [];
+      try {
+        result = await fetchFriendsOnce();
+      } catch (_) {
+        result = null;
+      }
+      if (seq !== loadSeq) return lastFriends || [];
+      if (result && result.status === 401) return lastFriends || [];
+    }
+    if (result && Array.isArray(result.friends)) {
+      render(result.friends, opts);
+      return result.friends;
+    }
+    renderError(opts);
+    return lastFriends || [];
   }
 
   function updateCurrent(characterId, { preview, time, unread } = {}) {
+    const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(characterId)
+      : String(characterId || '').replace(/[^a-zA-Z0-9_-]/g, '');
     const row = document.querySelector(
-      '#friends-section .chat-row[data-friend-id="' + CSS.escape(characterId) + '"]'
+      '#friends-section .chat-row[data-friend-id="' + escaped + '"]'
     );
     if (!row) return;
     const previewEl = row.querySelector('.row-preview');
@@ -108,8 +164,11 @@
     const badge = row.querySelector('.badge');
     if (previewEl && preview != null) previewEl.textContent = preview;
     if (timeEl && time) {
-      timeEl.dateTime = new Date(time).toISOString();
-      timeEl.textContent = formatTime(time);
+      const d = safeDate(time);
+      if (d) {
+        timeEl.dateTime = d.toISOString();
+        timeEl.textContent = formatTime(d);
+      }
     }
     if (badge && unread != null) {
       if (unread > 0) {
@@ -121,5 +180,12 @@
     }
   }
 
-  global.FriendsList = { load, render, updateCurrent, label };
-})(window);
+  function resetState() {
+    loadSeq = 0;
+    lastFriends = null;
+  }
+
+  const api = { load, render, renderError, updateCurrent, label, resetState };
+  if (typeof window !== 'undefined') global.FriendsList = { load, render, renderError, updateCurrent, label };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+})(typeof globalThis !== 'undefined' ? globalThis : window);

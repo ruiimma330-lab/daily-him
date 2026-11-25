@@ -109,5 +109,198 @@ test('chat-entry client module and index wire FriendsList', () => {
   assert.match(app, /open=1/);
   assert.doesNotMatch(app, /location\.replace\('\/shell\/pick\.html\?from=chat'\)/);
   assert.match(sw, /friends-list\.js/);
-  assert.match(sw, /dh-pwa-22/);
+  assert.match(sw, /dh-pwa-23/);
+});
+
+test('5-friend account and corrupt onboardedAt still return all 5 friends with finite lastAt', async () => {
+  const created = await request('/api/register', {
+    method: 'POST',
+    body: { username: digitUsername(), password: 'password1', age14: true },
+  });
+  assert.ok(created.status === 200 || created.status === 201);
+  const uid = created.json.user.id;
+  for (const id of ['baekhyun', 'jimin', 'jungkook', 'myungjaehyun']) {
+    profile.save(uid, id, { onboarded: true });
+  }
+  store.putDoc('profile', uid, 'dohoon', { ...profile.empty(), onboardedAt: 'not-a-date' });
+  await store.flush();
+
+  const res = await request('/api/friends', { cookie: created.cookie });
+  assert.equal(res.status, 200);
+  assert.equal(res.json.ok, true);
+  assert.equal(res.json.friends.length, 5);
+  assert.deepEqual(
+    res.json.friends.map((f) => f.id).sort(),
+    ['baekhyun', 'dohoon', 'jimin', 'jungkook', 'myungjaehyun']
+  );
+  for (const f of res.json.friends) {
+    assert.equal(typeof f.lastAt, 'number');
+    assert.ok(Number.isFinite(f.lastAt), `${f.id} lastAt must be finite`);
+  }
+});
+
+test('write-queue race: pending profile.save survives stale backend loadUserDocs without wiping memory', async () => {
+  const created = await request('/api/register', {
+    method: 'POST',
+    body: { username: digitUsername(), password: 'password1', age14: true },
+  });
+  assert.ok(created.status === 200 || created.status === 201);
+  const uid = created.json.user.id;
+  profile.save(uid, 'baekhyun', { onboarded: true });
+  await store.flush();
+
+  let releaseWrite;
+  const writeGate = new Promise((resolve) => { releaseWrite = resolve; });
+  const staleUser = store.findUserById(uid);
+  const staleBaekProfile = store.getDoc('profile', uid, 'baekhyun');
+  const slowBackend = {
+    name: 'slow-turso-test',
+    async init() {},
+    async loadAll() {
+      return {
+        users: staleUser ? [staleUser] : [],
+        docs: [{ kind: 'profile', userId: uid, characterId: 'baekhyun', data: staleBaekProfile }],
+        settings: {},
+      };
+    },
+    async loadUserDocs() {
+      // Stale snapshot from Turso before pending myungjaehyun write completes.
+      return [{ kind: 'profile', userId: uid, characterId: 'baekhyun', data: staleBaekProfile }];
+    },
+    async putDoc() { await writeGate; },
+    async delDoc() {},
+    async putUser() {},
+    async deleteUser() {},
+    async putSetting() {},
+  };
+
+  try {
+    await store.init({ backend: slowBackend });
+    profile.save(uid, 'myungjaehyun', { onboarded: true });
+    store.putDoc('profile', uid, 'account', { onboardedAt: Date.now() });
+
+    const listed = await friends.listForUser(uid);
+    const ids = listed.friends.map((f) => f.id).sort();
+    assert.deepEqual(ids, ['baekhyun', 'myungjaehyun']);
+    assert.ok(profile.load(uid, 'myungjaehyun').onboardedAt, 'in-memory onboardedAt must not be wiped');
+  } finally {
+    releaseWrite();
+    await store.flush();
+    await store.init();
+  }
+});
+
+test('FriendsList client DOM behavior: 5 rows, retry on failure, preserve rows, invalid lastAt', async () => {
+  function makeEl(tag) {
+    const el = {
+      tagName: String(tag || 'div').toUpperCase(),
+      className: '',
+      textContent: '',
+      type: '',
+      hidden: false,
+      dateTime: '',
+      dataset: {},
+      style: {},
+      children: [],
+      listeners: {},
+      setAttribute() {},
+      addEventListener(ev, fn) { this.listeners[ev] = fn; },
+      click() { if (this.listeners.click) this.listeners.click(); },
+      append(...nodes) { this.children.push(...nodes); },
+      replaceChildren(...nodes) { this.children = [...nodes]; },
+      querySelector(sel) {
+        if (sel.startsWith('.')) {
+          const cls = sel.slice(1);
+          const queue = [...this.children];
+          while (queue.length) {
+            const cur = queue.shift();
+            if (cur.className && cur.className.split(/\s+/).includes(cls)) return cur;
+            if (cur.children) queue.push(...cur.children);
+          }
+        }
+        return null;
+      },
+    };
+    return el;
+  }
+
+  const root = makeEl('div');
+  const prevDoc = global.document;
+  const prevFetch = global.fetch;
+  global.document = {
+    getElementById(id) { return id === 'friends-section' ? root : null; },
+    createElement(tag) { return makeEl(tag); },
+    querySelector() { return null; },
+  };
+
+  const friendsList = require('../public/friends-list.js');
+  try {
+    const five = ['baekhyun', 'dohoon', 'jimin', 'jungkook', 'myungjaehyun'].map((id, i) => ({
+      id,
+      name: id,
+      displayName: id,
+      lastAt: i === 1 ? 'not-a-date' : Date.now() - i * 1000,
+      preview: `msg-${id}`,
+    }));
+
+    // 1. 5 friends + invalid lastAt renders 5 rows without RangeError, click triggers onOpen
+    friendsList.resetState();
+    global.fetch = async () => ({
+      ok: true,
+      status: 200,
+      async json() { return { ok: true, friends: five }; },
+    });
+    let opened = null;
+    const loaded = await friendsList.load({ onOpen: (f) => { opened = f; }, retryDelayMs: 0 });
+    assert.equal(loaded.length, 5);
+    assert.equal(root.children.length, 5);
+    assert.equal(root.children[1].dataset.friendId, 'dohoon');
+    root.children[2].click();
+    assert.equal(opened && opened.id, 'jimin');
+
+    // 2. API failure after 5 friends were already rendered keeps all 5 rows intact
+    global.fetch = async () => ({
+      ok: false,
+      status: 500,
+      async json() { return { ok: false, error: 'friends_failed', friends: [] }; },
+    });
+    const kept = await friendsList.load({ retry: false });
+    assert.equal(kept.length, 5);
+    assert.equal(root.children.length, 5);
+
+    // 3. Initial API failure renders .friends-retry and NEVER shows empty-state copy
+    friendsList.resetState();
+    root.replaceChildren();
+    await friendsList.load({ retryDelayMs: 0 });
+    assert.ok(root.querySelector('.friends-retry'), 'retry button must render on persistent failure');
+    assert.equal(root.querySelector('.friends-empty').textContent, '没能加载聊天列表');
+    assert.notEqual(root.querySelector('.friends-empty').textContent, '还没有聊天，点右上角 + 添加');
+  } finally {
+    friendsList.resetState();
+    global.document = prevDoc;
+    global.fetch = prevFetch;
+  }
+});
+
+test('public assets (friends-list.js, playback.js) and /api/health contract', async () => {
+  for (const asset of ['/friends-list.js', '/playback.js']) {
+    const res = await fetch(base + asset, { redirect: 'manual' });
+    assert.equal(res.status, 200, `${asset} must return 200 when logged out`);
+  }
+  const health = await request('/api/health');
+  assert.equal(health.status, 200);
+  assert.equal(health.json.ok, true);
+  assert.equal(typeof health.json.commit, 'string');
+  assert.ok(health.json.commit.length > 0);
+  assert.equal(health.json.assetVersion, 'dh-pwa-23');
+});
+
+test('deploy/hk/update.sh contract enforces single instance, commit verification, and /friends-list.js smoke check', () => {
+  const script = fs.readFileSync(path.join(__dirname, '..', 'deploy', 'hk', 'update.sh'), 'utf8');
+  assert.match(script, /-i 1/);
+  assert.doesNotMatch(script, /--exec-mode/);
+  assert.match(script, /\/api\/health/);
+  assert.match(script, /\\"commit\\"/);
+  assert.match(script, /EXPECTED_COMMIT/);
+  assert.match(script, /\/friends-list\.js/);
 });

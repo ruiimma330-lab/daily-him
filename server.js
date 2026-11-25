@@ -33,6 +33,33 @@ const PUBLIC_DIR = path.join(ROOT, 'public');
 const AUDIO_DIR = path.join(ROOT, 'cache', 'audio');
 const CONFIG_PATH = path.join(ROOT, 'config.json');
 
+function readGitCommit() {
+  try {
+    const gitDir = path.join(ROOT, '.git');
+    const head = fs.readFileSync(path.join(gitDir, 'HEAD'), 'utf8').trim();
+    if (head.startsWith('ref:')) {
+      const ref = head.slice(4).trim();
+      const refFile = path.join(gitDir, ref);
+      if (fs.existsSync(refFile)) {
+        const sha = fs.readFileSync(refFile, 'utf8').trim();
+        if (/^[a-f0-9]{7,40}$/i.test(sha)) return sha.slice(0, 7);
+      }
+      const packed = path.join(gitDir, 'packed-refs');
+      if (fs.existsSync(packed)) {
+        for (const line of fs.readFileSync(packed, 'utf8').split(/\r?\n/)) {
+          if (!line || line.startsWith('#') || line.startsWith('^')) continue;
+          const parts = line.trim().split(/\s+/);
+          if (parts[1] === ref && /^[a-f0-9]{7,40}$/i.test(parts[0])) return parts[0].slice(0, 7);
+        }
+      }
+      return 'unknown';
+    }
+    if (/^[a-f0-9]{7,40}$/i.test(head)) return head.slice(0, 7);
+  } catch (_) { /* git metadata optional */ }
+  return 'unknown';
+}
+const APP_COMMIT = readGitCommit();
+
 const BCRYPT_ROUNDS = 10;
 // New registrations: 8–12 digit account numbers only. Login still accepts legacy usernames.
 const REGISTER_USERNAME_RE = /^\d{8,12}$/;
@@ -569,6 +596,7 @@ function isPwaAsset(p) {
   // account-cache.js / sw-heal.js are plain code with no account data. They must be public so the
   // service worker never precaches the /login page under their URL while logged out.
   return p === '/sw.js' || p === '/sw-heal.js' || p === '/account-cache.js'
+    || p === '/playback.js'
     || p === '/pwa.js' || p === '/pwa.css' || p === '/mobile-lock.js' || p === '/mobile-lock.css' || p === '/offline.html'
     || p === '/app.js' || p === '/friends-list.js' || p === '/style.css' || p === '/moments.css' || p === '/moments.js' || p === '/memory.js'
     || p.startsWith('/me/')
@@ -1465,9 +1493,12 @@ function createApp() {
     res.json({ ok: true, profile: profile.load(req.userId, req.characterId) });
   });
 
-  app.put('/api/profile', requireUser, requireCharacter, (req, res) => {
+  app.put('/api/profile', requireUser, requireCharacter, async (req, res) => {
     const body = req.body || {};
     const saved = profile.save(req.userId, req.characterId, body);
+    if (body && (body.onboarded === true || body.onboarded === false)) {
+      await Promise.race([store.flush(), delayMs(1200)]).catch(() => {});
+    }
     res.json({ ok: true, profile: saved });
   });
 
@@ -1615,20 +1646,25 @@ function createApp() {
   });
 
   app.get('/api/health', (req, res) => {
-    if (!getSession(req)) return res.json({ ok: true, storage: store.storageName() });
+    const baseHealth = {
+      ok: true,
+      storage: store.storageName(),
+      commit: APP_COMMIT,
+      assetVersion: characters.ASSET_VERSION,
+    };
+    if (!getSession(req)) return res.json(baseHealth);
     const raw = req.query && req.query.characterId;
     if (raw == null || String(raw).trim() === '') {
-      return res.json({ ok: true, storage: store.storageName() });
+      return res.json(baseHealth);
     }
     const id = characters.resolveId(raw);
     if (!id) return res.status(404).json({ error: 'unknown character' });
     const config = resolveRuntimeConfig(id);
     res.json({
-      ok: true,
+      ...baseHealth,
       model: config.llmModel,
       voiceId: config.voiceId,
       ttsModel: config.ttsModel,
-      storage: store.storageName(),
     });
   });
 
