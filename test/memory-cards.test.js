@@ -123,3 +123,53 @@ test('memory stays inside one account and one character, and summaries do not ke
     memory.setBackend(memory.storeBackend);
   }
 });
+
+test('memory.load survives null cards/deleted and concurrent promptBlock preserves afterTurn extraction', async () => {
+  const docs = new Map();
+  memory.setBackend({
+    load: (userId, characterId) => {
+      const found = docs.get(`${userId}|${characterId}`);
+      return found ? JSON.parse(JSON.stringify(found)) : null;
+    },
+    save: (userId, characterId, data) => docs.set(`${userId}|${characterId}`, JSON.parse(JSON.stringify(data))),
+  });
+  try {
+    docs.set('N|baekhyun', { cards: null, deleted: null, pending: null, openings: null, summary: '' });
+    const loaded = memory.load('N', 'baekhyun');
+    assert.deepEqual(loaded.cards, []);
+    assert.deepEqual(loaded.deleted, []);
+    assert.deepEqual(loaded.pending, []);
+    assert.deepEqual(loaded.openings, []);
+    assert.equal(memory.promptBlock('N', 'baekhyun', '안녕', '에리', { now: NOW }), '');
+
+    docs.set('C|baekhyun', {
+      cards: [memCard({ id: 'old1', text: '用户周三考试', date: '2026-11-01', category: 'promise', tags: ['考试', '시험'] })],
+      deleted: [],
+      summary: '',
+      turnsSinceProactive: 0,
+      openings: [],
+    });
+    const turnPromise = memory.afterTurn({
+      userId: 'C',
+      characterId: 'baekhyun',
+      userText: '我喜欢草莓',
+      replyText: '좋아',
+      llm: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        return JSON.stringify({
+          ops: [{ op: 'add', text: '用户喜欢草莓', category: 'preference', date: null, tags: ['草莓', '딸기'] }],
+        });
+      },
+      userName: '에리',
+    });
+    const block = memory.promptBlock('C', 'baekhyun', '안녕', '에리', { now: NOW });
+    assert.match(block, /먼저 꺼내도 되는 기억 1개/);
+    await turnPromise;
+    await memory.idle('C', 'baekhyun');
+    const finalDoc = docs.get('C|baekhyun');
+    assert.ok(finalDoc.cards.some((c) => c.text === '用户喜欢草莓'), 'afterTurn card should be kept');
+    assert.ok(finalDoc.cards.find((c) => c.id === 'old1').askedAt, 'promptBlock askedAt should be kept');
+  } finally {
+    memory.setBackend(memory.storeBackend);
+  }
+});

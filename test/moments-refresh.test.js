@@ -185,3 +185,36 @@ test('drafts stay hidden, admins can review them, and an unset secret turns refr
   const closed = await request('/api/admin/moments?characterId=baekhyun', { cookie: admin.cookie });
   assert.equal(closed.status, 404);
 });
+
+test('concurrent toggleLike during maybeReply preserves the like and saves the reply', async () => {
+  const userId = fan.json.user.id;
+  const postId = moments.loadPosts('baekhyun')[0].id;
+  const comment = await moments.addComment(userId, 'baekhyun', postId, '오빠 오늘 멋있다');
+  let markStarted;
+  let releaseLlm;
+  const started = new Promise((resolve) => { markStarted = resolve; });
+  const gate = new Promise((resolve) => { releaseLlm = resolve; });
+  const task = moments.maybeReply({
+    userId,
+    characterId: 'baekhyun',
+    postId,
+    comment,
+    userName: '에리',
+    llm: async () => {
+      markStarted();
+      await gate;
+      return JSON.stringify({ ko: '고마워, 오늘 기분 좋네!' });
+    },
+  });
+  await started;
+  const liked = await moments.toggleLike(userId, 'baekhyun', postId);
+  assert.equal(liked.liked, true);
+  releaseLlm();
+  const reply = await task;
+  assert.ok(reply);
+  assert.equal(reply.text, '고마워, 오늘 기분 좋네!');
+  const item = moments.list(userId, 'baekhyun').find((p) => p.id === postId);
+  assert.equal(item.liked, true);
+  const savedComment = item.comments.find((c) => c.id === comment.id);
+  assert.equal(savedComment.reply.text, '고마워, 오늘 기분 좋네!');
+});
