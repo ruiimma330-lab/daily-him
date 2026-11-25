@@ -173,3 +173,15 @@ test('memory.load survives null cards/deleted and concurrent promptBlock preserv
     memory.setBackend(memory.storeBackend);
   }
 });
+
+test('cleanSummary preserves 600-char summaries and caps at 800 chars', () => {
+  assert.equal(cards.SUMMARY_MAX_CHARS, 800);
+  const s600 = '她每周五都会去上韩语课，并且和白贤约定好年底一起去看雪。'.repeat(24).slice(0, 600);
+  assert.equal(s600.length, 600);
+  const kept600 = cards.cleanSummary(s600, '');
+  assert.equal(kept600.length, 600);
+  const s950 = '用户分享了重要的人生里程碑和约定。'.repeat(60);
+  assert.ok(s950.length > 800);
+  const capped = cards.cleanSummary(s950, '');
+  assert.equal(capped.length, 800);
+});

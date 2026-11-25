@@ -147,7 +147,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-27`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-28`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -407,7 +407,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function safeAudioUrl(url) {
-    return typeof url === 'string' && /^\/audio\/[a-f0-9]{64}\.mp3$/.test(url) ? url : null;
+    if (typeof url !== 'string' || url.includes('..')) return null;
+    return /^\/(?:audio|singing)\/[A-Za-z0-9_./-]+$/.test(url) ? url : null;
   }
 
   function showToast(text) {
@@ -432,7 +433,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     input.disabled = blocked;
     sendBtn.disabled = blocked;
     if (sceneBar) sceneBar.hidden = blocked || !sceneBar.children.length;
-    ['voice-toggle', 'remark-open', 'moments-open-menu', 'moments-open-profile', 'sheet-moments', 'tab-moments'].forEach((id) => {
+    ['voice-toggle', 'remark-open', 'moments-open-menu', 'moments-open-profile', 'sheet-moments', 'sheet-sing', 'tab-moments'].forEach((id) => {
       const node = document.getElementById(id);
       if (node) node.hidden = blocked;
     });
@@ -1548,8 +1549,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     } catch (_) { bar.hidden = true; }
   }
 
-  async function send() {
-    const text = input.value.trim();
+  async function sendText(rawText, { clearInput = false } = {}) {
+    const text = String(rawText || '').trim();
     if (!text) return;
     if (writesBlocked()) {
       showToast('该角色暂未开放，当前仅可查看');
@@ -1566,12 +1567,18 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     activeTurnId = newTurnId();
     messages.push({ role: 'user', text, time: Date.now(), audioUrl: null, turnId: activeTurnId });
     saveHistory();
-    input.value = '';
-    updateSendButton();
+    if (clearInput) {
+      input.value = '';
+      updateSendButton();
+    }
     showRetry = false;
     voiceNote = '';
     animateLast = true;
     await requestReply();
+  }
+
+  async function send() {
+    return sendText(input.value, { clearInput: true });
   }
 
   function retryLast() {
@@ -1600,6 +1607,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   menuBtn.addEventListener('click', () => setMenu(!menuOpen));
   document.getElementById('plus-btn').addEventListener('click', openSheet);
   document.getElementById('sheet-close').addEventListener('click', closeSheet);
+  const sheetSing = document.getElementById('sheet-sing');
+  if (sheetSing) {
+    sheetSing.addEventListener('click', () => {
+      closeSheet();
+      sendText('给我清唱一段吧');
+    });
+  }
   const sheetMoments = document.getElementById('sheet-moments');
   if (sheetMoments) {
     sheetMoments.addEventListener('click', () => {
