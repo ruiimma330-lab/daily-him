@@ -19,7 +19,7 @@
 </head>
 <body>
   <main>
-    <header><a href="/shell/cover.html" aria-label="返回封面">‹ 返回</a><span>安装与下载</span></header>
+    <header><a id="install-back" href="/shell/cover.html" aria-label="返回封面">‹ 返回</a><span>安装与下载</span></header>
     <div class="intro">
       <img class="app-icon" src="/icons/icon-192.png" width="68" height="68" alt="" />
       <h1 class="dh-wordmark" data-brand>Daily Him</h1>
@@ -60,7 +60,7 @@
       </div>
       <p class="hint">iOS 不提供 IPA 一键下载，也无需前往 App Store。</p>
     </section>
-    <footer><a href="/shell/cover.html">继续使用网页版 →</a><p>Daily Him · 每天见</p></footer>
+    <footer><a id="install-continue" href="/shell/cover.html">继续使用网页版 →</a><p>Daily Him · 每天见</p></footer>
     <noscript><p>请开启 JavaScript 以使用安装按钮。iPhone / iPad 可直接按上方 Safari 步骤添加到主屏幕。</p></noscript>
   </main>
   <script src="/sw-heal.js"></script>
@@ -68,5 +68,24 @@
   <script src="/pwa.js"></script>
   <script src="/mobile-lock.js"></script>
   <script src="/shell/install.js"></script>
+  <script>
+    (function () {
+      const back = document.getElementById('install-back');
+      const cont = document.getElementById('install-continue');
+      const params = new URLSearchParams(location.search);
+      function useAppRoot() {
+        if (back) { back.href = '/'; back.setAttribute('aria-label', '返回首页'); }
+        if (cont) cont.href = '/';
+      }
+      if (params.get('from') === 'app') {
+        useAppRoot();
+        return;
+      }
+      fetch('/api/me', { credentials: 'same-origin' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((me) => { if (me && me.user) useAppRoot(); })
+        .catch(() => {});
+    })();
+  </script>
 </body>
 </html>

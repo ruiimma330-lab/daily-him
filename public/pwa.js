@@ -91,7 +91,7 @@
   window.addEventListener('online', paintOnline);
   window.addEventListener('offline', paintOnline);
 
-  function showGuide() {
+  function prepareGuide() {
     copyLink.hidden = true;
     copyLink.textContent = '复制链接';
     copyFallback.hidden = true;
@@ -109,6 +109,10 @@
       iosLead.textContent = '暂时没有弹出系统安装框。请点 Chrome 右上角菜单，选择「安装应用」或「添加到主屏幕」。';
       steps.hidden = true;
     }
+  }
+
+  function showGuide() {
+    prepareGuide();
     iosGuide.hidden = false;
   }
 
@@ -156,13 +160,6 @@
     iosGuide.hidden = true;
     try { localStorage.setItem('dh_ios_guide', '1'); } catch (_) { /* ignore */ }
   });
-
-  function maybeIosGuide() {
-    if (standalone || !ios || wechat) return;
-    let seen = false;
-    try { seen = localStorage.getItem('dh_ios_guide') === '1'; } catch (_) { seen = false; }
-    if (!seen) showGuide();
-  }
 
   installHide.addEventListener('click', () => {
     install.hidden = true;
@@ -217,15 +214,44 @@
   });
 
   let reloading = false;
+  function isUserTyping() {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+      return true;
+    }
+    if (!document.querySelectorAll) return false;
+    const fields = document.querySelectorAll('textarea, input[type="text"], input[type="search"], input:not([type])');
+    for (let i = 0; i < fields.length; i += 1) {
+      if (fields[i].value) return true;
+    }
+    return false;
+  }
   function applyUpdate() {
     if (!waitingWorker) return;
     reloading = true;
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
   }
+  function scheduleAutoApply() {
+    setTimeout(() => {
+      if (reloading || !waitingWorker) return;
+      if (isUserTyping()) {
+        const active = document.activeElement;
+        if (active && active.addEventListener) {
+          active.addEventListener('blur', () => {
+            setTimeout(() => {
+              if (!reloading && waitingWorker && !isUserTyping()) applyUpdate();
+            }, 300);
+          }, { once: true });
+        }
+        return;
+      }
+      applyUpdate();
+    }, 1200);
+  }
   updateBtn.addEventListener('click', applyUpdate);
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (reloading) location.reload();
+      if (reloading && !isUserTyping()) location.reload();
     });
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').then((reg) => {
@@ -244,15 +270,15 @@
         if (reg.waiting && navigator.serviceWorker.controller) {
           waitingWorker = reg.waiting;
           update.hidden = false;
-          // Auto-apply after a short beat so deploys are not stuck behind the bar.
-          setTimeout(() => { if (!reloading && waitingWorker) applyUpdate(); }, 1200);
+          // Auto-apply after a short beat when idle so deploys are not stuck behind the bar.
+          scheduleAutoApply();
         }
         reg.addEventListener('updatefound', () => watch(reg.installing));
       }).catch(() => { /* private mode or insecure origin */ });
     });
   }
 
-  maybeIosGuide();
+  prepareGuide();
 
   window.DailyPwa = {
     isStandalone: () => standalone,

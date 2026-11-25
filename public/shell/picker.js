@@ -273,36 +273,73 @@
     }
   }
 
+  let hasFriendsState = false;
   function leave() {
-    if (Shell.qs('from') === 'chat') Shell.go('/', { c: Shell.selectedCharacter() });
+    if (Shell.qs('from') === 'chat' || hasFriendsState) Shell.go('/', { c: Shell.selectedCharacter() });
     else Shell.go('/shell/cover.html');
   }
 
   pager.addEventListener('scroll', syncFromScroll, { passive: true });
   goBtn.addEventListener('click', start);
-  document.getElementById('picker-search-btn').addEventListener('click', () => {
+  const searchBtn = document.getElementById('picker-search-btn');
+  searchForm.addEventListener('submit', (event) => event.preventDefault());
+  searchBtn.addEventListener('click', () => {
     const open = searchForm.hidden;
     searchForm.hidden = !open;
-    document.getElementById('picker-search-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
-    if (open) queryInput.focus();
+    searchBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      queryInput.focus();
+    } else if (state.query || queryInput.value) {
+      state.query = '';
+      queryInput.value = '';
+      state.index = 0;
+      paint();
+    }
   });
   queryInput.addEventListener('input', () => {
     state.query = queryInput.value;
     state.index = 0;
     paint();
   });
-  document.getElementById('picker-menu-btn').addEventListener('click', () => {
-    const open = menu.hidden;
-    menu.hidden = !open;
-    document.getElementById('picker-menu-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-  document.getElementById('picker-back').addEventListener('click', leave);
+
+  const menuBtn = document.getElementById('picker-menu-btn');
+  function closeMenu() {
+    if (!menu || menu.hidden) return;
+    menu.hidden = true;
+    if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
+  }
+  if (menuBtn && menu) {
+    menuBtn.hidden = menu.children.length === 0;
+    menuBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!menu.children.length) return;
+      const open = menu.hidden;
+      menu.hidden = !open;
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.addEventListener('click', (event) => {
+      if (!menu.hidden && !menu.contains(event.target) && !menuBtn.contains(event.target)) {
+        closeMenu();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
+    });
+  }
+
+  const backBtn = document.getElementById('picker-back');
+  if (backBtn) {
+    backBtn.hidden = Shell.qs('from') !== 'chat';
+    backBtn.addEventListener('click', leave);
+  }
 
   Promise.all([
     Shell.api('/api/characters'),
-    Shell.api('/api/friends').catch(() => ({ friends: [] })),
+    Shell.api('/api/friends').catch(() => ({ friends: [], hasFriends: false })),
   ]).then(([data, friends]) => {
     const added = new Set((friends.friends || []).map((item) => item.id));
+    hasFriendsState = Boolean(friends && (friends.hasFriends || added.size > 0));
+    if (backBtn) backBtn.hidden = !(hasFriendsState || Shell.qs('from') === 'chat');
     let roster = data.characters || [];
     // From chat "添加": only show idols not yet opened as friends.
     if (Shell.qs('from') === 'chat') {

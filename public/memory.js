@@ -218,7 +218,6 @@
     dirtyPersonal = false;
     try {
       await refresh();
-      if (!isReadOnly() && !dirtyPersonal) callInput.focus();
     } catch (_) { toast('加载失败'); }
   }
   function close() { panel.hidden = true; }
@@ -259,8 +258,10 @@
       paintPersonal({ personal: data.personal });
       dirtyPersonal = false;
       const savedNick = (data.personal && data.personal.characterNickname) || '';
+      const charId = (typeof CHARACTER_ID === 'string' && CHARACTER_ID)
+        || (new URLSearchParams(location.search).get('c') || 'baekhyun').toLowerCase();
       document.dispatchEvent(new CustomEvent('idol-profile', {
-        detail: { characterId: new URLSearchParams(location.search).get('c') || '', characterNickname: savedNick },
+        detail: { characterId: charId, characterNickname: savedNick },
       }));
       toast('保存好了，下一句就用上');
       personalSave.textContent = '已保存 ✓';

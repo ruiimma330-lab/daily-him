@@ -47,6 +47,14 @@
       <div class="field"><label for="code-custom">自定义码（可选）</label><input id="code-custom" autocomplete="off" placeholder="如 DH-STAR-200" /></div>
       <button type="button" class="btn btn-ghost" id="make-code">生成兑换码</button>
       <p id="new-code"></p>
+      <hr style="margin:20px 0;border:0;border-top:1px solid rgba(28,28,28,0.1)" />
+      <h3 style="font-size:15px;font-weight:500;margin:0 0 12px">批量生成一次性兑换码</h3>
+      <div class="field"><label for="batch-count">数量</label><input id="batch-count" inputmode="numeric" value="30" /></div>
+      <div class="field"><label for="batch-amount">单张星光面额</label><input id="batch-amount" inputmode="numeric" value="200" /></div>
+      <div class="field"><label for="batch-uses">每码可用次数</label><input id="batch-uses" inputmode="numeric" value="1" /></div>
+      <button type="button" class="btn btn-ghost" id="make-batch-codes">批量生成一次性兑换码</button>
+      <textarea id="batch-codes-md" readonly rows="8" hidden aria-label="批量兑换码 Markdown 列表" style="width:100%;box-sizing:border-box;margin-top:12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(28,28,28,0.12);background:#f7f7f8;font-family:monospace;font-size:13px"></textarea>
+      <button type="button" class="btn btn-ghost" id="copy-batch-codes" hidden>复制 Markdown 列表</button>
     </form>
   </div>
   <script src="/sw-heal.js"></script>
@@ -75,12 +83,20 @@
           ? `今日已领取 · 连续 ${data.streak || 0} 天`
           : `今日可领取 · 连续 ${data.streak || 0} 天`;
       noticeEl.textContent = data.notice || '';
-      packagesEl.innerHTML = '';
+      packagesEl.replaceChildren();
       (data.packages || []).forEach((item) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'pkg';
-        button.innerHTML = `<span><span class="name">${item.priceYuan} 元档 · ${item.amount} 星光</span></span><span class="unavailable">暂未开通</span>`;
+        const left = document.createElement('span');
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = `${item.priceYuan} 元档 · ${item.amount} 星光`;
+        left.append(name);
+        const status = document.createElement('span');
+        status.className = 'unavailable';
+        status.textContent = '暂未开通';
+        button.append(left, status);
         button.addEventListener('click', async () => {
           try {
             await Shell.api('/api/starlight/purchase', {
@@ -92,7 +108,7 @@
         });
         packagesEl.append(button);
       });
-      ledgerEl.innerHTML = '';
+      ledgerEl.replaceChildren();
       (data.ledger || []).forEach((row) => {
         const line = document.createElement('p');
         line.className = 'lead';
@@ -163,6 +179,50 @@
         document.getElementById('new-code').textContent = created.code || '';
         if (custom) document.getElementById('code-custom').value = '';
       } catch (_) { Shell.toast('没有生成'); }
+    };
+    const batchOut = document.getElementById('batch-codes-md');
+    const copyBatchBtn = document.getElementById('copy-batch-codes');
+    document.getElementById('make-batch-codes').onclick = async () => {
+      try {
+        const count = Number(document.getElementById('batch-count').value);
+        const amount = Number(document.getElementById('batch-amount').value);
+        const maxUses = Number(document.getElementById('batch-uses').value);
+        const res = await Shell.api('/api/admin/starlight/codes/batch', {
+          method: 'POST',
+          body: JSON.stringify({ count, amount, maxUses }),
+        });
+        const list = Array.isArray(res.codes) ? res.codes : (Array.isArray(res.items) ? res.items : []);
+        const md = typeof res.markdown === 'string' && res.markdown.trim()
+          ? res.markdown
+          : list.map((entry, idx) => {
+            const code = typeof entry === 'string' ? entry : (entry && entry.code) || '';
+            const amt = (entry && entry.amount != null) ? entry.amount : amount;
+            const uses = (entry && entry.maxUses != null) ? entry.maxUses : maxUses;
+            return `${idx + 1}. \`${code}\` (${amt} 星光, ${uses} 次)`;
+          }).join('\n');
+        batchOut.value = md;
+        batchOut.hidden = !md;
+        copyBatchBtn.hidden = !md;
+        if (!md) Shell.toast('没有生成兑换码');
+      } catch (_) { Shell.toast('批量生成失败'); }
+    };
+    copyBatchBtn.onclick = async () => {
+      const text = batchOut.value;
+      if (!text) return;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          batchOut.focus();
+          batchOut.select();
+          document.execCommand('copy');
+        }
+        Shell.toast('已复制 Markdown 列表');
+      } catch (_) {
+        batchOut.focus();
+        batchOut.select();
+        Shell.toast('请手动复制下方内容');
+      }
     };
     load().then(() => {
       const target = { '#claim': 'claim', '#recharge': 'recharge', '#ledger': 'ledger' }[location.hash];
