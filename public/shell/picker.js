@@ -253,6 +253,11 @@
         goBtn.disabled = current.available === false;
         return;
       }
+      // From 好友「添加」: go straight back to the list so the new row is visible.
+      if (Shell.qs('from') === 'chat') {
+        Shell.go('/', { c: current.id });
+        return;
+      }
       const named = Boolean(
         profile
         && (profile.callNameStatus === 'done' || profile.callNameStatus === 'pending')

@@ -1542,33 +1542,39 @@ function createApp() {
 
   // Friends = onboarded idols + characters with existing chat history (legacy accounts).
   app.get('/api/friends', requireUser, (req, res) => {
-    const byId = new Map(characters.listAll().map((ch) => [ch.id, ch]));
-    const friends = profile.listFriendIds(req.userId).map((id) => {
-      let ch = byId.get(id);
-      if (!ch) {
-        try { ch = characters.publicInfo(id); } catch (_) { ch = { id, name: id, displayName: id, available: false }; }
-      }
-      const p = profile.load(req.userId, id);
-      const history = store.getHistory(req.userId, id);
-      const last = history.length ? history[history.length - 1] : null;
-      const preview = last
-        ? (typeof last.text === 'string' && last.text ? last.text : (last.audioUrl ? '음성' : ''))
-        : '';
-      return {
-        id,
-        name: ch && ch.name,
-        displayName: ch && (ch.displayName || ch.name),
-        nameZh: ch && ch.nameZh,
-        group: ch && ch.group,
-        available: ch ? ch.available !== false : false,
-        avatar: ch && ch.avatar,
-        characterNickname: p.characterNickname || '',
-        onboardedAt: p.onboardedAt,
-        preview,
-        lastAt: last && last.time ? last.time : (p.onboardedAt || 0),
-      };
-    }).sort((a, b) => Number(b.lastAt || 0) - Number(a.lastAt || 0));
-    res.json({ ok: true, friends, hasFriends: friends.length > 0 });
+    try {
+      const byId = new Map(characters.listAll().map((ch) => [ch.id, ch]));
+      const friends = profile.listFriendIds(req.userId).map((id) => {
+        let ch = byId.get(id);
+        if (!ch) {
+          try { ch = characters.publicInfo(id); } catch (_) { ch = { id, name: id, displayName: id, available: false }; }
+        }
+        const p = profile.load(req.userId, id);
+        let history = [];
+        try { history = store.getHistory(req.userId, id); } catch (_) { history = []; }
+        const last = history.length ? history[history.length - 1] : null;
+        const preview = last
+          ? (typeof last.text === 'string' && last.text ? last.text : (last.audioUrl ? '음성' : ''))
+          : '';
+        return {
+          id,
+          name: ch && ch.name,
+          displayName: ch && (ch.displayName || ch.name),
+          nameZh: ch && ch.nameZh,
+          group: ch && ch.group,
+          available: ch ? ch.available !== false : false,
+          avatar: ch && ch.avatar,
+          characterNickname: p.characterNickname || '',
+          onboardedAt: p.onboardedAt,
+          preview,
+          lastAt: last && last.time ? last.time : (p.onboardedAt || 0),
+        };
+      }).sort((a, b) => Number(b.lastAt || 0) - Number(a.lastAt || 0));
+      res.json({ ok: true, friends, hasFriends: friends.length > 0 });
+    } catch (err) {
+      console.error('GET /api/friends failed', err && err.message ? err.message : err);
+      res.status(500).json({ ok: false, error: 'friends_failed', friends: [], hasFriends: false });
+    }
   });
 
   app.get('/api/characters', requireUser, (req, res) => {
