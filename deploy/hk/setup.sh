@@ -207,6 +207,9 @@ if [[ -S /root/.pm2/rpc.sock ]] && pm2 describe "$APP_NAME" >/dev/null 2>&1; the
   pm2 save --force >/dev/null
 fi
 systemctl disable --now pm2-root >/dev/null 2>&1 || true
+if systemctl list-unit-files dailyhim.service >/dev/null 2>&1 || systemctl is-active --quiet dailyhim.service 2>/dev/null; then
+  systemctl disable --now dailyhim.service >/dev/null 2>&1 || true
+fi
 run_as_app pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
 # Use -i 1 (portable). Some PM2 builds reject --exec-mode.
 run_as_app pm2 start "$APP_DIR/server.js" --name "$APP_NAME" --cwd "$APP_DIR" \
@@ -236,7 +239,14 @@ server {
     gzip_min_length 1024;
     gzip_types text/plain text/css application/json application/javascript application/manifest+json image/svg+xml;
 
-    location ~* ^/(?:icons|brand|characters)/.*\.(?:avif|gif|jpe?g|png|webp|woff2)$ {
+    location ^~ /characters/ {
+        proxy_pass http://127.0.0.1:${APP_PORT};
+        proxy_http_version 1.1;
+        include proxy_params;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location ~* ^/(?:icons|brand)/.*\.(?:avif|gif|jpe?g|png|webp|woff2)$ {
         proxy_pass http://127.0.0.1:${APP_PORT};
         include proxy_params;
         proxy_set_header X-Forwarded-Proto \$scheme;

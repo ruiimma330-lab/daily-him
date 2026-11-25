@@ -59,6 +59,9 @@ if [[ -S /root/.pm2/rpc.sock ]] && pm2 describe "$APP_NAME" >/dev/null 2>&1; the
   pm2 save --force >/dev/null
 fi
 systemctl disable --now pm2-root >/dev/null 2>&1 || true
+if systemctl list-unit-files dailyhim.service >/dev/null 2>&1 || systemctl is-active --quiet dailyhim.service 2>/dev/null; then
+  systemctl disable --now dailyhim.service >/dev/null 2>&1 || true
+fi
 
 set -a
 # shellcheck disable=SC1090
