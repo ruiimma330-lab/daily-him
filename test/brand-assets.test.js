@@ -56,5 +56,5 @@ test('manifest and visible logo containers use the B2 midnight blue while PWA st
   const sw = fs.readFileSync(path.join(PUBLIC, 'sw.js'), 'utf8');
   assert.match(shell, /\.mark \{[^}]*border-radius: 22px;[^}]*background: #13213f;/);
   assert.match(login, /\.mark \{[\s\S]*?border-radius: 20px;[\s\S]*?background: #13213f;/);
-  assert.match(sw, /const VERSION = 'dh-pwa-22';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-23';/);
 });
