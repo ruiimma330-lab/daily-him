@@ -58,7 +58,12 @@
       document.getElementById('more').textContent = copy.onboard.more;
       document.getElementById('next').textContent = copy.onboard.next;
       document.getElementById('disclaimer').textContent = copy.disclaimer;
-      document.getElementById('back').onclick = () => Shell.go('/shell/pick.html', { c });
+      // Safety: landing here after 开始聊天 also marks the idol as a friend.
+      Shell.api('/api/profile?characterId=' + encodeURIComponent(c), {
+        method: 'PUT',
+        body: JSON.stringify({ onboarded: true }),
+      }).catch(() => { /* list still works after a later successful save */ });
+      document.getElementById('back').onclick = () => Shell.go('/', { c });
       document.getElementById('pick-self').onclick = () => {
         document.getElementById('self').hidden = false;
         document.getElementById('callName').focus();

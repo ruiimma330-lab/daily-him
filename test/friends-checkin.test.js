@@ -157,6 +157,9 @@ test('cover and chat clients route returning users to the list, not the picker',
   assert.doesNotMatch(app, /if \(fromWelcome\) openRoom\(\)/);
   assert.match(login, /destinationAfterAuth/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
+  // 开始聊天 immediately PUTs onboarded:true before onboard / list.
+  assert.match(picker, /onboarded:\s*true/);
+  assert.match(picker, /method:\s*'PUT'/);
   assert.match(manifest, /"start_url": "\/"/);
-  assert.match(sw, /dh-pwa-18/);
+  assert.match(sw, /dh-pwa-19/);
 });
