@@ -8,8 +8,12 @@
   <style>
     body { margin: 0; font: 15px/1.5 sans-serif; background: #f6f4f1; color: #222; }
     main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
-    h1 { font-size: 22px; font-weight: 500; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+    h1 { font-size: 22px; font-weight: 500; margin: 0; }
+    .char-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: #444; }
+    .char-pick select { font-size: 16px; padding: 6px 10px; border: 1px solid #d5d0ca; border-radius: 8px; background: #fff; color: #222; }
     article { background: #fff; border-radius: 12px; padding: 14px; margin: 12px 0; }
+    input, textarea, select { font-size: 16px; }
     textarea { width: 100%; min-height: 72px; box-sizing: border-box; }
     button { margin-right: 8px; }
     .src { font-size: 12px; color: #666; word-break: break-all; }
@@ -18,7 +22,13 @@
 </head>
 <body>
   <main>
-    <h1>朋友圈草稿</h1>
+    <div class="topbar">
+      <h1>朋友圈草稿</h1>
+      <label class="char-pick">
+        <span>角色</span>
+        <select id="char-select" aria-label="选择角色"></select>
+      </label>
+    </div>
     <p class="note">定位：近况资讯 / 活动预告 / 活动速递。发布后会作为艺人消息出现在朋友圈。</p>
     <p id="note" class="note">正在确认权限…</p>
     <div id="list"></div>
@@ -27,7 +37,44 @@
   <script>
     const note = document.getElementById('note');
     const list = document.getElementById('list');
-    const characterId = new URLSearchParams(location.search).get('c') || 'baekhyun';
+    const charSelect = document.getElementById('char-select');
+    let characterId = (new URLSearchParams(location.search).get('c') || 'baekhyun').toLowerCase();
+    let loadSeq = 0;
+
+    async function loadCharacters() {
+      let options = [];
+      try {
+        const response = await fetch('/api/characters', { credentials: 'same-origin' });
+        if (response.ok) {
+          const data = await response.json();
+          options = (data.characters || []).filter((ch) => ch && ch.available !== false);
+        }
+      } catch (_) { /* keep fallback */ }
+      charSelect.replaceChildren();
+      if (!options.length) {
+        options = [{ id: characterId, displayName: characterId }];
+      } else if (!options.some((ch) => ch.id === characterId)) {
+        characterId = options[0].id;
+      }
+      options.forEach((ch) => {
+        const opt = document.createElement('option');
+        opt.value = ch.id;
+        opt.textContent = ch.nameZh ? `${ch.nameZh} (${ch.displayName || ch.name || ch.id})` : (ch.displayName || ch.name || ch.id);
+        if (ch.id === characterId) opt.selected = true;
+        charSelect.append(opt);
+      });
+    }
+
+    charSelect.addEventListener('change', () => {
+      characterId = charSelect.value;
+      try {
+        const params = new URLSearchParams(location.search);
+        params.set('c', characterId);
+        history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+      } catch (_) { /* ignore */ }
+      note.textContent = '正在加载…';
+      load();
+    });
 
     async function api(path, options) {
       const response = await fetch(path + (path.includes('?') ? '&' : '?') + 'characterId=' + encodeURIComponent(characterId), {
@@ -101,15 +148,18 @@
     }
 
     async function load() {
+      const seq = ++loadSeq;
       try {
         const data = await api('/api/admin/moments');
+        if (seq !== loadSeq) return;
         draw(data.drafts || []);
       } catch (err) {
+        if (seq !== loadSeq) return;
         list.innerHTML = '';
         note.textContent = err.status === 401 ? '请先登录。' : err.status === 403 ? '这个账号不能看草稿。' : '草稿箱没有打开。';
       }
     }
-    load();
+    loadCharacters().then(load);
   </script>
 </body>
 </html>

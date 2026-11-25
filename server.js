@@ -1045,6 +1045,9 @@ function createApp() {
   });
 
   app.put('/api/me/password', requireUser, async (req, res) => {
+    if (!authAllowed(clientIp(req))) {
+      return res.status(429).json({ error: 'Too many attempts' });
+    }
     const oldPassword = req.body && req.body.oldPassword;
     const newPassword = req.body && req.body.newPassword;
     if (typeof oldPassword !== 'string' || !oldPassword || !validatePassword(newPassword)) {
@@ -1053,14 +1056,18 @@ function createApp() {
     const user = store.findUserById(req.userId);
     if (!user) return res.status(401).json({ error: 'Unauthorized' });
     const matches = await bcrypt.compare(oldPassword, user.passwordHash);
-    if (!matches) return res.status(401).json({ error: 'Unauthorized' });
+    if (!matches) {
+      recordAuthFailure();
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     store.updateUser(req.userId, { passwordHash: await bcrypt.hash(newPassword, BCRYPT_ROUNDS) });
     return res.json({ ok: true });
   });
 
-  app.delete('/api/me', requireUser, (req, res) => {
+  app.delete('/api/me', requireUser, async (req, res) => {
     const confirm = req.body && typeof req.body.confirm === 'string' ? req.body.confirm.trim() : '';
     if (confirm !== '注销') return res.status(400).json({ error: 'confirm required' });
+    await starlight.deleteUser(req.userId);
     store.deleteUser(req.userId);
     clearSessionCookie(req, res);
     return res.json({ ok: true });
@@ -1197,6 +1204,11 @@ function createApp() {
     if (body.category !== undefined && !require('./lib/memory-cards').CATEGORIES.includes(body.category)) {
       return res.status(400).json({ error: 'bad category' });
     }
+    if (body.date !== undefined && body.date !== null && body.date !== '') {
+      if (typeof body.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(body.date)) {
+        return res.status(400).json({ error: '日期格式应为 YYYY-MM-DD' });
+      }
+    }
     const card = await memory.editCard(req.userId, req.characterId, req.params.id, {
       text: body.text,
       category: body.category,
@@ -1248,7 +1260,7 @@ function createApp() {
   }
 
   function starAdminNames() {
-    return [process.env.ADMINS, process.env.MOMENTS_ADMINS]
+    return [process.env.ADMINS]
       .filter(Boolean)
       .join(',')
       .split(',')
@@ -1280,7 +1292,9 @@ function createApp() {
     if (!secret) return res.json({ ok: true, enabled: false });
     const header = String(req.get('authorization') || '');
     const token = header.replace(/^Bearer\s+/i, '').trim();
-    if (token !== secret) return res.status(401).json({ error: 'Unauthorized' });
+    const a = sha256Digest(token);
+    const b = sha256Digest(secret);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return res.status(401).json({ error: 'Unauthorized' });
     try {
       const raw = req.body && req.body.characterId != null ? String(req.body.characterId).trim() : '';
       const all = !raw || raw === 'all' || raw === '*';
@@ -1336,7 +1350,7 @@ function createApp() {
     store.putSetting(VOICE_AB_KEY, JSON.stringify(data));
   }
 
-  app.get('/api/admin/voice-ab/status', requireUser, requireAdmin, (req, res) => {
+  app.get('/api/admin/voice-ab/status', requireUser, requireStarAdmin, (req, res) => {
     const pack = voicePack.load('baekhyun');
     const locked = Boolean(pack && pack.ok);
     res.json({
@@ -1349,7 +1363,7 @@ function createApp() {
     });
   });
 
-  app.post('/api/admin/voice-ab/session', requireUser, requireAdmin, async (req, res) => {
+  app.post('/api/admin/voice-ab/session', requireUser, requireStarAdmin, async (req, res) => {
     const pack = voicePack.load('baekhyun');
     if (!pack || !pack.ok || pack.enabled === false) {
       console.error(pack ? pack.error : 'no voice package');
@@ -1403,7 +1417,7 @@ function createApp() {
     return res.json({ ok: true, sessionId, lines });
   });
 
-  app.post('/api/admin/voice-ab/choice', requireUser, requireAdmin, (req, res) => {
+  app.post('/api/admin/voice-ab/choice', requireUser, requireStarAdmin, (req, res) => {
     const sessionId = req.body && typeof req.body.sessionId === 'string' ? req.body.sessionId : '';
     const lineId = req.body && typeof req.body.lineId === 'string' ? req.body.lineId : '';
     const pick = req.body && req.body.choice === 'B' ? 'B' : req.body && req.body.choice === 'A' ? 'A' : '';
@@ -1433,8 +1447,8 @@ function createApp() {
     });
   });
 
-  app.post('/api/moments/:id/like', requireUser, requireCharacter, requireAvailable, (req, res) => {
-    const result = moments.toggleLike(req.userId, req.characterId, req.params.id);
+  app.post('/api/moments/:id/like', requireUser, requireCharacter, requireAvailable, async (req, res) => {
+    const result = await moments.toggleLike(req.userId, req.characterId, req.params.id);
     if (!result) return res.status(404).json({ error: 'not found' });
     return res.json({ ok: true, ...result });
   });
@@ -1449,7 +1463,7 @@ function createApp() {
   app.post('/api/moments/:id/comments', requireUser, requireCharacter, requireAvailable, async (req, res) => {
     let comment;
     try {
-      comment = moments.addComment(req.userId, req.characterId, req.params.id, req.body && req.body.text);
+      comment = await moments.addComment(req.userId, req.characterId, req.params.id, req.body && req.body.text);
     } catch (err) {
       if (err.code === 'EMPTY') return res.status(400).json({ error: 'text required' });
       if (err.code === 'LIMIT') return res.status(400).json({ error: 'too many comments' });
@@ -1558,11 +1572,28 @@ function createApp() {
       maxUses: req.body && req.body.maxUses,
       expiresAt: req.body && req.body.expiresAt,
       code: req.body && req.body.code,
+      note: req.body && req.body.note,
       createdBy: req.userId,
     });
     if (!created.ok) {
       const status = created.code === 'taken' ? 409 : 400;
       return res.status(status).json({ error: created.code || 'bad-code' });
+    }
+    return res.json({ ok: true, ...created });
+  });
+
+  app.post('/api/admin/starlight/codes/batch', requireUser, requireStarAdmin, async (req, res) => {
+    const body = req.body || {};
+    const created = await starlight.createCodeBatch(req.userId, {
+      count: body.count,
+      amount: body.amount,
+      maxUses: body.maxUses,
+      prefix: body.prefix,
+      note: body.note,
+      expiresAt: body.expiresAt,
+    });
+    if (!created.ok) {
+      return res.status(400).json({ error: created.code || 'bad-request' });
     }
     return res.json({ ok: true, ...created });
   });
@@ -1601,12 +1632,8 @@ function createApp() {
     const meta = characters.loadMeta(id);
     const name = path.basename(String(meta.avatar || 'avatar.svg'));
     if (!name || name === '.' || name === '..') return res.status(404).end();
-    const candidates = [
-      path.join(PUBLIC_DIR, 'characters', id, name),
-      path.join(characters.CHAR_DIR, id, name),
-    ];
-    const file = candidates.find((candidate) => fs.existsSync(candidate));
-    if (!file) return res.status(404).end();
+    const file = path.join(characters.CHAR_DIR, id, name);
+    if (!fs.existsSync(file)) return res.status(404).end();
     res.set('Cache-Control', req.query.v === characters.ASSET_VERSION
       ? 'public, max-age=31536000, immutable'
       : 'public, max-age=300, must-revalidate');

@@ -16,11 +16,6 @@ function readCharacterId() {
 }
 const CHARACTER_ID = readCharacterId();
 const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
-(async function () {
-  // Soft gate: if ?c= points at a character that is not a chat entry yet, keep it
-  // (user may have just opened from picker). No redirect-to-pick — that hid real chats.
-  if (new URLSearchParams(location.search).get('forced') === '1') return;
-})();
 (function () {
   const pageFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
@@ -152,7 +147,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-23`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-24`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -183,8 +178,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       }
       img.src = `/api/me/avatar?v=${userAvatarVersion}`;
     });
-    const clearBtn = document.getElementById('me-avatar-clear');
-    if (clearBtn) clearBtn.hidden = !userAvatarVersion;
   }
 
   window.IdolChat = {
@@ -203,11 +196,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (!aiNotice) return;
     aiNoticeAccountId = me && me.user && me.user.id ? me.user.id : '';
     // The response is authoritative. A local flag is written only as a fast-path hint.
-    aiNotice.hidden = !me || me.aiDisclaimerAcknowledged !== false;
+    aiNotice.hidden = !me || !me.user || me.aiDisclaimerAcknowledged !== false;
   }
 
   if (aiNoticeOk) {
     aiNoticeOk.addEventListener('click', async () => {
+      if (aiNoticeOk.disabled) return;
       aiNoticeOk.disabled = true;
       try {
         const response = await fetch('/api/me/ai-disclaimer', { method: 'POST' });
@@ -438,7 +432,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     input.disabled = blocked;
     sendBtn.disabled = blocked;
     if (sceneBar) sceneBar.hidden = blocked || !sceneBar.children.length;
-    ['voice-toggle', 'remark-open', 'moments-open-menu', 'moments-open-profile', 'tab-moments'].forEach((id) => {
+    ['voice-toggle', 'remark-open', 'moments-open-menu', 'moments-open-profile', 'sheet-moments', 'tab-moments'].forEach((id) => {
       const node = document.getElementById(id);
       if (node) node.hidden = blocked;
     });
@@ -471,16 +465,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const date = new Date(ts);
     const week = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'][date.getDay()];
     return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${week}`;
-  }
-
-  function formatListTime(ts) {
-    const date = new Date(ts);
-    const now = new Date();
-    const start = (value) => new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
-    const diff = start(now) - start(date);
-    if (diff === 0) return formatClock(ts);
-    if (diff === 86400000) return '어제';
-    return `${date.getMonth() + 1}월 ${date.getDate()}일`;
   }
 
   function dayKey(ts) {
@@ -747,10 +731,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const url = await requestVoice(message);
     clearTimeout(timer);
     if (!url) return;
+    const hadFallback = Boolean(message.voiceFallback);
     message.ttsPending = false;
     message.voiceFallback = null;
     message.ttsFailed = false;
-    paintPlayer(player);
+    if (hadFallback) render();
+    else paintPlayer(player);
     scheduleAutoplay();
   }
 
@@ -1127,29 +1113,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     tabBar.hidden = !show;
   }
 
-  async function refreshMe() {
-    if (!screenMe) return;
-    try {
-      const me = await fetch('/api/me').then((r) => r.json());
-      const prof = await fetch(withChar('/api/profile')).then((r) => r.json());
-      const wal = await fetch('/api/wallet').then((r) => r.json());
-      const p = (prof && prof.profile) || {};
-      const display = p.displayName || (me.user && me.user.username) || '—';
-      if (me && me.hasAvatar) userAvatarVersion = userAvatarVersion || Date.now();
-      else userAvatarVersion = 0;
-      applyUserAvatar();
-      const el = (id) => document.getElementById(id);
-      if (el('me-display')) el('me-display').textContent = display;
-      const profileName = document.getElementById('me-profile-name');
-      if (profileName) profileName.textContent = display;
-      if (el('me-username')) el('me-username').textContent = me.user ? ('@' + me.user.username) : '';
-      if (el('me-call')) el('me-call').textContent = p.callName || '—';
-      if (typeof p.characterNickname === 'string') charRemark = p.characterNickname;
-      applyCharacterLabels();
-      if (el('me-balance')) el('me-balance').textContent = wal.unlimited ? '无限' : String(wal.balance ?? 0);
-    } catch (_) { /* ignore */ }
-  }
-
   function switchMainTab(tab) {
     if (roomOpen) closeRoom();
     mainTab = tab;
@@ -1164,7 +1127,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     });
     setTabBarVisible(true);
     if (tab === 'me' && window.Me && window.Me.open) window.Me.open();
-    else if (tab === 'me') refreshMe();
   }
 
   if (tabBar) {
@@ -1177,32 +1139,17 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   document.addEventListener('idol-tab', (e) => {
     if (e.detail && e.detail.tab) switchMainTab(e.detail.tab);
   });
-  const meRecharge = document.getElementById('me-recharge');
-  if (meRecharge) meRecharge.addEventListener('click', () => {
-    location.href = '/shell/starlight.html#recharge';
-  });
-  const meMemory = document.getElementById('me-memory');
-  if (meMemory) meMemory.addEventListener('click', () => {
-    const b = document.getElementById('memory-open-menu');
-    if (b) b.click();
-  });
-  const meLogout = document.getElementById('me-logout');
-  if (meLogout) meLogout.addEventListener('click', () => logout());
-  const meReset = document.getElementById('me-reset');
-  if (meReset) meReset.addEventListener('click', async () => {
-    if (!confirm('重新从封面选人？当前聊天记录不会删。')) return;
-    try {
-      await fetch(withChar('/api/profile'), {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ onboarded: false }),
-      });
-      location.href = '/shell/cover.html';
-    } catch (_) { showToast('操作失败'); }
-  });
 
-  function openRoom() {
+  function openRoom(opts = {}) {
+    const wasOpen = roomOpen;
     roomOpen = true;
+    if (!wasOpen && !opts.fromPopState) {
+      try {
+        if (!history.state || !history.state.dailyhimRoom || history.state.c !== CHARACTER_ID) {
+          history.pushState({ dailyhimRoom: true, c: CHARACTER_ID }, '', location.pathname + location.search);
+        }
+      } catch (_) { /* ignore */ }
+    }
     setTabBarVisible(false);
     if (window.Moments && window.Moments.isOpen && window.Moments.isOpen()) window.Moments.close();
     room.classList.add('open');
@@ -1215,12 +1162,21 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (!writesBlocked()) input.focus();
   }
 
-  function closeRoom() {
+  function closeRoom(opts = {}) {
     roomOpen = false;
+    if (!opts.fromPopState) {
+      try {
+        if (history.state && history.state.dailyhimRoom) {
+          history.replaceState(null, '', location.pathname + location.search);
+        }
+      } catch (_) { /* ignore */ }
+    }
     stopAllAudio();
     setMenu(false);
     closeSheet();
     closeProfile();
+    const memPanel = document.getElementById('mem-panel');
+    if (memPanel && !memPanel.hidden) memPanel.hidden = true;
     if (document.activeElement && room.contains(document.activeElement)) document.activeElement.blur();
     room.classList.remove('open');
     room.setAttribute('aria-hidden', 'true');
@@ -1231,6 +1187,16 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const focusRow = document.querySelector('#friends-section .chat-row[data-friend-id="' + CSS.escape(CHARACTER_ID) + '"]');
     if (focusRow) focusRow.focus();
   }
+
+  window.addEventListener('popstate', (event) => {
+    if (roomOpen) {
+      if (!event.state || !event.state.dailyhimRoom) closeRoom({ fromPopState: true });
+      return;
+    }
+    if (event.state && event.state.dailyhimRoom && (!event.state.c || event.state.c === CHARACTER_ID)) {
+      openRoom({ fromPopState: true });
+    }
+  });
 
   function openSheet() {
     sheet.hidden = false;
@@ -1403,7 +1369,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           bar.textContent = '星光不够啦 · 去领取';
           bar.onclick = () => { location.href = '/shell/starlight.html'; };
         }
-        input.value = currentUserText();
+        if (input.value.trim() === '') {
+          input.value = currentUserText();
+          updateSendButton();
+        }
         for (let i = messages.length - 1; i >= 0; i -= 1) {
           if (messages[i].role === 'user') { messages.splice(i, 1); break; }
         }
@@ -1614,11 +1583,33 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   applyCharacterAccessUi();
   loadScenes();
-  document.getElementById('back-btn').addEventListener('click', closeRoom);
+  document.getElementById('back-btn').addEventListener('click', () => closeRoom());
   document.getElementById('profile-btn').addEventListener('click', openProfile);
   menuBtn.addEventListener('click', () => setMenu(!menuOpen));
   document.getElementById('plus-btn').addEventListener('click', openSheet);
   document.getElementById('sheet-close').addEventListener('click', closeSheet);
+  const sheetMoments = document.getElementById('sheet-moments');
+  if (sheetMoments) {
+    sheetMoments.addEventListener('click', () => {
+      closeSheet();
+      if (window.Moments && window.Moments.open) window.Moments.open();
+    });
+  }
+  const sheetMemory = document.getElementById('sheet-memory');
+  if (sheetMemory) {
+    sheetMemory.addEventListener('click', () => {
+      closeSheet();
+      const memBtn = document.getElementById('memory-open-menu');
+      if (memBtn) memBtn.click();
+    });
+  }
+  const sheetStarlight = document.getElementById('sheet-starlight');
+  if (sheetStarlight) {
+    sheetStarlight.addEventListener('click', () => {
+      closeSheet();
+      location.href = '/shell/starlight.html';
+    });
+  }
   sheet.addEventListener('click', (event) => {
     if (event.target === sheet) closeSheet();
   });
@@ -1721,6 +1712,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const saved = data && data.profile && data.profile.characterNickname;
       charRemark = typeof saved === 'string' ? saved : next;
       applyCharacterLabels();
+      loadFriendsList();
       closeRemark();
       showToast('备注已更新');
     } catch (err) {
@@ -1758,6 +1750,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           if (ch.displayName || ch.name) charDefault.name = ch.displayName || ch.name;
           if (typeof ch.displayEmoji === 'string') charDefault.emoji = ch.displayEmoji;
           if (typeof ch.avatar === 'string' && ch.avatar.startsWith('/characters/')) characterAvatarUrl = ch.avatar;
+          const statusEl = document.getElementById('profile-status');
+          if (statusEl) {
+            const statusText = String(ch.status || ch.tagline || ch.bio || [ch.group, ch.company].filter(Boolean).join(' · ') || '').trim();
+            statusEl.textContent = statusText;
+            statusEl.hidden = !statusText;
+          }
         }
       }
       if (profRes.ok) {
@@ -1777,8 +1775,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   const remarkOpen = document.getElementById('remark-open');
   if (remarkOpen) remarkOpen.addEventListener('click', openRemark);
-  const meRemark = document.getElementById('me-remark-open');
-  if (meRemark) meRemark.addEventListener('click', openRemark);
   const remarkCancel = document.getElementById('remark-cancel');
   if (remarkCancel) remarkCancel.addEventListener('click', closeRemark);
   if (remarkForm) remarkForm.addEventListener('submit', saveRemark);
@@ -1823,67 +1819,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       document.querySelectorAll('#friends-section .chat-row').forEach((row) => {
         row.hidden = Boolean(q) && !row.innerText.toLowerCase().includes(q);
       });
-    });
-  }
-  const avatarFile = document.getElementById('me-avatar-file');
-  const avatarClear = document.getElementById('me-avatar-clear');
-
-  function jpegBytesToBase64(bytes) {
-    let binary = '';
-    const chunk = 0x8000;
-    for (let i = 0; i < bytes.length; i += chunk) {
-      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
-    }
-    return btoa(binary);
-  }
-
-  async function fileToAvatarJpeg(file) {
-    const bitmap = await createImageBitmap(file);
-    const side = Math.min(bitmap.width, bitmap.height);
-    const sx = Math.floor((bitmap.width - side) / 2);
-    const sy = Math.floor((bitmap.height - side) / 2);
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    canvas.getContext('2d').drawImage(bitmap, sx, sy, side, side, 0, 0, 256, 256);
-    if (bitmap.close) bitmap.close();
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
-    if (!blob) throw new Error('encode failed');
-    return jpegBytesToBase64(new Uint8Array(await blob.arrayBuffer()));
-  }
-
-  if (avatarFile) {
-    avatarFile.addEventListener('change', async () => {
-      const file = avatarFile.files && avatarFile.files[0];
-      avatarFile.value = '';
-      if (!file) return;
-      try {
-        const image = await fileToAvatarJpeg(file);
-        const response = await fetch('/api/me/avatar', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image }),
-        });
-        if (response.status === 401) { location.href = '/login'; return; }
-        if (!response.ok) throw new Error('upload failed');
-        userAvatarVersion = Date.now();
-        applyUserAvatar();
-        showToast('头像已更新');
-      } catch (err) {
-        showToast('头像没换上');
-      }
-    });
-  }
-  if (avatarClear) {
-    avatarClear.addEventListener('click', async () => {
-      try {
-        const response = await fetch('/api/me/avatar', { method: 'DELETE' });
-        if (!response.ok) throw new Error('clear failed');
-        userAvatarVersion = 0;
-        applyUserAvatar();
-      } catch (err) {
-        showToast('没能恢复默认头像');
-      }
     });
   }
 
@@ -1947,18 +1882,17 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   updateSendButton();
   render();
 
-  document.addEventListener('idol-prefs', (event) => applyPrefs(event.detail || {}));
   document.addEventListener('idol-avatar', (event) => {
     userAvatarVersion = event.detail && event.detail.hasAvatar ? Date.now() : 0;
     applyUserAvatar();
   });
   document.addEventListener('idol-profile', (event) => {
     const detail = event.detail || {};
-    if (detail.characterId !== CHARACTER_ID) return;
-    if (typeof detail.characterNickname === 'string') {
+    if (detail.characterId === CHARACTER_ID && typeof detail.characterNickname === 'string') {
       charRemark = detail.characterNickname;
       applyCharacterLabels();
     }
+    loadFriendsList();
   });
   document.addEventListener('idol-history-cleared', (event) => {
     const detail = event.detail || {};
@@ -2106,6 +2040,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     // welcome=1: seed greeting, stay on list. open=1: enter the chat room.
     const fromWelcome = params.get('welcome') === '1';
     const wantOpen = params.get('open') === '1';
+    const wantTab = params.get('tab');
     const seeded = await welcomeIfNeeded(remote);
     messages = window.AccountCache.viewAfterFetch(true, seeded);
     historyError = false;
@@ -2113,20 +2048,23 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (seeded !== remote) saveHistory();
     else saveLocalHistory();
     let checkinAppended = false;
-    try {
-      const checkin = await fetch(withChar('/api/checkin'), { method: 'POST' });
-      if (checkin.ok) {
-        const payload = await checkin.json();
-        if (payload && payload.appended && Array.isArray(payload.messages)) {
-          messages = window.AccountCache.viewAfterFetch(true, payload.messages);
-          checkinAppended = true;
-          saveLocalHistory();
+    if (!characterReadOnly) {
+      try {
+        const checkin = await fetch(withChar('/api/checkin'), { method: 'POST' });
+        if (checkin.ok) {
+          const payload = await checkin.json();
+          if (payload && payload.appended && Array.isArray(payload.messages)) {
+            messages = window.AccountCache.viewAfterFetch(true, payload.messages);
+            checkinAppended = true;
+            saveLocalHistory();
+          }
         }
-      }
-    } catch (_) { /* check-in is best-effort */ }
-    if (fromWelcome || wantOpen) {
+      } catch (_) { /* check-in is best-effort */ }
+    }
+    if (fromWelcome || wantOpen || wantTab) {
       params.delete('welcome');
       params.delete('open');
+      params.delete('tab');
       const cleaned = params.toString();
       history.replaceState(null, '', cleaned ? `${location.pathname}?${cleaned}` : location.pathname);
     }
@@ -2138,6 +2076,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
     updateList();
     if (wantOpen) openRoom();
+    else if (wantTab === 'moments' && !characterReadOnly) switchMainTab('moments');
   }
 
   async function bootAccount() {

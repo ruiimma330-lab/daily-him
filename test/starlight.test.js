@@ -303,3 +303,126 @@ test('seed codes and custom redeem codes work once', async () => {
   await starlight.ensure(other);
   assert.equal((await starlight.redeem(other, 'PROMO-VIP-88')).ok, true);
 });
+
+test('30x200 single-use seed codes, createCodeBatch, and batch endpoint work once per code', async () => {
+  const cfg = starlight.loadConfig();
+  const batch200 = cfg.seedCodes.filter((item) => item.amount === 200 && item.maxUses === 1);
+  assert.equal(batch200.length, 30);
+  const uniqueCodes = new Set(batch200.map((item) => item.code));
+  assert.equal(uniqueCodes.size, 30);
+
+  const doc = fs.readFileSync(path.join(__dirname, '..', 'docs', 'starlight-200-codes.md'), 'utf8');
+  for (const item of batch200) {
+    assert.ok(doc.includes(item.code), `docs/starlight-200-codes.md should list ${item.code}`);
+  }
+
+  await starlight.ensureSeedCodes();
+  const u1 = 'e'.repeat(32);
+  const u2 = 'f'.repeat(32);
+  await starlight.ensure(u1);
+  await starlight.ensure(u2);
+  const sample = batch200[0].code;
+  const before = (await starlight.summary(u1)).balance;
+  const firstRedeem = await starlight.redeem(u1, sample);
+  assert.equal(firstRedeem.ok, true);
+  assert.equal(firstRedeem.amount, 200);
+  assert.equal((await starlight.summary(u1)).balance, before + 200);
+  assert.equal((await starlight.redeem(u1, sample)).code, 'used-up');
+  assert.equal((await starlight.redeem(u2, sample)).code, 'used-up');
+
+  const generated = await starlight.createCodeBatch('admin-id', { count: 4, amount: 200, maxUses: 1, prefix: 'VIP' });
+  assert.equal(generated.ok, true);
+  assert.equal(generated.codes.length, 4);
+  assert.equal(new Set(generated.codes).size, 4);
+  assert.ok(generated.codes.every((code) => code.startsWith('VIP-')));
+  const r1 = await starlight.redeem(u1, generated.codes[0]);
+  assert.equal(r1.ok, true);
+  assert.equal(r1.amount, 200);
+  assert.equal((await starlight.redeem(u2, generated.codes[0])).code, 'used-up');
+  assert.equal((await starlight.createCodeBatch('admin-id', { count: 101 })).code, 'bad-count');
+
+  const adminName = digitUsername();
+  const adminUser = await request('/api/register', { method: 'POST', body: { username: adminName, password: 'password1', age14: true } });
+  const momentsOnlyName = digitUsername();
+  const momentsOnly = await request('/api/register', { method: 'POST', body: { username: momentsOnlyName, password: 'password1', age14: true } });
+  process.env.ADMINS = adminName;
+  process.env.MOMENTS_ADMINS = momentsOnlyName;
+  try {
+    const denied = await request('/api/admin/starlight/codes/batch', {
+      method: 'POST', cookie: momentsOnly.cookie, body: { count: 2 },
+    });
+    assert.equal(denied.status, 403);
+    const created = await request('/api/admin/starlight/codes/batch', {
+      method: 'POST', cookie: adminUser.cookie, body: { count: 2, amount: 200, maxUses: 1 },
+    });
+    assert.equal(created.status, 200);
+    assert.equal(created.json.codes.length, 2);
+  } finally {
+    delete process.env.ADMINS;
+    delete process.env.MOMENTS_ADMINS;
+  }
+});
+
+test('re-reserving a released requestId charges again and dailyVoiceCap tracks active holds', async () => {
+  const user = '1'.repeat(32);
+  await starlight.ensure(user);
+  await starlight.grant(user, 1000, 'test');
+  const start = (await starlight.summary(user)).balance;
+
+  const r1 = await starlight.reserve({ userId: user, requestId: 'reuse-rel-1', action: 'voice', amount: 15 });
+  assert.equal(r1.ok, true);
+  assert.equal(r1.status, 'reserved');
+  assert.equal(r1.balance, start - 15);
+  assert.equal((await starlight.summary(user)).voiceToday, 1);
+
+  const rel = await starlight.release('reuse-rel-1');
+  assert.equal(rel.ok, true);
+  assert.equal(rel.balance, start);
+  assert.equal((await starlight.summary(user)).voiceToday, 0);
+
+  const r2 = await starlight.reserve({ userId: user, requestId: 'reuse-rel-1', action: 'voice', amount: 15 });
+  assert.equal(r2.ok, true);
+  assert.equal(r2.reused, false);
+  assert.equal(r2.status, 'reserved');
+  assert.equal(r2.balance, start - 15);
+  assert.equal((await starlight.summary(user)).voiceToday, 1);
+
+  const s2 = await starlight.settle('reuse-rel-1');
+  assert.equal(s2.ok, true);
+  assert.equal(s2.status, 'settled');
+  const r3 = await starlight.reserve({ userId: user, requestId: 'reuse-rel-1', action: 'voice', amount: 15 });
+  assert.equal(r3.ok, true);
+  assert.equal(r3.reused, true);
+  assert.equal(r3.status, 'settled');
+  assert.equal(r3.balance, start - 15);
+
+  // Concurrent dailyVoiceCap test
+  const capUser = '2'.repeat(32);
+  await starlight.ensure(capUser);
+  await starlight.grant(capUser, 5000, 'test');
+  const cap = starlight.loadConfig().dailyVoiceCap;
+  const attempts = await Promise.all(
+    Array.from({ length: cap + 2 }, (_, idx) => starlight.reserve({
+      userId: capUser, requestId: `vcap-${idx}`, action: 'voice', amount: 15,
+    })),
+  );
+  assert.equal(attempts.filter((item) => item.ok).length, cap);
+  assert.equal(attempts.filter((item) => item.code === 'voice-cap').length, 2);
+
+  await starlight.release('vcap-0');
+  const afterRelease = await starlight.reserve({ userId: capUser, requestId: 'vcap-extra', action: 'voice', amount: 15 });
+  assert.equal(afterRelease.ok, true);
+
+  await starlight.deleteUser(capUser);
+  const freshAfterDelete = await starlight.ensure(capUser);
+  assert.equal(freshAfterDelete.balance, 100);
+  assert.equal(freshAfterDelete.voiceToday, 0);
+
+  const doomed = await request('/api/register', { method: 'POST', body: { username: digitUsername(), password: 'password1', age14: true } });
+  const doomedId = doomed.json.user.id;
+  await starlight.grant(doomedId, 50, 'test');
+  assert.equal((await starlight.summary(doomedId)).balance, 150);
+  const delRes = await request('/api/me', { method: 'DELETE', cookie: doomed.cookie, body: { confirm: '注销' } });
+  assert.equal(delRes.status, 200);
+  assert.equal((await starlight.ensure(doomedId)).balance, 100);
+});

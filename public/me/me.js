@@ -37,7 +37,6 @@
       try { localStorage.setItem(window.AccountCache.prefsKey(id), JSON.stringify(state.settings)); } catch (_) { /* ignore */ }
     }
     if (window.IdolChat && window.IdolChat.applyPrefs) window.IdolChat.applyPrefs(state.settings);
-    syncNotice();
   }
 
   function toast(msg) {
@@ -280,13 +279,9 @@
     card.className = 'me-group me-starlight';
     card.setAttribute('aria-label', '星光');
     const data = state.starlight;
-    const balance = data
-      ? (data.unlimited ? '无限星光' : `${data.balance ?? 0} 星光`)
-      : '余额暂不可用';
+    const balance = data ? `${data.balance ?? 0} 星光` : '余额暂不可用';
     const status = data
-      ? (data.unlimited
-        ? '管理员账号'
-        : (data.claimedToday ? `今日已领取 · 连续 ${data.streak || 0} 天` : '今日可领取'))
+      ? (data.claimedToday ? `今日已领取 · 连续 ${data.streak || 0} 天` : '今日可领取')
       : '领取状态暂不可用';
     const row = line(balance, status, () => { location.href = '/shell/starlight.html#claim'; });
     row.querySelector('b').className = 'me-label';
@@ -343,6 +338,7 @@
         if (state.me) state.me.hasAvatar = true;
         publish('idol-avatar', { hasAvatar: true });
         toast('头像已更新');
+        paintMain();
       } catch (_) { toast('头像没换上'); }
     });
     const ident = document.createElement('div');
@@ -356,6 +352,26 @@
     handle.className = 'me-handle';
     handle.textContent = username ? `@${username}` : '';
     ident.append(nick, handle);
+    if (state.me && state.me.hasAvatar) {
+      const resetAvatar = document.createElement('button');
+      resetAvatar.type = 'button';
+      resetAvatar.className = 'me-avatar-reset';
+      resetAvatar.textContent = '恢复默认头像';
+      resetAvatar.addEventListener('click', async () => {
+        resetAvatar.disabled = true;
+        try {
+          await api('/api/me/avatar', { method: 'DELETE' });
+          if (state.me) state.me.hasAvatar = false;
+          publish('idol-avatar', { hasAvatar: false });
+          toast('已恢复默认头像');
+          paintMain();
+        } catch (_) {
+          toast('没有恢复成默认头像');
+          resetAvatar.disabled = false;
+        }
+      });
+      ident.append(resetAvatar);
+    }
     profile.append(avatar, ident, file);
 
     const idols = document.createElement('div');
@@ -485,15 +501,20 @@
     call.setAttribute('aria-label', '他怎么叫你');
     call.addEventListener('change', async () => {
       const nextName = call.value.trim();
-      if (!nextName) { toast('称呼不能是空的'); call.value = (state.profiles[ch.id] && state.profiles[ch.id].callName) || ''; return; }
       try {
         const saved = await api(`/api/profile?characterId=${encodeURIComponent(ch.id)}`, {
           method: 'PUT',
-          body: JSON.stringify({ callName: nextName, callNameStatus: 'done', callNameSource: 'user' }),
+          body: JSON.stringify({
+            callName: nextName,
+            ...(nextName ? { callNameStatus: 'done', callNameSource: 'user' } : {}),
+          }),
         });
         state.profiles[ch.id] = (saved && saved.profile) || state.profiles[ch.id];
-        toast('称呼已更新');
-      } catch (_) { toast('称呼没保存上'); }
+        toast(nextName ? '称呼已更新' : '称呼已清空');
+      } catch (_) {
+        call.value = (state.profiles[ch.id] && state.profiles[ch.id].callName) || '';
+        toast('称呼没保存上');
+      }
     });
 
     const rel = state.rel[ch.id] || {};
@@ -787,11 +808,11 @@
     del.className = 'is-delete';
     del.textContent = '删除';
     del.addEventListener('click', async () => {
-      const ok = await twoStep({
+      const ok = await ask({
         title: '删除这条记忆',
-        body: card.text,
-        again: '删除后，他不会再记起这件事。',
+        body: `${card.text}\n删除后，他不会再记起这件事。`,
         confirm: '确认删除',
+        danger: true,
       });
       if (!ok) return;
       try {
@@ -937,21 +958,17 @@
     host.append(block);
   }
 
-  function syncNotice() {
-    const notice = document.getElementById('ai-notice');
-    if (!notice) return;
-    notice.hidden = state.settings.aiNoticeSeen === true;
-  }
+  let inflightRefresh = null;
+  let lastRefreshAt = 0;
 
-  async function refresh() {
+  async function doRefresh() {
     try {
-      const [me, settings, chars, about, starlight, history] = await Promise.all([
+      const [me, settings, friendsRes, about, starlight] = await Promise.all([
         api('/api/me'),
         api('/api/me/settings'),
-        api('/api/characters'),
+        api('/api/friends').catch(() => ({ friends: [] })),
         api('/api/about'),
         api('/api/starlight').catch(() => null),
-        api('/api/conversations'),
       ]);
       state.me = me;
       state.starlight = starlight;
@@ -960,15 +977,12 @@
         window.AccountCache.adopt(localStorage, me.user.id, characterId);
       }
       writeLocal(settings.settings || {});
-      state.characters = [...new Map([
-        ...(chars.characters || []).filter((ch) => ch.available !== false),
-        ...(history.conversations || []),
-      ].map((ch) => [ch.id, ch])).values()];
+      state.characters = Array.isArray(friendsRes && friendsRes.friends) ? friendsRes.friends : [];
       state.about = about || state.about;
       const details = await Promise.all(state.characters.map(async (ch) => {
         const [prof, rel] = await Promise.all([
-          api(`/api/profile?characterId=${encodeURIComponent(ch.id)}`),
-          api(`/api/relationship?characterId=${encodeURIComponent(ch.id)}`),
+          api(`/api/profile?characterId=${encodeURIComponent(ch.id)}`).catch(() => null),
+          api(`/api/relationship?characterId=${encodeURIComponent(ch.id)}`).catch(() => null),
         ]);
         return [ch.id, (prof && prof.profile) || {}, (rel && rel.relationship) || {}];
       }));
@@ -982,14 +996,18 @@
     paintMain();
     if (stack.length) showSub();
     else syncBar();
-    syncNotice();
   }
 
-  const noticeOk = document.getElementById('ai-notice-ok');
-  if (noticeOk) {
-    noticeOk.addEventListener('click', () => saveSettings({ aiNoticeSeen: true }));
+  function refresh() {
+    if (inflightRefresh) return inflightRefresh;
+    if (state.me && Date.now() - lastRefreshAt < 1000) return Promise.resolve();
+    inflightRefresh = doRefresh().finally(() => {
+      inflightRefresh = null;
+      lastRefreshAt = Date.now();
+    });
+    return inflightRefresh;
   }
-  syncNotice();
+
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || screen.hidden) return;
     if (!dialog.hidden) {
@@ -998,6 +1016,16 @@
     } else if (stack.length) pop();
   });
 
+  if (typeof MutationObserver === 'function') {
+    new MutationObserver(() => {
+      if (!screen.hidden) refresh();
+    }).observe(screen, { attributes: true, attributeFilter: ['hidden'] });
+  }
+  document.addEventListener('click', (event) => {
+    const tab = event.target && event.target.closest && event.target.closest('.tab[data-tab="me"], .tab-item[data-tab="me"]');
+    if (tab) refresh();
+  });
+
   window.Me = { open: refresh };
-  refresh();
+  if (!screen.hidden) refresh();
 })();

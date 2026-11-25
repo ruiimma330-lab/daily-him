@@ -12,6 +12,10 @@
   let done = false;
 
   function typing() {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+      return true;
+    }
     const fields = document.querySelectorAll('textarea, input[type="text"], input[type="search"], input:not([type])');
     for (let i = 0; i < fields.length; i += 1) if (fields[i].value) return true;
     return false;

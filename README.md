@@ -1,131 +1,57 @@
-# Idol chat
+# Daily Him
 
-Personal-use KakaoTalk-style demo. The chat partner is an **AI character**, not a real person. No voice cloning and no recordings are used.
+Multi-character KakaoTalk-style AI idol chat PWA. Chat partners are **AI fictional characters**, not real people; no voice cloning and no recordings are used.
 
-## Run
+- **Characters & Discovery:** 49 characters in the public discovery roster (`config/public-roster.json`), with 10 open characters currently enabled for live chat (`available !== false` and complete character packs).
+- **Core Features:** Friends list & onboarding (`public/friends-list.js`, `lib/friends.js`), multi-character chat & proactive check-ins, on-demand/inline voice synthesis, Moments feed & admin review desk, Starlight balance & redeem codes, long-term memory cards/summaries, and relationship/spark progression.
 
-Node.js 18 or newer.
+## Run Locally
+
+Node.js 18 or newer (Node.js 22 LTS in production).
 
 ```bash
 npm install
 export DEEPSEEK_CHAT_API_KEY=your_key_here
 export ELEVENLABS_API_KEY=your_key_here
-# optional: an ElevenLabs voice id you already have
-export VOICE_ID=your_voice_id
 # recommended locally so sessions survive restart
 export SESSION_SECRET=dev-secret-change-me
 npm start
 ```
 
-Open http://localhost:3000. The server reads keys only from the environment. It exits on startup if either API key is missing, and it never prints the key values.
+Open `http://localhost:3000`. The server reads API keys only from the environment, exits on startup if `DEEPSEEK_CHAT_API_KEY` or `ELEVENLABS_API_KEY` is missing, and never logs secret values. `PORT` defaults to `3000`.
 
-`PORT` defaults to 3000.
+### Accounts & Auth
 
-### Accounts (phase 0)
+Chat requires a registered account on `/login`:
 
-Chat requires a **username + password** account:
+- **Registration (`POST /api/register`):** `username` must be **8–12 digits** (`^\d{8,12}$`), `password` 8–128 characters (hashed with bcrypt), and `age14: true` is required.
+- **Login (`POST /api/login`):** accepts new 8–12 digit accounts as well as legacy `[A-Za-z0-9_]{3,32}` usernames.
+- **Session:** `sid` cookie binds to `userId` for 30 days.
+- **Optional site gate:** if `APP_PASSWORD` is set, visitors unlock the site first via `POST /api/site-login`. When `NODE_ENV=production`, `SESSION_SECRET` is required.
 
-- Register / login on `/login`
-- Username: 3–32 chars, letters / digits / underscore
-- Password: at least 8 characters (stored with bcrypt; never plaintext)
-- Session cookie `sid` binds to `userId` for 30 days
+### Storage (Turso or Local File)
 
-Optional **site gate**: if `APP_PASSWORD` is set, visitors must unlock the site first (`/api/site-login`), then register or log in. Leave `APP_PASSWORD` unset locally to skip that step. Site gate does **not** replace per-user accounts.
+- **Turso / libSQL:** when both `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` are set, users, account docs, settings, and the starlight ledger are stored in Turso.
+- **Local file fallback:** otherwise data is stored under `STORE_DATA_DIR` (defaults to `data/`), with per-character documents at `data/<kind>/<characterId>/<userId>.json` (`users.json` and `settings.json` at the root of `data/`). Do not commit `data/`.
+- `GET /api/health` returns `{ ok, storage, commit, assetVersion }` (`storage` is `"turso"` or `"file"`).
 
-When `NODE_ENV` is `production`, `SESSION_SECRET` is required (process exits if missing). `APP_PASSWORD` is optional.
+### Config, Prompts & Voice Packs
 
-### Chat history
+`config.json` holds global defaults (such as `llmModel: "deepseek-flash"` and relationship tier rules), while environment variables override them (`LLM_MODEL`, `TTS_MODEL`, `VOICE_ID`, `LLM_TIMEOUT_MS` defaulting to `90000`).
 
-History is stored **on the server per user** under `data/history/<userId>.json` (also mirrored in browser `localStorage` as a cache). Opening the app loads from the server. 「대화 기록 삭제」 clears both server and device.
+- **Prompts:** assembled by `lib/build-prompt.js` from `persona/common.md` and `characters/<id>/`.
+- **Voice packs:** locked characters resolve voice configuration and preprocessing from `characters/<id>/voice/voice.lock.json` (plus `prepare.js` and SHA-256 pinned files), rather than a single global `VOICE_ID`.
+- **Audio cache:** synthesized MP3 clips are cached in `cache/audio/` and served at `/audio/<sha256>.mp3`; optional pre-stored greeting clips live under `characters/<id>/greetings/`.
 
-**Storage:** with `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN` set, all data (users, history, relationship, memory, session secret) is stored in Turso (libSQL); otherwise it falls back to local JSON files in `data/` (wiped on Render free redeploys). `/api/health` shows `storage: turso|file`. Do not commit `data/`.
+## Key API Endpoints
 
-## Config
+- **Health & Auth:** `GET /api/health`, `GET /api/site-config`, `GET /api/auth-config`, `POST /api/site-login`, `POST /api/register`, `POST /api/login`, `POST /api/logout`, `GET /api/me`
+- **Friends & Roster:** `GET /api/friends`, `GET /api/characters`, `GET /api/conversations`
+- **Chat, Check-in & Voice:** `POST /api/chat`, `POST /api/tts`, `GET|PUT|DELETE /api/history`, `POST /api/checkin`
+- **Relationship & Memory:** `GET|DELETE /api/relationship`, `GET /api/memory`, `PUT /api/memory/personal`, `DELETE /api/memory/summary`, `DELETE /api/memory/:id`, `DELETE /api/memory`
+- **Moments:** `GET /api/moments`, `POST /api/moments/:id/like`, `GET|POST /api/moments/:id/comments`, `POST /api/moments/refresh`, `GET|PUT|POST /api/admin/moments...`
+- **Starlight:** `GET /api/starlight`, `POST /api/starlight/claim`, `POST /api/starlight/redeem`, `POST /api/admin/starlight/grant`, `POST /api/admin/starlight/codes`
 
-`config.json` holds non-secret defaults. Environment variables override it. If a value is missing from both, the server falls back to `deepseek-v4-pro`, `eleven_flash_v2_5`, and a 90 second model timeout.
+## Production Deployment
 
-| Env | Default |
-| --- | --- |
-| `LLM_MODEL` | `llmModel` in `config.json` |
-| `TTS_MODEL` | `ttsModel` in `config.json` |
-| `VOICE_ID` | `voiceId` in `config.json` |
-| `LLM_TIMEOUT_MS` | `90000` |
-| `SESSION_SECRET` | required in production |
-| `APP_PASSWORD` | optional site gate |
-| `PUBLIC_SITE_URL` | `https://dailyhim.cn` |
-| `MOVED_TO_URL` | unset; when set, HTML pages show the move notice |
-
-### Which chat model to run
-
-Leave `config.json` as it is and override with `LLM_MODEL` when you start the app.
-
-Off-peak (higher quality):
-
-```bash
-LLM_MODEL=deepseek-v4-pro npm start
-```
-
-Peak hours — Beijing time, weekdays 09:00–12:00 and 14:00–18:00 — use the faster model:
-
-```bash
-LLM_MODEL=deepseek-flash npm start
-```
-
-`LLM_TIMEOUT_MS` is the model request timeout in milliseconds. A timed-out model call returns HTTP 504 `{ "error": "timeout" }`. Other model failures return HTTP 502.
-
-Text chat still works when `voiceId` is `PLACEHOLDER`. Speech is skipped until a real voice id is set, and the reply includes `audioError`. Sending `{ "voice": false }` skips TTS entirely (no ElevenLabs call) and returns `audioUrl: null`.
-
-The chat screen always sends `voice: false`, so a reply does not spend ElevenLabs credits. Each character bubble shows the Korean text with a speaker icon; tapping it calls `POST /api/tts` and plays the mp3. Audio is cached under `cache/audio/` (same hash as before), and the bubble stores `audioUrl` after the first successful play.
-
-The system prompt is assembled by `lib/build-prompt.js` from `persona/common.md` and the character pack under `characters/<id>/`. Old prompt drafts live in `archive/`.
-
-Generated mp3 files are cached in `cache/audio/` and served at `/audio/<sha256>.mp3`.
-
-## API
-
-- `GET /api/health` → public `{ ok, storage }`; logged-in requests may also include runtime details
-- `GET /api/site-config` → public site, install, and share URLs
-- `GET /api/auth-config` → `{ siteGate, siteUnlocked, loggedIn }`
-- `POST /api/site-login` `{ password }` → optional site gate unlock
-- `POST /api/register` `{ username, password }` → set session
-- `POST /api/login` `{ username, password }` → set session
-- `POST /api/logout` → clear session
-- `GET /api/me` → current user
-- `GET /api/history` → `{ messages }`
-- `PUT /api/history` `{ messages }` → replace saved history
-- `DELETE /api/history` → clear server history
-- `POST /api/chat` with `{ messages: [{ role, content }], voice?: boolean }` → `{ bubbles, audioUrl, audioError? }`
-- `POST /api/tts` with `{ text, mood? }` → `{ audioUrl }` (login required). Generates speech for one bubble on demand; a repeated request for the same line reads the cache and does not call ElevenLabs again.
-- Model timeout → `504` `{ "error": "timeout" }`. Other model failures → `502`.
-
-Register / login are rate-limited (per IP + global failure window).
-
-## 数据存储（Turso）
-
-只有 **两个变量都填了** 才会用 Turso，否则自动用本地文件（Render 免费盘重部署会丢）：
-
-| 变量 | 填什么 |
-|---|---|
-| `TURSO_DATABASE_URL` | Turso 数据库地址，形如 `libsql://<库名>-<用户名>.turso.io` |
-| `TURSO_AUTH_TOKEN` | 这个库的访问令牌（Turso 后台 → 数据库 → Generate Token，或 `turso db tokens create <库名>`） |
-
-- 在 Render → 服务 → **Environment** 里添加这两个变量，点 **Save, rebuild, and deploy**。
-- 首次启动会自动建表；如果库是空的而服务器本地 `data/` 里有数据，会一次性导入。
-- 部署后打开 `/api/health`，看到 `"storage":"turso"` 就成功了。连不上时日志只显示错误名（如 `Database connection failed (SERVER_ERROR)`），服务会退出，Render 会保留上一个版本。
-- 以后换腾讯云等数据库：仿照 `lib/storage/libsql.js` 写一个同样接口的 backend（init / loadAll / putUser / putDoc / delDoc / putSetting），在 `lib/store.js` 的 `selectBackend()` 里接上即可。
-
-## Render 部署步骤
-
-1. 把这个仓库推送到 GitHub。
-2. 打开 [Render](https://render.com)，选 **New > Blueprint**（按仓库里的 `render.yaml` 创建），或者 **New > Web Service** 手动建一个 Node 网站服务。
-3. 配好环境变量，只填在 Render 的后台里，不要写进代码或提交到 Git：
-   - `DEEPSEEK_CHAT_API_KEY`（必填）
-   - `ELEVENLABS_API_KEY`（必填）
-   - `SESSION_SECRET`（必填；自己生成的一长串随机字符）
-   - `APP_PASSWORD`（可选；站点总闸，开启后要先输入它再注册/登录账号）
-   - `PUBLIC_SITE_URL`（新站填写 `https://dailyhim.cn`）
-   - `MOVED_TO_URL`（仅旧站填写 `https://dailyhim.cn`，新站留空）
-4. `render.yaml` 里已经把 `NODE_ENV` 设成 `production`。生产环境没设 `SESSION_SECRET` 时，服务会报错退出。
-5. 免费套餐闲置一段时间后会休眠，下次打开网址要等它醒来。`data/` 与 `cache/audio/` 都在实例本地盘上，**休眠 / 重启 / 重新部署后可能被清空**；账号与聊天记录下一步应迁到 Turso 等云库。
-6. 部署完成后打开 Render 给的网址：如开启了 `APP_PASSWORD` 先解锁站点，再 **注册** 用户名密码进入聊天。
-7. 用手机浏览器打开同一个网址，选「添加到主屏幕」，之后可以像独立 App 一样从主屏幕进入。
+Production runs on Tencent Cloud Hong Kong (Ubuntu 22.04, Nginx, Certbot HTTPS, PM2 `-i 1`, Turso). See [`deploy/hk/README.md`](deploy/hk/README.md) for setup, update, environment variables, moments refresh, and rollback instructions.

@@ -100,9 +100,18 @@
       lb.setAttribute('role', 'dialog');
       lb.setAttribute('aria-modal', 'true');
       lb.setAttribute('aria-label', '查看图片');
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'mom-lightbox-close';
+      closeBtn.setAttribute('aria-label', '关闭图片');
+      closeBtn.textContent = '×';
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        lb.hidden = true;
+      });
       const img = document.createElement('img');
       img.alt = '';
-      lb.append(img);
+      lb.append(closeBtn, img);
       lb.addEventListener('click', () => { lb.hidden = true; });
       (document.querySelector('.phone') || panel).append(lb);
     }
@@ -295,11 +304,14 @@
       likeBtn.disabled = false;
     });
     shareBtn.addEventListener('click', async () => {
-      const url = location.href;
+      const url = `${location.origin}/?c=${encodeURIComponent(characterId())}&tab=moments`;
       try {
-        if (navigator.clipboard) await navigator.clipboard.writeText(url);
+        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+          throw new Error('clipboard unavailable');
+        }
+        await navigator.clipboard.writeText(url);
         toast('链接已复制');
-      } catch (_) { toast('没能复制'); }
+      } catch (_) { toast('没能复制，请长按地址栏复制'); }
     });
     saveBtn.addEventListener('click', () => {
       const on = saveBtn.classList.toggle('on');
@@ -324,15 +336,28 @@
         showThread();
         paintView();
         if (!d.comment.reply) {
-          setTimeout(async () => {
-            try {
-              const rr = await fetch(withChar(`/api/moments/${encodeURIComponent(post.id)}/comments`));
-              if (!rr.ok) return;
-              const dd = await rr.json();
-              post.comments = dd.comments || [];
-              renderComments(thread, post.comments);
-            } catch (_) { /* ignore */ }
-          }, 2500);
+          const delays = [2500, 2500, 3500, 4500];
+          const commentId = d.comment.id;
+          (async () => {
+            for (const waitMs of delays) {
+              await new Promise((resolve) => setTimeout(resolve, waitMs));
+              if (panel.hidden) return;
+              try {
+                const rr = await fetch(withChar(`/api/moments/${encodeURIComponent(post.id)}/comments`));
+                if (!rr.ok) continue;
+                const dd = await rr.json();
+                const updated = dd.comments || [];
+                post.comments = updated;
+                post.commentCount = updated.length;
+                renderComments(thread, post.comments);
+                paintView();
+                const target = commentId
+                  ? updated.find((item) => item && item.id === commentId)
+                  : updated[updated.length - 1];
+                if (target && target.reply) return;
+              } catch (_) { /* ignore */ }
+            }
+          })();
         }
       } catch (_) { toast('评论失败'); }
       send.disabled = false;

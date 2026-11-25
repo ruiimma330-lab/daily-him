@@ -10,6 +10,7 @@
   z-index: 1;
   display: flex;
   flex-direction: column;
+  padding-bottom: 0;
   background: var(--me-bg);
   color: var(--me-ink);
   font-family: var(--me-font);
@@ -90,6 +91,19 @@
   outline: none;
 }
 .me-handle { margin: 4px 0 0; font-size: 12px; font-weight: 300; color: var(--me-muted); letter-spacing: 0.04em; }
+.me-avatar-reset {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 300;
+  color: #6f6a64;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.me-avatar-reset:disabled { opacity: 0.45; }
 
 .me-kicker {
   margin: 0;
@@ -245,7 +259,7 @@
 .room-header { position: relative; }
 .ai-mark {
   position: absolute;
-  top: calc(4px + env(safe-area-inset-top));
+  top: 4px;
   right: calc(10px + env(safe-area-inset-right));
   z-index: 1;
   font-size: 10px;

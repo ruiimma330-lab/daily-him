@@ -25,12 +25,19 @@ html, body { margin: 0; background: #fff; }
 
 .picker-bar {
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   height: calc(52px + env(safe-area-inset-top));
   padding-top: env(safe-area-inset-top);
   flex: none;
 }
+.picker-bar-side {
+  display: flex;
+  align-items: center;
+  min-width: 44px;
+}
+.picker-bar-side:first-child { justify-self: start; }
+.picker-bar-right { justify-self: end; }
 .picker-icon {
   width: 44px;
   height: 44px;
@@ -246,10 +253,13 @@ html, body { margin: 0; background: #fff; }
   flex: none;
 }
 .picker button.picker-go:disabled { opacity: 0.45; }
-.picker button.picker-go.is-soon {
-  background: transparent;
-  color: var(--pk-muted);
-  border-color: var(--pk-line);
+.picker button.picker-go.is-soon,
+.picker button.picker-go.is-soon:disabled {
+  background: #eceae6;
+  color: #5c5852;
+  border-color: #dcd8d2;
+  opacity: 1;
+  cursor: default;
 }
 .picker-empty {
   position: absolute;

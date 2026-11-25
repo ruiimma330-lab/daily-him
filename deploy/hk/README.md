@@ -59,7 +59,7 @@ curl -fsSL https://raw.githubusercontent.com/ruiimma330-lab/idol-chat/main/deplo
 - `LLM_EFFORT`
 - `VOICE_ID`
 - `TTS_MODEL`
-- `ADMINS`（逗号分隔用户名；列表内账号星光无限，并可发放星光 / 生成兑换码）
+- `ADMINS`（逗号分隔用户名；可发放星光 / 创建兑换码，以及访问语音 A/B 工具；不再享有无限星光）
 - `MOMENTS_ADMINS`
 - `SESSION_SECRET`
 - `MOMENTS_REFRESH_SECRET`
@@ -78,8 +78,10 @@ Render 服务需要设置 `MOVED_TO_URL=https://dailyhim.cn`。
 sudo bash /opt/dailyhim/deploy/hk/update.sh
 ```
 
-脚本只接受 main 的 fast-forward 更新，随后以 `dailyhim` 用户运行 `npm ci --omit=dev`，
-通过 PM2 cluster 模式平滑 reload，并等待本机健康接口就绪。
+脚本只接受 `main` 的 fast-forward 更新，随后以 `dailyhim` 用户运行 `npm ci --omit=dev`，
+停止可能占端口的遗留 `dailyhim.service` 与 `pm2-root`，以单实例 `pm2 -i 1` 执行干净重启
+（`pm2 delete` 后 `pm2 start ... -i 1` 并 `pm2 save --force`），随后轮询本机 `/api/health`
+校验返回 `ok:true` 且 `commit` SHA 与当前 `HEAD` 一致，并验证 `/friends-list.js` 返回 HTTP 200。
 
 ## 朋友圈如何保证更新（开放角色）
 
@@ -87,7 +89,7 @@ sudo bash /opt/dailyhim/deploy/hk/update.sh
 朋友圈更新分两层，缺一不可：
 
 1. **自动草稿（每日）**  
-   GitHub Actions `refresh moments` 每天 UTC 01:00（北京时间 09:00）调用  
+   GitHub Actions 工作流 [`.github/workflows/moments-refresh.yml`](../../.github/workflows/moments-refresh.yml)（`refresh moments`）每天 UTC 01:00（北京时间 09:00）调用  
    `POST /api/moments/refresh`，`characterId=all`，只给**当前开放**角色抓公开资讯并写成草稿。  
    需要同时配好：
    - 服务器 `/etc/dailyhim.env` 的 `MOMENTS_REFRESH_SECRET`
@@ -109,24 +111,29 @@ curl -fsS -X POST 'https://dailyhim.cn/api/moments/refresh' \
   -d '{"characterId":"all"}'
 ```
 
-## 管理员无限星光
+## 管理员与星光兑换码
 
-在 `/etc/dailyhim.env` 设置：
+管理员无限星光已取消。所有账号（包括 `ADMINS` 与 `MOMENTS_ADMINS`）均按统一规则扣减星光，
+管理员需通过兑换码或发放接口补充星光：
 
 ```bash
 ADMINS=你的用户名
 ```
 
-多个管理员用逗号分隔。列表内账号对话 / 语音不扣星光，补给站显示「无限」，并可用补给站里的管理员表单发放星光、生成兑换码。  
-朋友圈管理仍用 `MOMENTS_ADMINS`；两个列表可写成同一个用户名。
+多个管理员用逗号分隔。配置在 `ADMINS` 或 `MOMENTS_ADMINS` 中的账号可在星光补给站页面使用管理员表单，
+或调用管理接口发放星光与生成兑换码：
 
-改完后按下方「修改环境变量」reload PM2。
+- 一次性兑换码：可使用 `docs/starlight-200-codes.md` 中的 30 组 200 星光一次性兑换码，或通过管理端批量创建兑换码（`POST /api/admin/starlight/codes`）。
+- 定向发放：通过 `POST /api/admin/starlight/grant` 为指定账号发放星光。
+- 朋友圈审核仍使用 `MOMENTS_ADMINS`；两个列表可写成同一个用户名。
+
+改完环境变量后按下方「修改环境变量」单实例重启 PM2。
 
 ## 修改环境变量
 
 ```bash
 sudoedit /etc/dailyhim.env
-sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 reload dailyhim --update-env; runuser -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 save --force >/dev/null'
+sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 delete dailyhim >/dev/null 2>&1 || true; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 start /opt/dailyhim/server.js --name dailyhim --cwd /opt/dailyhim -i 1 --time; runuser -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 save --force >/dev/null'
 ```
 
 不要把该文件复制到仓库，不要把密钥粘贴到命令参数、Issue、PR 或日志中。
@@ -151,8 +158,8 @@ sudo git -C /opt/dailyhim checkout --detach <提交SHA>
 sudo rm -rf /opt/dailyhim/node_modules
 sudo install -d -o dailyhim -g dailyhim -m 755 /opt/dailyhim/node_modules
 sudo -u dailyhim env HOME=/var/lib/dailyhim npm --prefix /opt/dailyhim ci --omit=dev --no-audit --no-fund
-sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 reload dailyhim --update-env; runuser -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 save --force >/dev/null'
+sudo bash -c 'set -a; source /etc/dailyhim.env; set +a; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 delete dailyhim >/dev/null 2>&1 || true; runuser --preserve-environment -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 start /opt/dailyhim/server.js --name dailyhim --cwd /opt/dailyhim -i 1 --time; runuser -u dailyhim -- env HOME=/var/lib/dailyhim PATH=/usr/local/bin:/usr/bin:/bin pm2 save --force >/dev/null'
 curl -fsS https://dailyhim.cn/api/health
 ```
 
-需要回到最新 main 时，再执行 `sudo bash /opt/dailyhim/deploy/hk/update.sh`。
+需要回到最新 `main` 时，再执行 `sudo bash /opt/dailyhim/deploy/hk/update.sh`。

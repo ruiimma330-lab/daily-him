@@ -130,7 +130,7 @@
 .mom-citem .who { font-weight: 500; margin-right: 6px; }
 .mom-reply { margin: 0 0 8px 16px; font-size: 13px; line-height: 1.45; font-weight: 300; color: #3a3a3a; }
 .mom-compose { display: flex; gap: 8px; margin-top: 8px; }
-.mom-compose input { flex: 1; border: 0; border-bottom: 1px solid var(--mom-line); padding: 8px 0; font-size: 14px; outline: none; background: transparent; }
+.mom-compose input { flex: 1; border: 0; border-bottom: 1px solid var(--mom-line); padding: 8px 0; font-size: 16px; outline: none; background: transparent; }
 .mom-compose button { border: 0; background: none; font-size: 13px; letter-spacing: 0.06em; cursor: pointer; }
 .mom-compose button:disabled { opacity: .4; }
 .mom-lightbox {
@@ -139,3 +139,21 @@
 }
 .mom-lightbox[hidden] { display: none; }
 .mom-lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.mom-lightbox-close {
+  position: absolute;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.mom-lightbox-close:hover { background: rgba(255, 255, 255, 0.32); }
