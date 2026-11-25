@@ -235,6 +235,7 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
   const legacy = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'recharge.html'), 'utf8');
   const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
   const loading = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'loading.html'), 'utf8');
+  const shellCss = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'shell.css'), 'utf8');
   assert.match(station, /充值尚未开通，星光可每日领取或使用兑换码。/);
   assert.match(station, /充值（即将开通）/);
   assert.match(station, /id="redeem-panel" hidden/);
@@ -244,6 +245,11 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
   assert.ok(station.indexOf('id="packages"') < station.indexOf('id="redeem-section"'));
   assert.match(station, /alert\('测试环境，暂未开通'\)/);
   assert.doesNotMatch(station, /class="price">¥/);
+  // Back must return to chat list — history.back() fails in PWA / deep links.
+  assert.match(station, /Shell\.go\('\/'/);
+  assert.doesNotMatch(station, /history\.back\(/);
+  // Ghost buttons keep dark text on light fill (contrast).
+  assert.match(shellCss, /\.btn-ghost\s*\{[^}]*color:\s*#1c1c1c/s);
   assert.match(legacy, /location\.replace\('\/shell\/starlight\.html#recharge'\)/);
   assert.doesNotMatch(legacy, /\/api\/wallet\/purchase/);
   assert.doesNotMatch(app, /\/shell\/recharge\.html/);

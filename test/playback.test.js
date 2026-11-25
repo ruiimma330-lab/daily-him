@@ -257,7 +257,7 @@ test('the first-enter greeting comes from the pre-stored file, with welcomeKo as
 
 test('the service worker precaches the new script under a bumped cache name', () => {
   const sw = fs.readFileSync(path.join(ROOT, 'public/sw.js'), 'utf8');
-  assert.match(sw, /const VERSION = 'dh-pwa-17';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-18';/);
   assert.match(sw, /'\/playback\.js'/);
   const html = fs.readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
   const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map((match) => match[1]);

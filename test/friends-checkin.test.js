@@ -158,5 +158,5 @@ test('cover and chat clients route returning users to the list, not the picker',
   assert.match(login, /destinationAfterAuth/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
   assert.match(manifest, /"start_url": "\/"/);
-  assert.match(sw, /dh-pwa-17/);
+  assert.match(sw, /dh-pwa-18/);
 });
