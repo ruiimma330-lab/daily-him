@@ -280,8 +280,17 @@
   });
   document.getElementById('picker-back').addEventListener('click', leave);
 
-  Shell.api('/api/characters').then((data) => {
-    state.all = data.characters || [];
+  Promise.all([
+    Shell.api('/api/characters'),
+    Shell.api('/api/friends').catch(() => ({ friends: [] })),
+  ]).then(([data, friends]) => {
+    const added = new Set((friends.friends || []).map((item) => item.id));
+    let roster = data.characters || [];
+    // From chat "添加": only show idols not yet opened as friends.
+    if (Shell.qs('from') === 'chat') {
+      roster = roster.filter((ch) => !added.has(ch.id));
+    }
+    state.all = roster;
     state.model = PickerGroups.build(state.all);
     const preset = Shell.qs('c') || data.defaultId;
     paint();

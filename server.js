@@ -25,6 +25,7 @@ const voiceExec = require('./lib/voice-exec');
 const starlight = require('./lib/starlight');
 const callName = require('./lib/call-name');
 const greetings = require('./lib/greetings');
+const checkins = require('./lib/checkins');
 const PKG = require('./package.json');
 
 const ROOT = __dirname;
@@ -945,10 +946,12 @@ function createApp() {
   app.get('/api/me', requireUser, (req, res) => {
     const avatar = readAccountDoc(store, 'avatar', req.userId);
     const user = store.findUserById(req.userId);
+    const hasFriends = profile.listOnboardedIds(req.userId).length > 0;
     res.json({
       ok: true,
       user: req.user,
       hasAvatar: Boolean(avatar && avatar.data),
+      hasFriends,
       aiDisclaimerAcknowledged: !user || user.aiDisclaimerAcknowledged !== false,
     });
   });
@@ -1062,6 +1065,19 @@ function createApp() {
   }, (req, res) => {
     const messages = store.getHistory(req.userId, req.characterId);
     res.json({ messages, readOnly: !characters.isAvailable(req.characterId) });
+  });
+
+  // Idle check-in: after a long quiet stretch, append one proactive idol line (no starlight).
+  app.post('/api/checkin', requireUser, requireCharacter, requireAvailable, (req, res) => {
+    const result = checkins.maybeAppend({ userId: req.userId, characterId: req.characterId });
+    return res.json({
+      ok: true,
+      appended: Boolean(result.appended),
+      reason: result.reason || null,
+      kind: result.kind || null,
+      message: result.message || null,
+      messages: result.history || store.getHistory(req.userId, req.characterId),
+    });
   });
 
   app.put('/api/history', requireUser, requireCharacter, requireAvailable, (req, res) => {
@@ -1522,6 +1538,34 @@ function createApp() {
   app.get('/api/conversations', requireUser, (req, res) => {
     const conversations = characters.listAll().filter((ch) => store.getHistory(req.userId, ch.id).length);
     res.json({ ok: true, conversations });
+  });
+
+  // Friends = characters this account has onboarded (开通即好友), including empty chats.
+  app.get('/api/friends', requireUser, (req, res) => {
+    const byId = new Map(characters.listAll().map((ch) => [ch.id, ch]));
+    const friends = profile.listOnboardedIds(req.userId).map((id) => {
+      const ch = byId.get(id) || characters.publicInfo(id);
+      const p = profile.load(req.userId, id);
+      const history = store.getHistory(req.userId, id);
+      const last = history.length ? history[history.length - 1] : null;
+      const preview = last
+        ? (typeof last.text === 'string' && last.text ? last.text : (last.audioUrl ? '음성' : ''))
+        : '';
+      return {
+        id,
+        name: ch && ch.name,
+        displayName: ch && (ch.displayName || ch.name),
+        nameZh: ch && ch.nameZh,
+        group: ch && ch.group,
+        available: ch ? ch.available !== false : false,
+        avatar: ch && ch.avatar,
+        characterNickname: p.characterNickname || '',
+        onboardedAt: p.onboardedAt,
+        preview,
+        lastAt: last && last.time ? last.time : (p.onboardedAt || 0),
+      };
+    }).sort((a, b) => Number(b.lastAt || 0) - Number(a.lastAt || 0));
+    res.json({ ok: true, friends, hasFriends: friends.length > 0 });
   });
 
   app.get('/api/characters', requireUser, (req, res) => {

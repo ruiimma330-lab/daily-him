@@ -1,7 +1,7 @@
 {
   "name": "Daily Him",
   "short_name": "Daily Him",
-  "start_url": "/shell/cover.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

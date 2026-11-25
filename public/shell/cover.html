@@ -42,27 +42,35 @@
       const mark = document.getElementById('mark');
       mark.innerHTML = '<img src="/icons/icon-192.png" alt="" />';
 
-      let loggedIn = false;
-      let onboarded = false;
       const me = await Shell.api('/api/me', { allow401: true });
-      loggedIn = Boolean(me);
+      const loggedIn = Boolean(me);
+      let hasFriends = Boolean(me && me.hasFriends);
+      let friendIds = [];
+
       if (loggedIn) {
         try {
-          const c = Shell.selectedCharacter();
-          const chars = await Shell.api('/api/characters');
-          const selected = (chars.characters || []).find(ch => ch.id === c);
-          if (selected) document.getElementById('disclaimer').textContent = selected.disclaimer;
-          const p = await Shell.api('/api/profile?characterId=' + encodeURIComponent(c));
-          onboarded = Boolean(p && p.profile && p.profile.onboardedAt);
-        } catch (_) { onboarded = false; }
+          const friends = await Shell.api('/api/friends');
+          friendIds = (friends.friends || []).map((item) => item.id);
+          hasFriends = friendIds.length > 0;
+          if (hasFriends) {
+            const preferred = Shell.selectedCharacter();
+            const c = friendIds.includes(preferred) ? preferred : friendIds[0];
+            Shell.setSelectedCharacter(c);
+            // Returning users (incl. PWA cold start) go straight to the chat list.
+            Shell.go('/', { c });
+            return;
+          }
+        } catch (_) {
+          hasFriends = Boolean(me && me.hasFriends);
+        }
       }
 
       const cta = document.getElementById('cta');
-      cta.textContent = onboarded ? copy.cover.ctaContinue : copy.cover.cta;
+      cta.textContent = hasFriends ? copy.cover.ctaContinue : copy.cover.cta;
       cta.addEventListener('click', () => {
         const c = Shell.selectedCharacter();
-        if (!loggedIn) Shell.go('/login', { next: 'pick' });
-        else if (onboarded) Shell.go('/', { c });
+        if (!loggedIn) Shell.go('/login', { next: 'chat' });
+        else if (hasFriends) Shell.go('/', { c });
         else Shell.go('/shell/pick.html', { c });
       });
     })();
