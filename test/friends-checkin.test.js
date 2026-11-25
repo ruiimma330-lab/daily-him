@@ -94,6 +94,23 @@ test('friends lists onboarded idols even without messages', async () => {
   assert.equal(jimin.characterNickname, '智旻哥');
 });
 
+test('legacy chat history counts as friends and backfills onboardedAt', async () => {
+  store.putHistory(userId, 'jungkook', [
+    { role: 'user', text: 'hi', time: Date.now() - 1000 },
+    { role: 'assistant', text: 'hey', time: Date.now(), zh: '嘿' },
+  ]);
+  assert.equal(profile.load(userId, 'jungkook').onboardedAt, null);
+
+  const friends = await request('/api/friends', { cookie });
+  assert.equal(friends.status, 200);
+  assert.ok(friends.json.friends.some((item) => item.id === 'jungkook'));
+  assert.equal(friends.json.hasFriends, true);
+  assert.ok(profile.load(userId, 'jungkook').onboardedAt);
+
+  const me = await request('/api/me', { cookie });
+  assert.equal(me.json.hasFriends, true);
+});
+
 test('idle check-in appends one proactive line after a quiet stretch', async () => {
   const old = Date.now() - (9 * 60 * 60 * 1000);
   store.putHistory(userId, 'baekhyun', [
