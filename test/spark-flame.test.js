@@ -36,5 +36,5 @@ test('intimacy spark uses the monoline flame instead of the fire emoji', () => {
   assert.match(css, /\.rel-pop \.spark\.spark-inline\{[^}]*background:none/);
 
   const sw = fs.readFileSync(path.join(ROOT, 'public/sw.js'), 'utf8');
-  assert.match(sw, /const VERSION = 'dh-pwa-26';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-27';/);
 });

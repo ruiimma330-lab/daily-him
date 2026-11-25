@@ -781,6 +781,16 @@ function clipReady(hash) {
   return fs.existsSync(filePath) && fs.statSync(filePath).size > 0;
 }
 
+function voiceDeniedNotice(voiced) {
+  const denied = (voiced && voiced.denied) || {};
+  const code = denied.code || 'insufficient';
+  if (code === 'voice-cap') return '今日语音条数已达上限，明天 0 点恢复';
+  if (code === 'site-cap') return '今日语音服务已达全站上限，请稍后再试';
+  const need = voiced && voiced.need != null ? voiced.need : 0;
+  const balance = denied.balance != null ? denied.balance : 0;
+  return `这条语音需要 ${need} 星光，剩余 ${balance}`;
+}
+
 async function billVoice({ userId, requestId, cached, speak }) {
   if (cached) return { audioUrl: await speak() };
   const voiceCost = starlight.loadConfig().voice;
@@ -1451,7 +1461,8 @@ function createApp() {
           if (voiced.denied) {
             return res.status(402).json({
               error: 'starlight',
-              notice: `这条语音需要 ${voiced.need} 星光，剩余 ${voiced.denied.balance}`,
+              code: (voiced.denied && voiced.denied.code) || 'insufficient',
+              notice: voiceDeniedNotice(voiced),
               balance: voiced.denied.balance,
               need: voiced.need,
             });
@@ -1801,7 +1812,8 @@ function createApp() {
       if (voiced.denied) {
         return res.status(402).json({
           error: 'starlight',
-          notice: `这条语音需要 ${voiced.need} 星光，剩余 ${voiced.denied.balance}`,
+          code: (voiced.denied && voiced.denied.code) || 'insufficient',
+          notice: voiceDeniedNotice(voiced),
           balance: voiced.denied.balance,
           need: voiced.need,
         });
@@ -2079,7 +2091,8 @@ function createApp() {
     const payload = { messages: outMessages, bubbles: displayBubbles, audioUrl, mood: items[0].mood, ttsChars, relationship: rel };
     if (voiceDenied) {
       payload.starlight = {
-        notice: `这条语音需要 ${voiceDenied.need} 星光，剩余 ${voiceDenied.denied.balance}`,
+        code: (voiceDenied.denied && voiceDenied.denied.code) || 'insufficient',
+        notice: voiceDeniedNotice(voiceDenied),
         balance: voiceDenied.denied.balance,
         need: voiceDenied.need,
       };
@@ -2187,4 +2200,5 @@ module.exports = {
   buildPrompt: characters.buildPrompt,
   llmTimeoutMs,
   isLlmTimeout,
+  voiceDeniedNotice,
 };

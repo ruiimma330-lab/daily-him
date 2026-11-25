@@ -10,7 +10,7 @@
   "streak3": 5,
   "streak7": 15,
   "chatStreakReward": 5,
-  "dailyVoiceCap": 30,
+  "dailyVoiceCap": 0,
   "siteDailyCostCap": 500000,
   "adminGrantMax": 10000,
   "packages": [

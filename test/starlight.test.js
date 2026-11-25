@@ -18,7 +18,7 @@ process.env.ELEVENLABS_API_KEY = 'test-voice-key';
 const { digitUsername } = require('./helpers');
 const starlight = require('../lib/starlight');
 const store = require('../lib/store');
-const { createApp } = require('../server');
+const { createApp, voiceDeniedNotice } = require('../server');
 
 const day = (iso) => Date.parse(iso);
 
@@ -396,22 +396,38 @@ test('re-reserving a released requestId charges again and dailyVoiceCap tracks a
   assert.equal(r3.status, 'settled');
   assert.equal(r3.balance, start - 15);
 
-  // Concurrent dailyVoiceCap test
+  // dailyVoiceCap is disabled (0) so 35+ concurrent voice holds succeed when balance suffices
   const capUser = '2'.repeat(32);
   await starlight.ensure(capUser);
   await starlight.grant(capUser, 5000, 'test');
-  const cap = starlight.loadConfig().dailyVoiceCap;
+  assert.equal(starlight.loadConfig().dailyVoiceCap, 0);
   const attempts = await Promise.all(
-    Array.from({ length: cap + 2 }, (_, idx) => starlight.reserve({
+    Array.from({ length: 35 }, (_, idx) => starlight.reserve({
       userId: capUser, requestId: `vcap-${idx}`, action: 'voice', amount: 15,
     })),
   );
-  assert.equal(attempts.filter((item) => item.ok).length, cap);
-  assert.equal(attempts.filter((item) => item.code === 'voice-cap').length, 2);
+  assert.equal(attempts.filter((item) => item.ok).length, 35);
+  assert.equal(attempts.filter((item) => item.code === 'voice-cap').length, 0);
+  assert.equal((await starlight.summary(capUser)).voiceToday, 35);
 
   await starlight.release('vcap-0');
+  assert.equal((await starlight.summary(capUser)).voiceToday, 34);
   const afterRelease = await starlight.reserve({ userId: capUser, requestId: 'vcap-extra', action: 'voice', amount: 15 });
   assert.equal(afterRelease.ok, true);
+  assert.equal((await starlight.summary(capUser)).voiceToday, 35);
+
+  assert.equal(
+    voiceDeniedNotice({ need: 15, denied: { code: 'insufficient', balance: 5 } }),
+    '这条语音需要 15 星光，剩余 5',
+  );
+  assert.equal(
+    voiceDeniedNotice({ need: 15, denied: { code: 'voice-cap', balance: 1688 } }),
+    '今日语音条数已达上限，明天 0 点恢复',
+  );
+  assert.equal(
+    voiceDeniedNotice({ need: 15, denied: { code: 'site-cap', balance: 1688 } }),
+    '今日语音服务已达全站上限，请稍后再试',
+  );
 
   await starlight.deleteUser(capUser);
   const freshAfterDelete = await starlight.ensure(capUser);

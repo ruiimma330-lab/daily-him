@@ -147,7 +147,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-26`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-27`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -584,7 +584,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function applyStarlightDenied(data) {
-    showToast(`${(data && data.notice) || '这条语音需要 15 星光'} · 去领取`);
+    const base = (data && data.notice) || '这条语音需要 15 星光';
+    const isCap = data && (data.code === 'voice-cap' || data.code === 'site-cap');
+    showToast(isCap ? base : `${base} · 去领取`);
     const bar = document.getElementById('star-bar');
     if (!bar) return;
     bar.hidden = false;
@@ -651,7 +653,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     unlockAudio();
     const player = playback.playerFor(message);
     if (message.starlightDenied) {
-      applyStarlightDenied({ notice: message.starlightNotice });
+      applyStarlightDenied({ notice: message.starlightNotice, code: message.starlightCode || '' });
       return Promise.resolve();
     }
     return playback.toggle(message).then((result) => {
@@ -690,6 +692,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           applyStarlightDenied(data);
           message.starlightDenied = true;
           message.starlightNotice = data.notice || '';
+          message.starlightCode = data.code || '';
           voiceFailed(message);
           return null;
         }
