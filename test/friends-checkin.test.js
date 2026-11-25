@@ -159,6 +159,8 @@ test('cover and chat clients route returning users to the list, not the picker',
   assert.match(app, /fromWelcome/);
   assert.doesNotMatch(app, /if \(wantRoom\) openRoom\(\)/);
   assert.doesNotMatch(app, /if \(fromWelcome\) openRoom\(\)/);
+  // Empty friends must stay on the list — do not auto-replace to pick.
+  assert.doesNotMatch(app, /location\.replace\('\/shell\/pick\.html\?from=chat'\)/);
   assert.match(login, /destinationAfterAuth/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
   // 开始聊天 immediately PUTs onboarded:true before onboard / list.
@@ -166,5 +168,5 @@ test('cover and chat clients route returning users to the list, not the picker',
   assert.match(picker, /method:\s*'PUT'/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
   assert.match(manifest, /"start_url": "\/"/);
-  assert.match(sw, /dh-pwa-20/);
+  assert.match(sw, /dh-pwa-21/);
 });

@@ -944,6 +944,7 @@ function createApp() {
   });
 
   app.get('/api/me', requireUser, async (req, res) => {
+    res.set('Cache-Control', 'no-store');
     try { await store.refreshUserDocs(req.userId); } catch (_) { /* memory cache remains */ }
     const avatar = readAccountDoc(store, 'avatar', req.userId);
     const user = store.findUserById(req.userId);
@@ -1543,6 +1544,7 @@ function createApp() {
 
   // Friends = onboarded idols + characters with existing chat history (legacy accounts).
   app.get('/api/friends', requireUser, async (req, res) => {
+    res.set('Cache-Control', 'no-store');
     try {
       try { await store.refreshUserDocs(req.userId); } catch (_) { /* use memory */ }
       const byId = new Map(characters.listAll().map((ch) => [ch.id, ch]));
