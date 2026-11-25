@@ -17,19 +17,16 @@ function readCharacterId() {
 const CHARACTER_ID = readCharacterId();
 const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
 (async function () {
-  // Friends gate: no friends → pick once; unknown ?c → first friend.
-  // Stay on the list when the API errors so the empty state remains visible.
+  // Friends gate: only fix unknown ?c=. Do NOT bounce empty lists to the picker —
+  // that hid real friends when /api/friends briefly failed or returned stale empty.
+  // New users are sent to pick from cover/login instead.
   if (new URLSearchParams(location.search).get('forced') === '1') return;
   try {
-    const response = await fetch('/api/friends', { credentials: 'same-origin' });
+    const response = await fetch('/api/friends', { credentials: 'same-origin', cache: 'no-store' });
     if (!response.ok) return;
     const data = await response.json();
     const friends = (data && data.friends) || [];
-    if (!friends.length) {
-      location.replace('/shell/pick.html?from=chat');
-      return;
-    }
-    if (!friends.some((item) => item.id === CHARACTER_ID)) {
+    if (friends.length && !friends.some((item) => item.id === CHARACTER_ID)) {
       location.replace('/?c=' + encodeURIComponent(friends[0].id));
     }
   } catch (_) { /* ignore */ }
@@ -165,7 +162,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-20`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-21`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -1114,15 +1111,22 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     updateList();
   }
 
+  let friendsLoadTries = 0;
   async function loadFriendsList() {
     try {
-      const response = await fetch('/api/friends');
+      const response = await fetch('/api/friends', { credentials: 'same-origin', cache: 'no-store' });
       if (!response.ok) {
         if (!friendsCache.length) renderFriendsList([]);
         return;
       }
       const data = await response.json();
-      renderFriendsList((data && data.friends) || []);
+      const list = (data && data.friends) || [];
+      renderFriendsList(list);
+      // One retry: first paint can race a cold Turso refresh.
+      if (!list.length && friendsLoadTries < 1) {
+        friendsLoadTries += 1;
+        setTimeout(() => { loadFriendsList(); }, 700);
+      }
     } catch (_) {
       if (!friendsCache.length) renderFriendsList([]);
     }

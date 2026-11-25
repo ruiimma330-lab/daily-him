@@ -256,6 +256,6 @@ test('picker wires the loader, keeps the photo crop, and reuses the shell dots',
   assert.match(css, /animation-delay:\s*\.15s/);
   assert.match(css, /animation-delay:\s*\.3s/);
   assert.match(css, /@keyframes bounce/);
-  assert.match(sw, /const VERSION = 'dh-pwa-20';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-21';/);
   assert.match(sw, /'\/shell\/portrait-loader\.js'/);
 });
