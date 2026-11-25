@@ -1,6 +1,0 @@
-Picker-only for now (available: false). Not chattable: no persona, no voice.
-Photos cropped from File:20231006 Mark (NCT).jpg
-Author: K-POPIT 케이팝잇 (https://www.youtube.com/channel/UCY9QGuU9mBLBp_OCRNKeVSw)
-License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0)
-Source: https://commons.wikimedia.org/wiki/File:20231006_Mark_(NCT).jpg
-Changes: tall 3:4 portrait for the picker, and a square face crop saved as avatar.jpg.

@@ -1632,12 +1632,8 @@ function createApp() {
     const meta = characters.loadMeta(id);
     const name = path.basename(String(meta.avatar || 'avatar.svg'));
     if (!name || name === '.' || name === '..') return res.status(404).end();
-    const candidates = [
-      path.join(PUBLIC_DIR, 'characters', id, name),
-      path.join(characters.CHAR_DIR, id, name),
-    ];
-    const file = candidates.find((candidate) => fs.existsSync(candidate));
-    if (!file) return res.status(404).end();
+    const file = path.join(characters.CHAR_DIR, id, name);
+    if (!fs.existsSync(file)) return res.status(404).end();
     res.set('Cache-Control', req.query.v === characters.ASSET_VERSION
       ? 'public, max-age=31536000, immutable'
       : 'public, max-age=300, must-revalidate');

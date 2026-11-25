@@ -1,6 +1,0 @@
-Picker-only for now (available: false). Not chattable: no persona, no voice.
-Photos cropped from File:Kai at the U Have A Dream concert on May 31, 2017 (2).jpg
-Author: OXO (http://ohxo.tistory.com/)
-License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)
-Source: https://commons.wikimedia.org/wiki/File:Kai_at_the_U_Have_A_Dream_concert_on_May_31,_2017_(2).jpg
-Changes: tall 3:4 portrait for the picker, and a square face crop saved as avatar.jpg.
