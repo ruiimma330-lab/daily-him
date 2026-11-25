@@ -28,7 +28,7 @@ test('batch6 packs remain complete (zhanghao open for launch, the rest deferred)
     assert.equal(info.available, isLaunch(id), id);
     assert.equal(info.availabilityLabel, isLaunch(id) ? '' : '暂未开放');
     assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
-    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-25`);
+    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-26`);
     for (const asset of ['avatar.jpg','portrait.jpg']) {
       const file = path.join(dir, asset);
       assert.ok(fs.existsSync(file), `${id}/${asset}`);

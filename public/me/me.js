@@ -388,9 +388,7 @@
     }
     profile.append(avatar, ident, file);
 
-    const idols = document.createElement('div');
-    state.characters.forEach((ch) => idols.append(idolCard(ch)));
-    if (!state.characters.length) idols.append(group([line('还没有可聊天的爱豆')]));
+    const countLabel = state.characters.length ? `${state.characters.length} 位` : '去添加';
 
     const voice = seg([
       { id: 'tap', label: '点了才播' },
@@ -406,7 +404,7 @@
       kicker('个人资料'),
       profile,
       kicker('我的爱豆'),
-      idols,
+      group([line('管理爱豆与关系', countLabel, () => push(renderIdols))]),
       kicker('星光'),
       starlightCard(),
       kicker('聊天'),
@@ -505,6 +503,8 @@
         state.profiles[ch.id] = (saved && saved.profile) || state.profiles[ch.id];
         publish('idol-profile', { characterId: ch.id, characterNickname });
         strong.textContent = nameOf(ch);
+        const heading = sub.querySelector('.me-bar h1');
+        if (!sub.hidden && heading) heading.textContent = nameOf(ch);
         toast('备注已更新');
       } catch (_) { toast('备注没保存上'); }
     });
@@ -567,11 +567,105 @@
     callLabel.textContent = '他怎么叫你';
     callField.append(callLabel, call);
     const chat = document.createElement('a');
-    chat.className = 'me-link';
+    chat.className = 'me-chat-btn';
     chat.textContent = '进入聊天';
-    chat.href = '/?c=' + encodeURIComponent(ch.id);
+    chat.href = '/?c=' + encodeURIComponent(ch.id) + '&open=1';
     card.append(head, chat, field, callField, stats, memory, clear);
     return card;
+  }
+
+  async function renderIdols(host, gen) {
+    host.replaceChildren();
+    host.append(bar('我的爱豆'));
+    if (!state.characters.length) {
+      const wrap = document.createElement('div');
+      wrap.className = 'me-block';
+      const note = document.createElement('p');
+      note.className = 'me-note';
+      note.textContent = '还没有添加爱豆';
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'me-submit';
+      add.textContent = '去添加爱豆';
+      add.addEventListener('click', () => { location.href = '/shell/pick.html?from=chat'; });
+      wrap.append(note, add);
+      host.append(wrap);
+      return;
+    }
+
+    const listWrap = document.createElement('div');
+    const paintList = () => {
+      listWrap.replaceChildren();
+      const rows = state.characters.map((ch) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'me-idol-row';
+
+        const img = document.createElement('img');
+        img.alt = '';
+        img.src = ch.avatar;
+
+        const info = document.createElement('div');
+        info.className = 'me-idol-info';
+        const strong = document.createElement('strong');
+        strong.textContent = nameOf(ch);
+        const small = document.createElement('small');
+        small.textContent = ch.group || ch.name || '';
+        info.append(strong, small);
+
+        row.append(img, info);
+
+        const rel = state.rel[ch.id];
+        const tierName = rel && rel.tier && rel.tier.name ? rel.tier.name : '';
+        const daysText = rel && rel.daysKnown != null ? `${rel.daysKnown}天` : '';
+        const summaryText = [tierName, daysText].filter(Boolean).join(' · ');
+        if (summaryText) {
+          const meta = document.createElement('span');
+          meta.className = 'me-idol-rel';
+          meta.textContent = summaryText;
+          row.append(meta);
+        }
+
+        const chev = document.createElement('i');
+        chev.setAttribute('aria-hidden', 'true');
+        chev.textContent = '›';
+        row.append(chev);
+
+        row.addEventListener('click', () => push((h, g) => renderIdolDetail(h, ch, g)));
+        return row;
+      });
+      listWrap.append(group(rows));
+    };
+
+    paintList();
+    const moreWrap = document.createElement('div');
+    moreWrap.className = 'me-block';
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'me-idol-add';
+    more.textContent = '添加更多爱豆';
+    more.addEventListener('click', () => { location.href = '/shell/pick.html?from=chat'; });
+    moreWrap.append(more);
+    host.append(listWrap, moreWrap);
+
+    if (!detailsLoaded) {
+      await loadIdolDetails();
+      if (gen !== viewGen) return;
+      paintList();
+    }
+  }
+
+  async function renderIdolDetail(host, ch, gen) {
+    host.replaceChildren();
+    const header = bar(nameOf(ch));
+    host.append(header);
+    if (!detailsLoaded) {
+      await loadIdolDetails();
+      if (gen !== undefined && gen !== viewGen) return;
+      const heading = header.querySelector('h1');
+      if (heading) heading.textContent = nameOf(ch);
+    }
+    host.append(idolCard(ch));
   }
 
   async function clearOne(ch) {
@@ -978,6 +1072,34 @@
 
   let inflightRefresh = null;
   let lastRefreshAt = 0;
+  let detailsLoaded = false;
+  let detailsPromise = null;
+
+  async function loadIdolDetails() {
+    if (detailsLoaded) return;
+    if (detailsPromise) return detailsPromise;
+    const list = state.characters.slice();
+    detailsPromise = Promise.all(list.map(async (ch) => {
+      const [prof, rel] = await Promise.all([
+        api(`/api/profile?characterId=${encodeURIComponent(ch.id)}`).catch(() => null),
+        api(`/api/relationship?characterId=${encodeURIComponent(ch.id)}`).catch(() => null),
+      ]);
+      return [ch.id, (prof && prof.profile) || {}, (rel && rel.relationship) || {}];
+    })).then((details) => {
+      const nextProfiles = {};
+      const nextRel = {};
+      details.forEach(([id, prof, rel]) => {
+        nextProfiles[id] = prof;
+        nextRel[id] = rel;
+      });
+      state.profiles = nextProfiles;
+      state.rel = nextRel;
+      detailsLoaded = true;
+    }).finally(() => {
+      detailsPromise = null;
+    });
+    return detailsPromise;
+  }
 
   async function doRefresh() {
     try {
@@ -997,19 +1119,8 @@
       writeLocal(settings.settings || {});
       state.characters = Array.isArray(friendsRes && friendsRes.friends) ? friendsRes.friends : [];
       state.about = about || state.about;
-      const details = await Promise.all(state.characters.map(async (ch) => {
-        const [prof, rel] = await Promise.all([
-          api(`/api/profile?characterId=${encodeURIComponent(ch.id)}`).catch(() => null),
-          api(`/api/relationship?characterId=${encodeURIComponent(ch.id)}`).catch(() => null),
-        ]);
-        return [ch.id, (prof && prof.profile) || {}, (rel && rel.relationship) || {}];
-      }));
-      state.profiles = {};
-      state.rel = {};
-      details.forEach(([id, prof, rel]) => {
-        state.profiles[id] = prof;
-        state.rel[id] = rel;
-      });
+      detailsLoaded = false;
+      detailsPromise = null;
     } catch (_) { /* login redirect handles auth */ }
     paintMain();
     if (stack.length) showSub();
