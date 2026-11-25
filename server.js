@@ -570,7 +570,7 @@ function isPwaAsset(p) {
   // service worker never precaches the /login page under their URL while logged out.
   return p === '/sw.js' || p === '/sw-heal.js' || p === '/account-cache.js'
     || p === '/pwa.js' || p === '/pwa.css' || p === '/mobile-lock.js' || p === '/mobile-lock.css' || p === '/offline.html'
-    || p === '/app.js' || p === '/style.css' || p === '/moments.css' || p === '/moments.js' || p === '/memory.js'
+    || p === '/app.js' || p === '/friends-list.js' || p === '/style.css' || p === '/moments.css' || p === '/moments.js' || p === '/memory.js'
     || p.startsWith('/me/')
     || p.startsWith('/shell/');
 }
@@ -945,10 +945,15 @@ function createApp() {
 
   app.get('/api/me', requireUser, async (req, res) => {
     res.set('Cache-Control', 'no-store');
-    try { await store.refreshUserDocs(req.userId); } catch (_) { /* memory cache remains */ }
+    let hasFriends = false;
+    try {
+      const friendsApi = require('./lib/friends');
+      hasFriends = (await friendsApi.listForUser(req.userId)).hasFriends;
+    } catch (_) {
+      hasFriends = profile.listFriendIds(req.userId).length > 0;
+    }
     const avatar = readAccountDoc(store, 'avatar', req.userId);
     const user = store.findUserById(req.userId);
-    const hasFriends = profile.listFriendIds(req.userId).length > 0;
     res.json({
       ok: true,
       user: req.user,
@@ -1542,39 +1547,13 @@ function createApp() {
     res.json({ ok: true, conversations });
   });
 
-  // Friends = onboarded idols + characters with existing chat history (legacy accounts).
+  // Chat entries = friends list (Turso-first via lib/friends).
   app.get('/api/friends', requireUser, async (req, res) => {
     res.set('Cache-Control', 'no-store');
     try {
-      try { await store.refreshUserDocs(req.userId); } catch (_) { /* use memory */ }
-      const byId = new Map(characters.listAll().map((ch) => [ch.id, ch]));
-      const friends = profile.listFriendIds(req.userId).map((id) => {
-        let ch = byId.get(id);
-        if (!ch) {
-          try { ch = characters.publicInfo(id); } catch (_) { ch = { id, name: id, displayName: id, available: false }; }
-        }
-        const p = profile.load(req.userId, id);
-        let history = [];
-        try { history = store.getHistory(req.userId, id); } catch (_) { history = []; }
-        const last = history.length ? history[history.length - 1] : null;
-        const preview = last
-          ? (typeof last.text === 'string' && last.text ? last.text : (last.audioUrl ? '음성' : ''))
-          : '';
-        return {
-          id,
-          name: ch && ch.name,
-          displayName: ch && (ch.displayName || ch.name),
-          nameZh: ch && ch.nameZh,
-          group: ch && ch.group,
-          available: ch ? ch.available !== false : false,
-          avatar: ch && ch.avatar,
-          characterNickname: p.characterNickname || '',
-          onboardedAt: p.onboardedAt,
-          preview,
-          lastAt: last && last.time ? last.time : (p.onboardedAt || 0),
-        };
-      }).sort((a, b) => Number(b.lastAt || 0) - Number(a.lastAt || 0));
-      res.json({ ok: true, friends, hasFriends: friends.length > 0 });
+      const friendsApi = require('./lib/friends');
+      const result = await friendsApi.listForUser(req.userId);
+      res.json({ ok: true, friends: result.friends, hasFriends: result.hasFriends });
     } catch (err) {
       console.error('GET /api/friends failed', err && err.message ? err.message : err);
       res.status(500).json({ ok: false, error: 'friends_failed', friends: [], hasFriends: false });

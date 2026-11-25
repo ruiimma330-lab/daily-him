@@ -208,8 +208,9 @@ if [[ -S /root/.pm2/rpc.sock ]] && pm2 describe "$APP_NAME" >/dev/null 2>&1; the
 fi
 systemctl disable --now pm2-root >/dev/null 2>&1 || true
 run_as_app pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
+# Use -i 1 (portable). Some PM2 builds reject --exec-mode.
 run_as_app pm2 start "$APP_DIR/server.js" --name "$APP_NAME" --cwd "$APP_DIR" \
-  --instances 1 --exec-mode cluster --time
+  -i 1 --time
 pm2 startup systemd -u "$APP_USER" --hp "$APP_HOME" >/dev/null
 run_as_app pm2 save --force >/dev/null
 systemctl enable --now "pm2-${APP_USER}"

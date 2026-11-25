@@ -17,19 +17,9 @@ function readCharacterId() {
 const CHARACTER_ID = readCharacterId();
 const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
 (async function () {
-  // Friends gate: only fix unknown ?c=. Do NOT bounce empty lists to the picker —
-  // that hid real friends when /api/friends briefly failed or returned stale empty.
-  // New users are sent to pick from cover/login instead.
+  // Soft gate: if ?c= points at a character that is not a chat entry yet, keep it
+  // (user may have just opened from picker). No redirect-to-pick — that hid real chats.
   if (new URLSearchParams(location.search).get('forced') === '1') return;
-  try {
-    const response = await fetch('/api/friends', { credentials: 'same-origin', cache: 'no-store' });
-    if (!response.ok) return;
-    const data = await response.json();
-    const friends = (data && data.friends) || [];
-    if (friends.length && !friends.some((item) => item.id === CHARACTER_ID)) {
-      location.replace('/?c=' + encodeURIComponent(friends[0].id));
-    }
-  } catch (_) { /* ignore */ }
 })();
 (function () {
   const pageFetch = window.fetch.bind(window);
@@ -162,7 +152,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-21`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-22`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -1048,120 +1038,27 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return '대화를 시작해 보세요';
   }
 
-  function friendLabel(friend) {
-    return (friend && (friend.characterNickname || friend.nameZh || friend.displayName || friend.name || friend.id)) || '';
+  function openFriendChat(friend) {
+    if (!friend || !friend.id) return;
+    if (friend.id === CHARACTER_ID) openRoom();
+    else location.href = '/?c=' + encodeURIComponent(friend.id) + '&open=1';
   }
 
-  function renderFriendsList(friends) {
-    const section = document.getElementById('friends-section');
-    if (!section) return;
-    friendsCache = Array.isArray(friends) ? friends.slice() : [];
-    section.replaceChildren();
-    if (!friendsCache.length) {
-      const empty = document.createElement('p');
-      empty.className = 'friends-empty';
-      empty.textContent = '还没有好友，点右上角添加';
-      section.append(empty);
-      return;
-    }
-    friendsCache.forEach((friend) => {
-      const row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'chat-row';
-      row.dataset.friendId = friend.id;
-      const avatar = document.createElement('span');
-      avatar.className = 'avatar squircle';
-      avatar.setAttribute('aria-hidden', 'true');
-      if (friend.avatar) {
-        avatar.style.backgroundImage = 'url("' + friend.avatar + '")';
-        avatar.style.backgroundSize = 'cover';
-        avatar.style.backgroundPosition = 'center';
-      }
-      const main = document.createElement('span');
-      main.className = 'row-main';
-      const top = document.createElement('span');
-      top.className = 'row-top';
-      const name = document.createElement('span');
-      name.className = 'row-name';
-      name.textContent = friendLabel(friend);
-      const time = document.createElement('time');
-      time.className = 'row-time';
-      if (friend.lastAt) {
-        time.dateTime = new Date(friend.lastAt).toISOString();
-        time.textContent = formatListTime(friend.lastAt);
-      }
-      top.append(name, time);
-      const bot = document.createElement('span');
-      bot.className = 'row-bot';
-      const preview = document.createElement('span');
-      preview.className = 'row-preview';
-      preview.textContent = friend.preview || '대화를 시작해 보세요';
-      const badge = document.createElement('span');
-      badge.className = 'badge';
-      badge.hidden = true;
-      bot.append(preview, badge);
-      main.append(top, bot);
-      row.append(avatar, main);
-      row.addEventListener('click', () => {
-        if (friend.id === CHARACTER_ID) openRoom();
-        else location.href = '/?c=' + encodeURIComponent(friend.id);
-      });
-      section.append(row);
-    });
+  async function loadFriendsList() {
+    if (!window.FriendsList) return;
+    const list = await window.FriendsList.load({ onOpen: openFriendChat });
+    friendsCache = Array.isArray(list) ? list.slice() : [];
     updateList();
   }
 
-  let friendsLoadTries = 0;
-  async function loadFriendsList() {
-    try {
-      const response = await fetch('/api/friends', { credentials: 'same-origin', cache: 'no-store' });
-      if (!response.ok) {
-        if (!friendsCache.length) renderFriendsList([]);
-        return;
-      }
-      const data = await response.json();
-      const list = (data && data.friends) || [];
-      renderFriendsList(list);
-      // One retry: first paint can race a cold Turso refresh.
-      if (!list.length && friendsLoadTries < 1) {
-        friendsLoadTries += 1;
-        setTimeout(() => { loadFriendsList(); }, 700);
-      }
-    } catch (_) {
-      if (!friendsCache.length) renderFriendsList([]);
-    }
-  }
-
   function updateList() {
-    const row = document.querySelector('#friends-section .chat-row[data-friend-id="' + CSS.escape(CHARACTER_ID) + '"]');
-    if (!row) return;
-    const preview = row.querySelector('.row-preview');
-    const time = row.querySelector('.row-time');
-    const badge = row.querySelector('.badge');
     const last = messages[messages.length - 1];
-    if (preview) {
-      preview.textContent = showRetry
-        ? '앗 미안 ㅠㅠ 잠깐 신호가 안 좋았나 봐…'
-        : previewText(last);
-    }
-    if (time) {
-      if (last) {
-        time.dateTime = new Date(last.time).toISOString();
-        time.textContent = formatListTime(last.time);
-      } else {
-        time.textContent = '';
-        time.removeAttribute('datetime');
-      }
-    }
-    if (badge) {
-      const unread = Math.max(0, messages.length - settings.seen);
-      if (unread > 0) {
-        badge.hidden = false;
-        badge.textContent = unread > 99 ? '99+' : String(unread);
-      } else {
-        badge.hidden = true;
-      }
-    }
+    if (!window.FriendsList) return;
+    window.FriendsList.updateCurrent(CHARACTER_ID, {
+      preview: showRetry ? '앗 미안 ㅠㅠ 잠깐 신호가 안 좋았나 봐…' : previewText(last),
+      time: last && last.time,
+      unread: Math.max(0, messages.length - settings.seen),
+    });
   }
 
   function updateSendButton() {
@@ -2205,9 +2102,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       return;
     }
     const params = new URLSearchParams(location.search);
-    // welcome=1: seed the first greeting, then stay on the friends list
-    // (product: after 开始聊天 land on 聊天列表, not auto-open the room).
+    // welcome=1: seed greeting, stay on list. open=1: enter the chat room.
     const fromWelcome = params.get('welcome') === '1';
+    const wantOpen = params.get('open') === '1';
     const seeded = await welcomeIfNeeded(remote);
     messages = window.AccountCache.viewAfterFetch(true, seeded);
     historyError = false;
@@ -2224,16 +2121,18 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         }
       }
     } catch (_) { /* check-in is best-effort */ }
-    if (fromWelcome) {
+    if (fromWelcome || wantOpen) {
       params.delete('welcome');
+      params.delete('open');
       const cleaned = params.toString();
       history.replaceState(null, '', cleaned ? `${location.pathname}?${cleaned}` : location.pathname);
     }
-    if (roomOpen) settings.seen = messages.length;
+    if (roomOpen || wantOpen) settings.seen = messages.length;
     saveSettings();
     render();
     await loadFriendsList();
     updateList();
+    if (wantOpen) openRoom();
   }
 
   async function bootAccount() {
