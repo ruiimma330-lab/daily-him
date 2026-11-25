@@ -265,7 +265,13 @@
         // Force pick only when the account still has no friends.
         try {
           const friends = await fetch('/api/friends').then((r) => (r.ok ? r.json() : null));
-          const list = (friends && friends.friends) || [];
+          const list = friends && Array.isArray(friends.friends) ? friends.friends : [];
+          try {
+            const account = localStorage.getItem('idol_account_id');
+            if (account && window.AccountCache && friends && Array.isArray(friends.friends)) {
+              window.AccountCache.setFriends(localStorage, account, list);
+            }
+          } catch (_) { /* ignore */ }
           if (list.length) {
             let c = '';
             try {

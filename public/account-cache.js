@@ -33,6 +33,14 @@
     return `idol_selected_character:${userId}`;
   }
 
+  function friendsKey(userId) {
+    return `idol_friends_v1:${userId}`;
+  }
+
+  function meKey(userId) {
+    return `idol_me_v1:${userId}`;
+  }
+
   function getSelected(storage, userId) {
     try {
       const value = storage.getItem(selectedKey(userId));
@@ -45,6 +53,86 @@
   function setSelected(storage, userId, characterId) {
     if (!userId || !characterId) return;
     try { storage.setItem(selectedKey(userId), String(characterId).toLowerCase()); } catch (_) { /* ignore */ }
+  }
+
+  function getFriends(storage, userId) {
+    if (!storage || !userId) return null;
+    try {
+      const raw = storage.getItem(friendsKey(userId));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function compactFriend(friend) {
+    if (!friend || typeof friend !== 'object' || !friend.id) return null;
+    return {
+      id: friend.id,
+      name: friend.name || '',
+      displayName: friend.displayName || '',
+      nameZh: friend.nameZh || '',
+      characterNickname: friend.characterNickname || '',
+      avatar: friend.avatar || '',
+      preview: friend.preview || '',
+      lastAt: friend.lastAt || 0,
+      onboardedAt: friend.onboardedAt || null,
+      available: friend.available !== false,
+    };
+  }
+
+  function setFriends(storage, userId, friends) {
+    if (!storage || !userId || !Array.isArray(friends)) return;
+    try {
+      const compact = friends.map(compactFriend).filter(Boolean);
+      storage.setItem(friendsKey(userId), JSON.stringify(compact));
+    } catch (_) { /* ignore */ }
+  }
+
+  function getMe(storage, userId) {
+    if (!storage || !userId) return null;
+    try {
+      const raw = storage.getItem(meKey(userId));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setMe(storage, userId, me) {
+    if (!storage || !userId || !me || typeof me !== 'object') return;
+    try {
+      const compact = {
+        id: me.id || userId,
+        username: me.username || '',
+        nickname: me.nickname || '',
+        hasAvatar: Boolean(me.hasAvatar),
+      };
+      storage.setItem(meKey(userId), JSON.stringify(compact));
+    } catch (_) { /* ignore */ }
+  }
+
+  function getHistory(storage, userId, characterId) {
+    if (!storage || !userId || !characterId) return null;
+    try {
+      const raw = storage.getItem(historyKey(userId, characterId));
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setHistory(storage, userId, characterId, messages) {
+    if (!storage || !userId || !characterId || !Array.isArray(messages)) return;
+    try {
+      storage.setItem(historyKey(userId, characterId), JSON.stringify(messages));
+    } catch (_) { /* ignore */ }
   }
 
   function migrate(storage, userId, characterId) {
@@ -85,6 +173,8 @@
   function belongsToUser(key, userId) {
     return key === prefsKey(userId)
       || key === selectedKey(userId)
+      || key === friendsKey(userId)
+      || key === meKey(userId)
       || key === `idol_cache_migrated:${userId}`
       || key.indexOf(`idolchat_history_v1:${userId}:`) === 0
       || key.indexOf(`idolchat_settings_v1:${userId}:`) === 0;
@@ -98,9 +188,23 @@
       || key === 'idolchat_settings_v1'
       || key.indexOf('idol_prefs_v1:') === 0
       || key.indexOf('idol_selected_character:') === 0
+      || key.indexOf('idol_friends_v1:') === 0
+      || key.indexOf('idol_me_v1:') === 0
       || key.indexOf('idolchat_history_v1') === 0
       || key.indexOf('idolchat_settings_v1') === 0
       || key.indexOf('idol_cache_migrated:') === 0;
+  }
+
+  function clearUser(storage, userId) {
+    if (!storage || !userId) return;
+    keysOf(storage).forEach((key) => {
+      if (belongsToUser(key, userId)) storage.removeItem(key);
+    });
+    try {
+      if (storage.getItem('idol_account_id') === userId) {
+        storage.removeItem('idol_account_id');
+      }
+    } catch (_) { /* ignore */ }
   }
 
   function purgeForeign(storage, userId) {
@@ -114,7 +218,6 @@
   function adopt(storage, userId, characterId) {
     if (!userId) return;
     migrate(storage, userId, characterId || 'baekhyun');
-    purgeForeign(storage, userId);
     try {
       storage.setItem('idol_account_id', userId);
       storage.setItem(`idol_cache_migrated:${userId}`, '1');
@@ -132,8 +235,17 @@
     settingsKey,
     prefsKey,
     selectedKey,
+    friendsKey,
+    meKey,
     getSelected,
     setSelected,
+    getFriends,
+    setFriends,
+    getMe,
+    setMe,
+    getHistory,
+    setHistory,
+    clearUser,
     migrate,
     adopt,
     purgeForeign,
