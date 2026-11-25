@@ -258,6 +258,26 @@
         return '/shell/cover.html';
       }
 
+      async function destinationAfterAuth() {
+        const next = new URLSearchParams(location.search).get('next') || '';
+        // Force pick only when the account still has no friends.
+        try {
+          const friends = await fetch('/api/friends').then((r) => (r.ok ? r.json() : null));
+          const list = (friends && friends.friends) || [];
+          if (list.length) {
+            let c = '';
+            try {
+              const account = localStorage.getItem('idol_account_id');
+              if (account && window.AccountCache) c = window.AccountCache.getSelected(localStorage, account) || '';
+            } catch (_) { /* ignore */ }
+            if (!list.some((item) => item.id === c)) c = list[0].id;
+            return '/?c=' + encodeURIComponent(c);
+          }
+        } catch (_) { /* fall through */ }
+        if (next === 'pick' || next === 'chat' || !next) return '/shell/pick.html';
+        return destination();
+      }
+
       function setMode(next) {
         mode = next;
         const register = next === 'register';
@@ -304,7 +324,7 @@
           const response = await fetch('/api/me/ai-disclaimer', { method: 'POST' });
           if (!response.ok) throw new Error('acknowledgement failed');
           if (registeredAccountId) localStorage.setItem(`idol-ai-disclaimer-${registeredAccountId}`, '1');
-          location.href = destination();
+          location.href = await destinationAfterAuth();
         } catch (_) {
           accountError.textContent = '请检查网络连接后重试。';
           aiNoticeOk.disabled = false;
@@ -395,7 +415,7 @@
             aiNotice.hidden = false;
             return;
           }
-          location.href = destination();
+          location.href = await destinationAfterAuth();
         } catch (err) {
           accountError.textContent = '请检查网络连接。';
         } finally {
@@ -405,9 +425,9 @@
 
       fetch('/api/auth-config')
         .then((r) => r.json())
-        .then((cfg) => {
+        .then(async (cfg) => {
           if (cfg && cfg.loggedIn) {
-            location.href = destination();
+            location.href = await destinationAfterAuth();
             return;
           }
           if (cfg && cfg.siteGate && !cfg.siteUnlocked) {

@@ -16,14 +16,22 @@ function readCharacterId() {
 }
 const CHARACTER_ID = readCharacterId();
 const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
-(function () {
-  // profile onboarded gate: first-time users go through shell (cover→pick→onboard)
+(async function () {
+  // Friends gate: no onboarded idols → pick once; unknown ?c → first friend.
   if (new URLSearchParams(location.search).get('forced') === '1') return;
-  fetch(withChar('/api/profile')).then((r) => r.json()).then((d) => {
-    if (!d || !d.profile || !d.profile.onboardedAt) {
-      location.replace('/shell/cover.html');
+  try {
+    const response = await fetch('/api/friends');
+    if (!response.ok) return;
+    const data = await response.json();
+    const friends = (data && data.friends) || [];
+    if (!friends.length) {
+      location.replace('/shell/pick.html');
+      return;
     }
-  }).catch(() => {});
+    if (!friends.some((item) => item.id === CHARACTER_ID)) {
+      location.replace('/?c=' + encodeURIComponent(friends[0].id));
+    }
+  } catch (_) { /* ignore */ }
 })();
 (function () {
   const pageFetch = window.fetch.bind(window);
@@ -59,10 +67,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   const toast = document.getElementById('toast');
   const aiNotice = document.getElementById('ai-notice');
   const aiNoticeOk = document.getElementById('ai-notice-ok');
-  const listTime = document.getElementById('list-time');
-  const listPreview = document.getElementById('list-preview');
-  const listBadge = document.getElementById('list-badge');
   const themeMeta = document.querySelector('meta[name="theme-color"]');
+  let friendsCache = [];
 
   let messages = [];
   let settings = { autoplay: false, seen: 0, playback: 'tap', translation: 'collapsed' };
@@ -1044,23 +1050,107 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return '대화를 시작해 보세요';
   }
 
-  function updateList() {
-    const last = messages[messages.length - 1];
-    if (showRetry) listPreview.textContent = '앗 미안 ㅠㅠ 잠깐 신호가 안 좋았나 봐…';
-    else listPreview.textContent = previewText(last);
-    if (last) {
-      listTime.dateTime = new Date(last.time).toISOString();
-      listTime.textContent = formatListTime(last.time);
-    } else {
-      listTime.textContent = '';
-      listTime.removeAttribute('datetime');
+  function friendLabel(friend) {
+    return (friend && (friend.characterNickname || friend.nameZh || friend.displayName || friend.name || friend.id)) || '';
+  }
+
+  function renderFriendsList(friends) {
+    const section = document.getElementById('friends-section');
+    if (!section) return;
+    friendsCache = Array.isArray(friends) ? friends.slice() : [];
+    section.replaceChildren();
+    if (!friendsCache.length) {
+      const empty = document.createElement('p');
+      empty.className = 'friends-empty';
+      empty.textContent = '还没有好友，点右上角添加';
+      section.append(empty);
+      return;
     }
-    const unread = Math.max(0, messages.length - settings.seen);
-    if (unread > 0) {
-      listBadge.hidden = false;
-      listBadge.textContent = unread > 99 ? '99+' : String(unread);
-    } else {
-      listBadge.hidden = true;
+    friendsCache.forEach((friend) => {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'chat-row';
+      row.dataset.friendId = friend.id;
+      const avatar = document.createElement('span');
+      avatar.className = 'avatar squircle';
+      avatar.setAttribute('aria-hidden', 'true');
+      if (friend.avatar) {
+        avatar.style.backgroundImage = 'url("' + friend.avatar + '")';
+        avatar.style.backgroundSize = 'cover';
+        avatar.style.backgroundPosition = 'center';
+      }
+      const main = document.createElement('span');
+      main.className = 'row-main';
+      const top = document.createElement('span');
+      top.className = 'row-top';
+      const name = document.createElement('span');
+      name.className = 'row-name';
+      name.textContent = friendLabel(friend);
+      const time = document.createElement('time');
+      time.className = 'row-time';
+      if (friend.lastAt) {
+        time.dateTime = new Date(friend.lastAt).toISOString();
+        time.textContent = formatListTime(friend.lastAt);
+      }
+      top.append(name, time);
+      const bot = document.createElement('span');
+      bot.className = 'row-bot';
+      const preview = document.createElement('span');
+      preview.className = 'row-preview';
+      preview.textContent = friend.preview || '대화를 시작해 보세요';
+      const badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.hidden = true;
+      bot.append(preview, badge);
+      main.append(top, bot);
+      row.append(avatar, main);
+      row.addEventListener('click', () => {
+        if (friend.id === CHARACTER_ID) openRoom();
+        else location.href = '/?c=' + encodeURIComponent(friend.id);
+      });
+      section.append(row);
+    });
+    updateList();
+  }
+
+  async function loadFriendsList() {
+    try {
+      const response = await fetch('/api/friends');
+      if (!response.ok) return;
+      const data = await response.json();
+      renderFriendsList((data && data.friends) || []);
+    } catch (_) { /* keep previous list */ }
+  }
+
+  function updateList() {
+    const row = document.querySelector('#friends-section .chat-row[data-friend-id="' + CSS.escape(CHARACTER_ID) + '"]');
+    if (!row) return;
+    const preview = row.querySelector('.row-preview');
+    const time = row.querySelector('.row-time');
+    const badge = row.querySelector('.badge');
+    const last = messages[messages.length - 1];
+    if (preview) {
+      preview.textContent = showRetry
+        ? '앗 미안 ㅠㅠ 잠깐 신호가 안 좋았나 봐…'
+        : previewText(last);
+    }
+    if (time) {
+      if (last) {
+        time.dateTime = new Date(last.time).toISOString();
+        time.textContent = formatListTime(last.time);
+      } else {
+        time.textContent = '';
+        time.removeAttribute('datetime');
+      }
+    }
+    if (badge) {
+      const unread = Math.max(0, messages.length - settings.seen);
+      if (unread > 0) {
+        badge.hidden = false;
+        badge.textContent = unread > 99 ? '99+' : String(unread);
+      } else {
+        badge.hidden = true;
+      }
     }
   }
 
@@ -1230,7 +1320,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     themeMeta.setAttribute('content', '#ffffff');
     updateList();
     switchMainTab(mainTab === 'moments' || mainTab === 'me' ? 'chat' : mainTab);
-    document.getElementById('open-chat').focus();
+    const focusRow = document.querySelector('#friends-section .chat-row[data-friend-id="' + CSS.escape(CHARACTER_ID) + '"]');
+    if (focusRow) focusRow.focus();
   }
 
   function openSheet() {
@@ -1615,7 +1706,6 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   applyCharacterAccessUi();
   loadScenes();
-  document.getElementById('open-chat').addEventListener('click', openRoom);
   document.getElementById('back-btn').addEventListener('click', closeRoom);
   document.getElementById('profile-btn').addEventListener('click', openProfile);
   menuBtn.addEventListener('click', () => setMenu(!menuOpen));
@@ -1821,10 +1911,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
   if (friendSearchInput) {
     friendSearchInput.addEventListener('input', () => {
-      const row = document.getElementById('open-chat');
-      if (!row) return;
       const q = friendSearchInput.value.trim().toLowerCase();
-      row.hidden = Boolean(q) && !row.innerText.toLowerCase().includes(q);
+      document.querySelectorAll('#friends-section .chat-row').forEach((row) => {
+        row.hidden = Boolean(q) && !row.innerText.toLowerCase().includes(q);
+      });
     });
   }
   const avatarFile = document.getElementById('me-avatar-file');
@@ -2112,6 +2202,17 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     historyReady = true;
     if (seeded !== remote) saveHistory();
     else saveLocalHistory();
+    try {
+      const checkin = await fetch(withChar('/api/checkin'), { method: 'POST' });
+      if (checkin.ok) {
+        const payload = await checkin.json();
+        if (payload && payload.appended && Array.isArray(payload.messages)) {
+          messages = window.AccountCache.viewAfterFetch(true, payload.messages);
+          saveLocalHistory();
+          loadFriendsList();
+        }
+      }
+    } catch (_) { /* check-in is best-effort */ }
     if (wantRoom) {
       params.delete('welcome');
       const cleaned = params.toString();
@@ -2120,6 +2221,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     if (roomOpen || wantRoom) settings.seen = messages.length;
     saveSettings();
     render();
+    updateList();
     if (wantRoom) openRoom();
   }
 
@@ -2141,7 +2243,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         if (data && data.settings) applyPrefs(data.settings);
       }
     } catch (_) { /* local prefs remain until the next visit */ }
-    await loadAccountHistory();
+    await Promise.all([loadFriendsList(), loadAccountHistory()]);
   }
   bootAccount();
 })();
