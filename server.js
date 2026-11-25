@@ -1192,12 +1192,21 @@ function createApp() {
       .filter(Boolean)
       .join(',')
       .split(',')
-      .map((name) => name.trim().toLowerCase())
+      .map((name) => String(name || '').trim().replace(/^['"]|['"]$/g, '').trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  function starAdminNames() {
+    return [process.env.ADMINS, process.env.MOMENTS_ADMINS]
+      .filter(Boolean)
+      .join(',')
+      .split(',')
+      .map((name) => String(name || '').trim().replace(/^['"]|['"]$/g, '').trim().toLowerCase())
       .filter(Boolean);
   }
 
   function requireStarAdmin(req, res, next) {
-    const names = String(process.env.ADMINS || '').split(',').map((name) => name.trim().toLowerCase()).filter(Boolean);
+    const names = starAdminNames();
     if (!names.length) return res.status(404).json({ error: 'Not found' });
     const user = store.findUserById(req.userId);
     if (!user || !names.includes(String(user.username || '').toLowerCase())) {

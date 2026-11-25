@@ -257,7 +257,7 @@ test('ADMINS users get unlimited starlight and can still chat at zero balance', 
     method: 'POST', body: { username, password: 'password1', age14: true },
   });
   assert.ok(admin.status === 200 || admin.status === 201);
-  process.env.ADMINS = username;
+  process.env.ADMINS = `'${username}'`;
   const view = await request('/api/starlight', { cookie: admin.cookie });
   assert.equal(view.status, 200);
   assert.equal(view.json.unlimited, true);
@@ -287,6 +287,16 @@ test('ADMINS users get unlimited starlight and can still chat at zero balance', 
   assert.equal(calls > beforeCalls, true);
   assert.equal((await request('/api/starlight', { cookie: admin.cookie })).json.balance, balance);
   delete process.env.ADMINS;
+
+  // MOMENTS_ADMINS alone is enough for unlimited starlight.
+  const other = digitUsername();
+  const momentsAdmin = await request('/api/register', {
+    method: 'POST', body: { username: other, password: 'password1', age14: true },
+  });
+  process.env.MOMENTS_ADMINS = other;
+  const momentsView = await request('/api/starlight', { cookie: momentsAdmin.cookie });
+  assert.equal(momentsView.json.unlimited, true);
+  delete process.env.MOMENTS_ADMINS;
 });
 
 test('seed codes and custom redeem codes work once', async () => {
