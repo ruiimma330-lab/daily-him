@@ -239,18 +239,25 @@
     Shell.setSelectedCharacter(current.id);
     goBtn.disabled = true;
     try {
-      let alreadyFriend = false;
+      // Product rule: tapping 开始聊天 immediately makes this idol a friend,
+      // even if the user later backs out of the naming screen.
+      let profile = null;
       try {
-        const profile = await Shell.api('/api/profile?characterId=' + encodeURIComponent(current.id));
-        alreadyFriend = Boolean(profile.profile && profile.profile.onboardedAt);
-      } catch (_) { /* treat as not set up */ }
-      if (!alreadyFriend) {
-        try {
-          const friends = await Shell.api('/api/friends');
-          alreadyFriend = Boolean((friends.friends || []).some((item) => item.id === current.id));
-        } catch (_) { /* ignore */ }
+        const saved = await Shell.api('/api/profile?characterId=' + encodeURIComponent(current.id), {
+          method: 'PUT',
+          body: JSON.stringify({ onboarded: true }),
+        });
+        profile = saved && saved.profile;
+      } catch (_) {
+        Shell.toast('保存失败，请重试');
+        goBtn.disabled = current.available === false;
+        return;
       }
-      if (alreadyFriend) {
+      const named = Boolean(
+        profile
+        && (profile.callNameStatus === 'done' || profile.callNameStatus === 'pending')
+      );
+      if (named) {
         Shell.go('/', { c: current.id });
         return;
       }
