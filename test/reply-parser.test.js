@@ -20,6 +20,11 @@ process.env.ELEVENLABS_API_KEY = 'test-voice-key';
 const { digitUsername } = require('./helpers');
 const store = require('../lib/store');
 const friends = require('../lib/friends');
+const replyParser = require('../lib/reply-parser');
+const callName = require('../lib/call-name');
+const moments = require('../lib/moments');
+const momentsRefresh = require('../lib/moments-refresh');
+const memory = require('../lib/memory');
 const { createApp, parseReply, resolveRuntimeConfig } = require('../server');
 
 const JUNGKOOK_MALFORMED = '{"messages":[{"mood":"cooking_steps","ko":"안녕~ 이 시간에 뭐 하고 있었어? 저녁은 먹었어?",zh":"你好呀～这个点儿在干嘛呢？吃晚饭了吗？"},{"mood":"playful","ko":" 나는 그냥 노래 듣고 있었는데, 혹시 요즘 꽂힌 노래 있어? 하나 추천해 줘.",zh":" 我就在听歌来着，你最近有特别上头的歌吗？推荐我一首呗。"}]}';
@@ -139,4 +144,65 @@ test('GET /api/history auto-repairs malformed JSON assistant bubble and lib/frie
   assert.equal(persisted.length, 3);
   assert.equal(persisted[1].text, '안녕~ 이 시간에 뭐 하고 있었어? 저녁은 먹었어?');
   assert.equal(persisted[2].text, '나는 그냥 노래 듣고 있었는데, 혹시 요즘 꽂힌 노래 있어? 하나 추천해 줘.');
+});
+
+test('parseJsonLoose and downstream parsers handle malformed DeepSeek JSON across schemas', async () => {
+  const settled = callName.settle(
+    { callNameStatus: 'pending' },
+    '{address:{name:"소연",confidence:"high"}}',
+  );
+  assert.equal(settled.patch.callName, '소연');
+  assert.equal(settled.patch.callNameStatus, 'done');
+
+  const settledMissingQuote = callName.settle(
+    { callNameStatus: 'pending' },
+    '{"address":{"name":"소연",confidence:"high"}}',
+  );
+  assert.equal(settledMissingQuote.patch.callName, '소연');
+
+  const postId = moments.loadPosts('baekhyun')[0].id;
+  const comment = await moments.addComment(userId, 'baekhyun', postId, '응원해!');
+  const reply1 = await moments.maybeReply({
+    userId,
+    characterId: 'baekhyun',
+    postId,
+    comment,
+    userName: '소연',
+    llm: async () => '{ko:"고마워!"}',
+  });
+  assert.equal(reply1.text, '고마워!');
+  assert.deepEqual(replyParser.parseJsonLoose('{"ko":"고마워!",}'), { ko: '고마워!' });
+
+  const drafted = await momentsRefresh.draftFromItem(
+    { title: '원본', url: 'https://example.com/news' },
+    async () => '{"kind":"news",title":"공지","ko":"안녕",zh":"你好",}',
+  );
+  assert.deepEqual(drafted, {
+    ko: '안녕',
+    zh: '你好',
+    title: '공지',
+    kind: 'news',
+    link: 'https://example.com/news',
+  });
+
+  assert.deepEqual(
+    replyParser.parseJsonLoose('{"cards":[{"text":"좋아해",category":"preference",}]}'),
+    { cards: [{ text: '좋아해', category: 'preference' }] },
+  );
+
+  await memory.afterTurn({
+    userId,
+    characterId: 'jungkook',
+    userText: '나 딸기 좋아해',
+    replyText: '딸기 좋지!',
+    userName: '소연',
+    llm: async () => '{"ops":[{"op":"add",text":"用户喜欢草莓","category":"preference","date":null,tags:["草莓","딸기"],}]}',
+  });
+  assert.equal(memory.load(userId, 'jungkook').cards.some((c) => c.text === '用户喜欢草莓'), true);
+
+  // Valid JSON continues to take the strict JSON.parse fast path untouched.
+  assert.deepEqual(
+    replyParser.parseJsonLoose('{"ko":"hi, name: bob"}'),
+    { ko: 'hi, name: bob' },
+  );
 });
