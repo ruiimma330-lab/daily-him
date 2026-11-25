@@ -129,11 +129,17 @@ test('cover and chat clients route returning users to the list, not the picker',
   const login = fs.readFileSync(path.join(__dirname, '..', 'public', 'login.html'), 'utf8');
   const picker = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'picker.js'), 'utf8');
   const manifest = fs.readFileSync(path.join(__dirname, '..', 'public', 'manifest.webmanifest'), 'utf8');
+  const sw = fs.readFileSync(path.join(__dirname, '..', 'public', 'sw.js'), 'utf8');
   assert.match(cover, /\/api\/friends/);
   assert.match(cover, /Shell\.go\('\/'/);
   assert.match(app, /renderFriendsList/);
   assert.match(app, /\/api\/checkin/);
+  // After 开始聊天 / onboard, welcome seeds a greeting but must NOT openRoom.
+  assert.match(app, /fromWelcome/);
+  assert.doesNotMatch(app, /if \(wantRoom\) openRoom\(\)/);
+  assert.doesNotMatch(app, /if \(fromWelcome\) openRoom\(\)/);
   assert.match(login, /destinationAfterAuth/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
   assert.match(manifest, /"start_url": "\/"/);
+  assert.match(sw, /dh-pwa-17/);
 });
