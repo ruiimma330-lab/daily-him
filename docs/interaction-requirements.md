@@ -49,15 +49,19 @@
 
 | 规则 | 说明 |
 | --- | --- |
-| 用户名 | 3–32 位；**允许纯数字**（如 `2315042798`） |
+| **注册**用户名 | **必须** `^\d{8,12}$`（8–12 位纯数字，如 `2315042798`）+ `age14: true` |
+| **登录**用户名 | `[A-Za-z0-9_]{3,32}`（兼容旧号） |
 | 密码 | ≥ 8 位；bcrypt 存储 |
 | 会话 | Cookie `sid`，约 30 天 |
 | 可选门禁 | 若设 `APP_PASSWORD`，先站点解锁再注册登录 |
+| 注册后无好友 | 进选人页 |
 
 ### 2.3 选人 `/shell/pick.html`
 
-- 横向滑动选爱豆；确认后进入新人引导（昵称 / 他怎么叫你等）。
-- **点「开始聊天」= 已成为好友**（写入 `profile.onboardedAt`），之后必须出现在「聊天」列表，即使还没发过消息。
+- 团体 Tab → 横向滑动肖像 →「开始聊天」。
+- **点「开始聊天」= 已成为好友**（立刻 `PUT /api/profile { onboarded: true }`），之后必须出现在「聊天」列表，即使还没发过消息。
+- 若尚未设称呼 → `/shell/onboard.html?c=`（自己填 / 让他来问）→ `/?c=&welcome=1`。
+- 从聊天页「+」进入（`?from=chat`）→ 保存后**直接回列表**，可跳过 onboard。
 
 ### 2.4 首页「聊天」列表（**当前最关键验收点**）
 
@@ -71,20 +75,30 @@
 | 空态 | 文案「还没有聊天，点右上角 + 添加」；**不要**误跳选人页把已有好友藏掉 |
 | 添加 | 右上角 + → 选人；加完回列表应立刻看到新行 |
 
-**生产诊断（仍未解决 UI 空列表）：**
+**生产诊断（仍未解决 UI 空列表）与已针对过的根因：**
 
-- 账号用户名 `2315042798`，Turso 内已有约 **5** 个好友文档，但页面仍常显示无聊天入口。
-- 已合并多次修复（#58–#64），含 Turso 重同步、禁止误清空、整段重做 `lib/friends.js` + `friends-list.js`。
-- **交给 Neon 的首要任务：查出为何 API/前端仍不渲染行，并修到该账号能看到 5 行。**
+| 根因 | 表现 | 修复落点 |
+| --- | --- | --- |
+| PM2 多 worker 内存漂移 | Turso 有数据、某进程内存无 → 列表空 | `exportUserDocs` 直读；部署 **`pm2 … -i 1`** |
+| 未写 `onboardedAt` | 点开始聊天后仍空 | picker/onboard 立刻 `onboarded:true` |
+| API 失败当空数组 | 500 → 客户端当「没好友」 | 应用 `friends_failed`；listing 不因 backfill 抛错 |
+| SW 旧缓存 | 旧脚本 / 空态 | `dh-pwa-22` + `sw-heal.js` |
+| 误 redirect 到 pick | 有聊天也被藏 | soft-gate，禁止 `replace` 到 pick |
+
+- 账号用户名 `2315042798`，Turso 曾确认约 **5** 个好友文档，页面仍常无入口。
+- 已合 #58–#64（含整段重做）；**Neon 首要任务：在 #64 架构上查清 API 有无数据 vs 前端不渲染，修到可见 5 行。**
 
 ### 2.5 聊天室（同页 `/`，`open=1` 打开房间）
 
 | 能力 | 期望 |
 | --- | --- |
-| 发文字 | `POST /api/chat`；扣星光 |
+| 进房 | 列表点行或 `open=1` → `openRoom()` |
+| `welcome=1` | 种欢迎语后**留在列表**（不要强行进房藏列表） |
+| 发文字 | `POST /api/chat`；扣星光（约 3 / 长文 4）；402 → 星光条 |
 | 历史 | 服务端按 userId+角色持久；打开时拉取 |
-| 语音气泡 | 点喇叭 `POST /api/tts`（聊天发送默认 `voice:false` 不自动 TTS） |
-| 主动 check-in | 安静一段时间后可有一条主动消息（`/api/checkin`） |
+| 语音气泡 | 点喇叭 `POST /api/tts`（聊天发送默认 `voice:false`） |
+| 主动 check-in | 默认闲置约 **8h**（`CHECKIN_IDLE_MS`）且当日未 proactive → `/api/checkin` 写一行（不扣星光、不调 LLM）；需已 onboarded + 有历史 |
+| 亲密度 | `GET /api/relationship`；火花 streak |
 | 记忆 | 「他记得的你」可查看/编辑；清空聊天**保留**记忆与亲密度 |
 | 星光不足 | 提示去领取 / 补给站 |
 | 朋友圈入口 | 菜单或资料里进该角色朋友圈 |
@@ -132,17 +146,20 @@
 
 | 区域 | 路径 |
 | --- | --- |
-| 好友列表 API | `GET /api/friends` → `lib/friends.js` → `store.exportUserDocs`（Turso 优先） |
-| 列表 UI | `public/friends-list.js` + `index.html` `#friends-section` |
-| 聊天主逻辑 | `public/app.js`、`POST /api/chat` |
-| 封面分流 | `public/shell/cover.html` |
-| 选人 | `public/shell/picker.js`、`pick.html` |
-| 新人 | `public/shell/onboard.html` |
+| 好友列表 API | `GET /api/friends`（`Cache-Control: no-store`）→ `lib/friends.js` → `store.exportUserDocs` |
+| 列表 UI | `public/friends-list.js` + `index.html` `#friends-section` / `#screen-list` |
+| 聊天主逻辑 | `public/app.js`、`POST /api/chat`、`public/playback.js` |
+| 封面分流 | `public/shell/cover.html`；未登录 `/` → gate → cover |
+| 选人 | `public/shell/picker.js`、`pick.html`、`picker-groups.js` |
+| 新人 | `public/shell/onboard.html`、`lib/call-name.js` |
+| 我的 | `public/me/me.js`（资料、改密、清空全部、注销等） |
 | 星光 | `lib/starlight.js`、`config/starlight.json`、`public/shell/starlight.html` |
-| 朋友圈 | `lib/moments*.js`、`public/moments.js` |
-| 存储 | Turso（`TURSO_*`）；健康检查 `/api/health` 含 `storage` |
-| 部署 | `/opt/dailyhim`，`deploy/hk/update.sh`，PM2 名 `dailyhim`，启动用 **`-i 1`**（不要 `--exec-mode`） |
-| 环境 | `/etc/dailyhim.env`；进程用户 `dailyhim` |
+| 朋友圈 | `lib/moments*.js`、`public/moments.js`；kind：`news` / `preview` / `event` |
+| 签到 | `lib/checkins.js`、`config/checkins.json` |
+| 角色 | 开放约 10 人；roster 见 `config/public-roster.json` + `characters/<id>/` |
+| 存储 | Turso（`TURSO_*`）；否则 `data/`；`/api/health` → `storage` |
+| 部署 | `/opt/dailyhim`，`deploy/hk/update.sh`，PM2 **`dailyhim -i 1`**（勿 `--exec-mode`） |
+| 环境 | `/etc/dailyhim.env`；用户 `dailyhim` |
 
 ---
 

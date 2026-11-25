@@ -6,7 +6,7 @@
 - **默认分支**：`main`（应含 #64：`5d67cb2` 或更新）
 - **本机建议路径**：`D:\antigravity peoject\daily him`
 - **线上**：https://dailyhim.cn  
-- **完整交互需求**：同目录 `interaction-requirements.md`（必读）
+- **完整交互需求**：同目录 `interaction-requirements.md`（必读；已按代码全图校对：注册 8–12 位数字、`from=chat`、check-in 8h、空列表根因表等）
 - **产品规划背景**：`roadmap-v2.md`
 
 ## Windows 一键落到 D 盘（PowerShell）
