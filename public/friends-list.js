@@ -110,6 +110,22 @@
     root.append(wrap);
   }
 
+  function resolveAccountId(opts) {
+    if (opts && opts.accountId) return String(opts.accountId);
+    try {
+      if (typeof localStorage !== 'undefined') return localStorage.getItem('idol_account_id') || '';
+    } catch (_) { /* ignore */ }
+    return '';
+  }
+
+  function hydrateFromCache(userId, opts = {}) {
+    if (!userId || !global.AccountCache || typeof localStorage === 'undefined') return false;
+    const cached = global.AccountCache.getFriends(localStorage, userId);
+    if (!Array.isArray(cached)) return false;
+    render(cached, opts);
+    return true;
+  }
+
   async function fetchFriendsOnce() {
     const response = await fetch('/api/friends', { credentials: 'same-origin', cache: 'no-store' });
     if (response.status === 401) return { status: 401 };
@@ -123,6 +139,7 @@
     const root = section();
     if (!root) return [];
     const seq = ++loadSeq;
+    const accountId = resolveAccountId(opts);
     let result = null;
     try {
       result = await fetchFriendsOnce();
@@ -144,6 +161,9 @@
       if (result && result.status === 401) return lastFriends || [];
     }
     if (result && Array.isArray(result.friends)) {
+      if (accountId && global.AccountCache && typeof localStorage !== 'undefined') {
+        global.AccountCache.setFriends(localStorage, accountId, result.friends);
+      }
       render(result.friends, opts);
       return result.friends;
     }
@@ -152,6 +172,23 @@
   }
 
   function updateCurrent(characterId, { preview, time, unread } = {}) {
+    if (Array.isArray(lastFriends) && characterId) {
+      const idx = lastFriends.findIndex((f) => f && f.id === characterId);
+      if (idx !== -1) {
+        const nextItem = { ...lastFriends[idx] };
+        if (preview != null) nextItem.preview = preview;
+        if (time) {
+          const d = safeDate(time);
+          if (d) nextItem.lastAt = d.getTime();
+        }
+        lastFriends = lastFriends.slice();
+        lastFriends[idx] = nextItem;
+        const activeId = resolveAccountId();
+        if (activeId && global.AccountCache && typeof localStorage !== 'undefined') {
+          global.AccountCache.setFriends(localStorage, activeId, lastFriends);
+        }
+      }
+    }
     const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
       ? CSS.escape(characterId)
       : String(characterId || '').replace(/[^a-zA-Z0-9_-]/g, '');
@@ -181,11 +218,11 @@
   }
 
   function resetState() {
-    loadSeq = 0;
+    loadSeq += 1;
     lastFriends = null;
   }
 
-  const api = { load, render, renderError, updateCurrent, label, resetState };
-  if (typeof window !== 'undefined') global.FriendsList = { load, render, renderError, updateCurrent, label };
+  const api = { load, render, renderError, updateCurrent, label, hydrateFromCache, resetState };
+  if (typeof window !== 'undefined') global.FriendsList = api;
   if (typeof module === 'object' && module.exports) module.exports = api;
 })(typeof globalThis !== 'undefined' ? globalThis : window);

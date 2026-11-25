@@ -38,7 +38,7 @@ test('17 complete packs have adult policy; Wonyoung is open, Jennie and the rest
     assert.match(fs.readFileSync(path.join(dir,'facts.md'),'utf8'), /待人工核验/);
     assert.match(fs.readFileSync(path.join(dir,'moments.json'),'utf8'), /虚构日常/);
     assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
-    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-24`);
+    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-25`);
     for (const asset of ['avatar.jpg','portrait.jpg']) {
       const file = path.join(dir, asset);
       assert.ok(fs.existsSync(file), `${id}/${asset}`);

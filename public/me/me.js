@@ -30,12 +30,24 @@
     return { playback: 'tap', translation: 'collapsed', nickname: '', aiNoticeSeen: false };
   }
 
+  function syncMeCache() {
+    const id = state.me && state.me.user && state.me.user.id;
+    if (!id || !window.AccountCache || !window.AccountCache.setMe) return;
+    window.AccountCache.setMe(localStorage, id, {
+      id,
+      username: state.me.user.username || '',
+      nickname: (state.settings && state.settings.nickname) || '',
+      hasAvatar: Boolean(state.me.hasAvatar),
+    });
+  }
+
   function writeLocal(next) {
     state.settings = { ...state.settings, ...next };
     const id = state.me && state.me.user && state.me.user.id;
     if (id && window.AccountCache) {
       try { localStorage.setItem(window.AccountCache.prefsKey(id), JSON.stringify(state.settings)); } catch (_) { /* ignore */ }
     }
+    syncMeCache();
     if (window.IdolChat && window.IdolChat.applyPrefs) window.IdolChat.applyPrefs(state.settings);
   }
 
@@ -336,6 +348,7 @@
         const image = await fileToAvatarJpeg(picked);
         await api('/api/me/avatar', { method: 'PUT', body: JSON.stringify({ image }) });
         if (state.me) state.me.hasAvatar = true;
+        syncMeCache();
         publish('idol-avatar', { hasAvatar: true });
         toast('头像已更新');
         paintMain();
@@ -362,6 +375,7 @@
         try {
           await api('/api/me/avatar', { method: 'DELETE' });
           if (state.me) state.me.hasAvatar = false;
+          syncMeCache();
           publish('idol-avatar', { hasAvatar: false });
           toast('已恢复默认头像');
           paintMain();
@@ -897,7 +911,11 @@
       if (!ok) return;
       button.disabled = true;
       try {
+        const deletedId = state.me && state.me.user && state.me.user.id;
         await api('/api/me', { method: 'DELETE', body: JSON.stringify({ confirm: '注销' }) });
+        if (deletedId && window.AccountCache) {
+          window.AccountCache.clearUser(localStorage, deletedId);
+        }
         if (window.IdolChat && window.IdolChat.logout) window.IdolChat.logout();
         else location.href = '/login';
       } catch (_) {

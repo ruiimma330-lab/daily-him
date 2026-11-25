@@ -147,7 +147,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-24`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-25`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -1032,7 +1032,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
 
   async function loadFriendsList() {
     if (!window.FriendsList) return;
-    const list = await window.FriendsList.load({ onOpen: openFriendChat });
+    const list = await window.FriendsList.load({ onOpen: openFriendChat, accountId });
     friendsCache = Array.isArray(list) ? list.slice() : [];
     updateList();
   }
@@ -1083,6 +1083,14 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           nickname: userNickname,
           aiNoticeSeen: typeof next.aiNoticeSeen === 'boolean' ? next.aiNoticeSeen : prev.aiNoticeSeen === true,
         }));
+        if (typeof next.nickname === 'string') {
+          const prevMe = window.AccountCache.getMe(localStorage, accountId) || { id: accountId };
+          window.AccountCache.setMe(localStorage, accountId, {
+            ...prevMe,
+            id: accountId,
+            nickname: userNickname,
+          });
+        }
       }
     } catch (_) { /* ignore */ }
     saveSettings();
@@ -1283,6 +1291,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     messages = [];
     historyReady = false;
     historyError = false;
+    if (window.FriendsList && window.FriendsList.resetState) window.FriendsList.resetState();
     try { localStorage.removeItem('idol_account_id'); } catch (err) { /* ignore */ }
     location.href = '/login';
   }
@@ -1767,7 +1776,20 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       const me = meRes.ok ? await meRes.json() : null;
       syncAiNotice(me);
       setMyName(profile, me);
-      if (me && me.hasAvatar) userAvatarVersion = Date.now();
+      if (me && me.user && me.user.id && window.AccountCache) {
+        const prevMe = window.AccountCache.getMe(localStorage, me.user.id);
+        window.AccountCache.setMe(localStorage, me.user.id, {
+          id: me.user.id,
+          username: me.user.username || '',
+          nickname: userNickname || (prevMe && prevMe.nickname) || '',
+          hasAvatar: Boolean(me.hasAvatar),
+        });
+      }
+      if (me && me.hasAvatar) {
+        if (!userAvatarVersion) userAvatarVersion = Date.now();
+      } else if (me) {
+        userAvatarVersion = 0;
+      }
       applyUserAvatar();
     } catch (err) { /* keep the default name */ }
     applyCharacterLabels();
@@ -1877,10 +1899,55 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     });
   }
 
+  const bootAccountId = (() => {
+    try { return localStorage.getItem('idol_account_id') || ''; } catch (_) { return ''; }
+  })();
+  let bootHydratedMessages = false;
+  let sessionSwitched = false;
+
+  if (bootAccountId && window.AccountCache) {
+    accountId = bootAccountId;
+    HISTORY_KEY = window.AccountCache.historyKey(bootAccountId, CHARACTER_ID);
+    SETTINGS_KEY = window.AccountCache.settingsKey(bootAccountId, CHARACTER_ID);
+    settings = loadSettings();
+
+    const cachedMe = window.AccountCache.getMe(localStorage, bootAccountId);
+    if (cachedMe) {
+      if (cachedMe.nickname) userNickname = cachedMe.nickname;
+      const profileName = document.getElementById('me-profile-name');
+      if (profileName) {
+        profileName.textContent = (userNickname || cachedMe.nickname || cachedMe.username || '我').trim() || '我';
+      }
+      if (cachedMe.hasAvatar) {
+        userAvatarVersion = 1;
+        applyUserAvatar();
+      }
+    }
+
+    if (window.FriendsList && window.FriendsList.hydrateFromCache) {
+      if (window.FriendsList.hydrateFromCache(bootAccountId, { onOpen: openFriendChat })) {
+        const cachedFriends = window.AccountCache.getFriends(localStorage, bootAccountId);
+        if (Array.isArray(cachedFriends)) friendsCache = cachedFriends.slice();
+      }
+    }
+
+    const cachedHistory = window.AccountCache.getHistory(localStorage, bootAccountId, CHARACTER_ID);
+    if (Array.isArray(cachedHistory) && cachedHistory.length > 0) {
+      messages = normalizeHistoryList(cachedHistory);
+      if (messages.length > 0) {
+        bootHydratedMessages = true;
+        historyReady = true;
+      }
+    }
+  }
+
   mountStaticAvatars();
   syncToggles();
   updateSendButton();
   render();
+  if (bootHydratedMessages && new URLSearchParams(location.search).get('open') === '1') {
+    openRoom();
+  }
 
   document.addEventListener('idol-avatar', (event) => {
     userAvatarVersion = event.detail && event.detail.hasAvatar ? Date.now() : 0;
@@ -1994,6 +2061,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       return '';
     }
     if (response.status === 401) {
+      try { localStorage.removeItem('idol_account_id'); } catch (_) { /* ignore */ }
+      if (window.FriendsList && window.FriendsList.resetState) window.FriendsList.resetState();
       location.href = '/login';
       return 'leave';
     }
@@ -2001,28 +2070,88 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const data = await response.json().catch(() => null);
     const id = data && data.user && data.user.id;
     if (!id || !window.AccountCache) return '';
-    const prev = localStorage.getItem('idol_account_id');
+    const prev = bootAccountId || (() => {
+      try { return localStorage.getItem('idol_account_id') || ''; } catch (_) { return ''; }
+    })();
     const urlChar = new URLSearchParams(location.search).get('c');
     window.AccountCache.adopt(localStorage, id, urlChar || CHARACTER_ID);
-    if (prev && prev !== id && !urlChar) {
-      const saved = window.AccountCache.getSelected(localStorage, id) || 'baekhyun';
-      const next = new URL(location.href);
-      next.searchParams.set('c', saved);
-      location.replace(`${next.pathname}?${next.searchParams.toString()}`);
-      return 'leave';
+    const switched = Boolean(prev && prev !== id);
+    if (switched) {
+      sessionSwitched = true;
+      messages = [];
+      historyReady = false;
+      historyError = false;
+      bootHydratedMessages = false;
+      friendsCache = [];
+      userNickname = '';
+      userAvatarVersion = 0;
+      if (window.FriendsList && window.FriendsList.resetState) window.FriendsList.resetState();
+      if (!urlChar) {
+        const saved = window.AccountCache.getSelected(localStorage, id) || 'baekhyun';
+        const next = new URL(location.href);
+        next.searchParams.set('c', saved);
+        location.replace(`${next.pathname}?${next.searchParams.toString()}`);
+        return 'leave';
+      }
+      const nextMe = window.AccountCache.getMe(localStorage, id);
+      const profileName = document.getElementById('me-profile-name');
+      if (profileName) {
+        profileName.textContent = (nextMe && (nextMe.nickname || nextMe.username)) || (data.user && data.user.username) || '我';
+      }
+      userAvatarVersion = data.hasAvatar ? Date.now() : 0;
+      applyUserAvatar();
+      let hydrated = false;
+      if (window.FriendsList && window.FriendsList.hydrateFromCache) {
+        hydrated = window.FriendsList.hydrateFromCache(id, { onOpen: openFriendChat });
+        if (hydrated) {
+          const cachedFriends = window.AccountCache.getFriends(localStorage, id);
+          if (Array.isArray(cachedFriends)) friendsCache = cachedFriends.slice();
+        }
+      }
+      if (!hydrated) {
+        const friendsRoot = document.getElementById('friends-section');
+        if (friendsRoot) {
+          const loading = document.createElement('p');
+          loading.className = 'friends-empty';
+          loading.textContent = '加载中…';
+          friendsRoot.replaceChildren(loading);
+        }
+      }
+      render();
     }
     accountId = id;
     window.AccountCache.setSelected(localStorage, id, CHARACTER_ID);
     HISTORY_KEY = window.AccountCache.historyKey(id, CHARACTER_ID);
     SETTINGS_KEY = window.AccountCache.settingsKey(id, CHARACTER_ID);
+    const existingMe = window.AccountCache.getMe(localStorage, id);
+    let prefNickname = '';
+    try {
+      const rawPrefs = JSON.parse(localStorage.getItem(window.AccountCache.prefsKey(id)) || '{}');
+      if (rawPrefs && typeof rawPrefs.nickname === 'string') prefNickname = rawPrefs.nickname.trim();
+    } catch (_) { /* ignore */ }
+    window.AccountCache.setMe(localStorage, id, {
+      id,
+      username: (data.user && data.user.username) || '',
+      nickname: prefNickname || (switched ? '' : userNickname) || (existingMe && existingMe.nickname) || '',
+      hasAvatar: Boolean(data.hasAvatar),
+    });
     return id;
   }
 
   async function loadAccountHistory() {
     historyError = false;
-    historyReady = false;
-    messages = window.AccountCache.viewAfterFetch(false, null);
-    render();
+    const hasVerifiedCache = Boolean(
+      !sessionSwitched
+      && accountId
+      && accountId === bootAccountId
+      && bootHydratedMessages
+      && messages.length > 0
+    );
+    if (!hasVerifiedCache) {
+      historyReady = false;
+      messages = window.AccountCache.viewAfterFetch(false, null);
+      render();
+    }
     let remote = null;
     try {
       remote = await pullHistoryFromServer();
@@ -2030,10 +2159,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       remote = null;
     }
     if (!remote) {
-      messages = window.AccountCache.viewAfterFetch(false, null);
-      historyError = true;
-      historyReady = false;
-      render();
+      if (!hasVerifiedCache) {
+        messages = window.AccountCache.viewAfterFetch(false, null);
+        historyError = true;
+        historyReady = false;
+        render();
+      }
       return;
     }
     const params = new URLSearchParams(location.search);
@@ -2066,7 +2197,11 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       params.delete('open');
       params.delete('tab');
       const cleaned = params.toString();
-      history.replaceState(null, '', cleaned ? `${location.pathname}?${cleaned}` : location.pathname);
+      history.replaceState(
+        roomOpen ? { dailyhimRoom: true, c: CHARACTER_ID } : null,
+        '',
+        cleaned ? `${location.pathname}?${cleaned}` : location.pathname
+      );
     }
     if (roomOpen || wantOpen) settings.seen = messages.length;
     saveSettings();
@@ -2091,14 +2226,16 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
     settings = loadSettings();
     applyPrefs(settings);
-    try {
-      const response = await fetch('/api/me/settings');
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.settings) applyPrefs(data.settings);
-      }
-    } catch (_) { /* local prefs remain until the next visit */ }
-    await Promise.all([loadFriendsList(), loadAccountHistory()]);
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/me/settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.settings) applyPrefs(data.settings);
+        }
+      } catch (_) { /* local prefs remain until the next visit */ }
+    };
+    await Promise.all([fetchSettings(), loadFriendsList(), loadAccountHistory()]);
   }
   bootAccount();
 })();

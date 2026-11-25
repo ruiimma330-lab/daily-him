@@ -109,7 +109,7 @@ test('chat-entry client module and index wire FriendsList', () => {
   assert.match(app, /open=1/);
   assert.doesNotMatch(app, /location\.replace\('\/shell\/pick\.html\?from=chat'\)/);
   assert.match(sw, /friends-list\.js/);
-  assert.match(sw, /dh-pwa-24/);
+  assert.match(sw, /dh-pwa-25/);
 });
 
 test('5-friend account and corrupt onboardedAt still return all 5 friends with finite lastAt', async () => {
@@ -282,6 +282,129 @@ test('FriendsList client DOM behavior: 5 rows, retry on failure, preserve rows, 
   }
 });
 
+test('FriendsList hydrateFromCache renders 0ms isolated cache and load persists per-account friends', async () => {
+  function makeEl(tag) {
+    const el = {
+      tagName: String(tag || 'div').toUpperCase(),
+      className: '',
+      textContent: '',
+      type: '',
+      hidden: false,
+      dateTime: '',
+      dataset: {},
+      style: {},
+      children: [],
+      listeners: {},
+      setAttribute() {},
+      addEventListener(ev, fn) { this.listeners[ev] = fn; },
+      click() { if (this.listeners.click) this.listeners.click(); },
+      append(...nodes) { this.children.push(...nodes); },
+      replaceChildren(...nodes) { this.children = [...nodes]; },
+      querySelector(sel) {
+        if (sel.startsWith('.')) {
+          const cls = sel.slice(1);
+          const queue = [...this.children];
+          while (queue.length) {
+            const cur = queue.shift();
+            if (cur.className && cur.className.split(/\s+/).includes(cls)) return cur;
+            if (cur.children) queue.push(...cur.children);
+          }
+        }
+        return null;
+      },
+    };
+    return el;
+  }
+
+  function memoryStorage() {
+    const map = new Map();
+    return {
+      getItem(key) { return map.has(key) ? map.get(key) : null; },
+      setItem(key, value) { map.set(String(key), String(value)); },
+      removeItem(key) { map.delete(key); },
+      key(index) { return [...map.keys()][index] || null; },
+      get length() { return map.size; },
+    };
+  }
+
+  const root = makeEl('div');
+  const prevDoc = global.document;
+  const prevFetch = global.fetch;
+  const prevStorage = global.localStorage;
+  const prevCache = global.AccountCache;
+
+  const accountCache = require('../public/account-cache.js');
+  const storage = memoryStorage();
+  const userA = 'a'.repeat(32);
+  const userB = 'b'.repeat(32);
+
+  global.localStorage = storage;
+  global.AccountCache = accountCache;
+  global.document = {
+    getElementById(id) { return id === 'friends-section' ? root : null; },
+    createElement(tag) { return makeEl(tag); },
+    querySelector() { return null; },
+  };
+
+  const friendsList = require('../public/friends-list.js');
+  try {
+    friendsList.resetState();
+    accountCache.setFriends(storage, userA, [
+      { id: 'baekhyun', name: 'baekhyun', displayName: '백현', preview: 'A-cached-msg', lastAt: Date.now() },
+    ]);
+
+    let fetchCalled = 0;
+    global.fetch = async () => {
+      fetchCalled += 1;
+      return {
+        ok: true,
+        status: 200,
+        async json() {
+          return {
+            ok: true,
+            friends: [
+              { id: 'baekhyun', name: 'baekhyun', displayName: '백현', preview: 'A-fresh-msg', lastAt: Date.now() },
+              { id: 'jimin', name: 'jimin', displayName: '지민', preview: 'A-jimin', lastAt: Date.now() - 1000 },
+            ],
+          };
+        },
+      };
+    };
+
+    // 1. hydrateFromCache(userA) renders cached rows immediately without calling fetch.
+    const hydratedA = friendsList.hydrateFromCache(userA);
+    assert.equal(hydratedA, true);
+    assert.equal(fetchCalled, 0);
+    assert.equal(root.children.length, 1);
+    assert.equal(root.children[0].dataset.friendId, 'baekhyun');
+    assert.equal(root.children[0].querySelector('.row-preview').textContent, 'A-cached-msg');
+
+    // 2. hydrateFromCache(userB) returns false and never renders userA's rows.
+    root.replaceChildren();
+    friendsList.resetState();
+    const hydratedB = friendsList.hydrateFromCache(userB);
+    assert.equal(hydratedB, false);
+    assert.equal(root.children.length, 0);
+
+    // 3. load({ accountId: userA }) saves refreshed friends to AccountCache.friendsKey(userA).
+    const loaded = await friendsList.load({ accountId: userA, retryDelayMs: 0 });
+    assert.equal(fetchCalled, 1);
+    assert.equal(loaded.length, 2);
+    const savedA = accountCache.getFriends(storage, userA);
+    assert.equal(savedA.length, 2);
+    assert.equal(savedA[0].preview, 'A-fresh-msg');
+    assert.equal(accountCache.getFriends(storage, userB), null);
+  } finally {
+    friendsList.resetState();
+    global.document = prevDoc;
+    global.fetch = prevFetch;
+    if (prevStorage === undefined) delete global.localStorage;
+    else global.localStorage = prevStorage;
+    if (prevCache === undefined) delete global.AccountCache;
+    else global.AccountCache = prevCache;
+  }
+});
+
 test('public assets (friends-list.js, playback.js) and /api/health contract', async () => {
   for (const asset of ['/friends-list.js', '/playback.js']) {
     const res = await fetch(base + asset, { redirect: 'manual' });
@@ -292,7 +415,7 @@ test('public assets (friends-list.js, playback.js) and /api/health contract', as
   assert.equal(health.json.ok, true);
   assert.equal(typeof health.json.commit, 'string');
   assert.ok(health.json.commit.length > 0);
-  assert.equal(health.json.assetVersion, 'dh-pwa-24');
+  assert.equal(health.json.assetVersion, 'dh-pwa-25');
 });
 
 test('deploy/hk/update.sh contract enforces single instance, commit verification, and /friends-list.js smoke check', () => {
