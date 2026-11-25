@@ -244,6 +244,8 @@
         if (reg.waiting && navigator.serviceWorker.controller) {
           waitingWorker = reg.waiting;
           update.hidden = false;
+          // Auto-apply after a short beat so deploys are not stuck behind the bar.
+          setTimeout(() => { if (!reloading && waitingWorker) applyUpdate(); }, 1200);
         }
         reg.addEventListener('updatefound', () => watch(reg.installing));
       }).catch(() => { /* private mode or insecure origin */ });

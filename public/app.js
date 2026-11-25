@@ -17,15 +17,16 @@ function readCharacterId() {
 const CHARACTER_ID = readCharacterId();
 const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeURIComponent(CHARACTER_ID)}`;
 (async function () {
-  // Friends gate: no onboarded idols → pick once; unknown ?c → first friend.
+  // Friends gate: no friends → pick once; unknown ?c → first friend.
+  // Stay on the list when the API errors so the empty state remains visible.
   if (new URLSearchParams(location.search).get('forced') === '1') return;
   try {
-    const response = await fetch('/api/friends');
+    const response = await fetch('/api/friends', { credentials: 'same-origin' });
     if (!response.ok) return;
     const data = await response.json();
     const friends = (data && data.friends) || [];
     if (!friends.length) {
-      location.replace('/shell/pick.html');
+      location.replace('/shell/pick.html?from=chat');
       return;
     }
     if (!friends.some((item) => item.id === CHARACTER_ID)) {
@@ -164,7 +165,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-19`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-20`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {

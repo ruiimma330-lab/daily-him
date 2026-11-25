@@ -160,6 +160,7 @@ test('cover and chat clients route returning users to the list, not the picker',
   // 开始聊天 immediately PUTs onboarded:true before onboard / list.
   assert.match(picker, /onboarded:\s*true/);
   assert.match(picker, /method:\s*'PUT'/);
+  assert.match(picker, /qs\('from'\) === 'chat'/);
   assert.match(manifest, /"start_url": "\/"/);
-  assert.match(sw, /dh-pwa-19/);
+  assert.match(sw, /dh-pwa-20/);
 });
