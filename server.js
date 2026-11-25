@@ -943,7 +943,8 @@ function createApp() {
     return res.json({ ok: true });
   });
 
-  app.get('/api/me', requireUser, (req, res) => {
+  app.get('/api/me', requireUser, async (req, res) => {
+    try { await store.refreshUserDocs(req.userId); } catch (_) { /* memory cache remains */ }
     const avatar = readAccountDoc(store, 'avatar', req.userId);
     const user = store.findUserById(req.userId);
     const hasFriends = profile.listFriendIds(req.userId).length > 0;
@@ -1541,8 +1542,9 @@ function createApp() {
   });
 
   // Friends = onboarded idols + characters with existing chat history (legacy accounts).
-  app.get('/api/friends', requireUser, (req, res) => {
+  app.get('/api/friends', requireUser, async (req, res) => {
     try {
+      try { await store.refreshUserDocs(req.userId); } catch (_) { /* use memory */ }
       const byId = new Map(characters.listAll().map((ch) => [ch.id, ch]));
       const friends = profile.listFriendIds(req.userId).map((id) => {
         let ch = byId.get(id);

@@ -111,6 +111,10 @@ test('legacy chat history counts as friends and backfills onboardedAt', async ()
   assert.equal(me.json.hasFriends, true);
 });
 
+test('refreshUserDocs is exported for Turso cache resync', () => {
+  assert.equal(typeof store.refreshUserDocs, 'function');
+});
+
 test('idle check-in appends one proactive line after a quiet stretch', async () => {
   const old = Date.now() - (9 * 60 * 60 * 1000);
   store.putHistory(userId, 'baekhyun', [
