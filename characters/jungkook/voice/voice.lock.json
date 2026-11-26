@@ -1,7 +1,7 @@
 {
   "version": "jungkook-voice-2",
-  "voiceId": "lnL0XrGM8b3KxeSGEm3G",
-  "model": "eleven_v3",
+  "voiceId": "5fd8fda12193470f96153288210c4f2a",
+  "model": "s2.1-pro-free",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
     "stability": 0,
@@ -63,5 +63,6 @@
       "text": "하나 더 넣고 싶은데, 참을게. 조금만 더 넣을까?"
     }
   ],
-  "contentHash": "2164046f003dd5b27462aed7865781056266556d7e7350e5edbbba10088179c4"
+  "contentHash": "05c8132a82260b1061368a787cc5134201b340e980ba065319e4e497994f756e",
+  "provider": "fish"
 }

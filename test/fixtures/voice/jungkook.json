@@ -1,128 +1,120 @@
 {
   "characterId": "jungkook",
   "version": "jungkook-voice-2",
-  "contentHash": "2164046f003dd5b27462aed7865781056266556d7e7350e5edbbba10088179c4",
+  "contentHash": "05c8132a82260b1061368a787cc5134201b340e980ba065319e4e497994f756e",
   "enabled": true,
   "requests": [
     {
       "id": "cooking_steps_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
         "text": "[calm] [thoughtful] 일단 네 얘기부터 듣고, 그다음에 같이 정해볼게요.",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "06e37d1b5506b7c384b895764c2d7941a231a7b2e502115f0d54004e7bdda91e"
+      "cacheKey": "da832194801d80effd0e9489c78cc5c13193f75e8387725b3c9457681f641c4c"
     },
     {
       "id": "long_hee_laugh_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
-        "text": "[laughs] 에헤헤헤, 순서가 완전히 바뀌었네. 다시 하면 되지.",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "text": "[laughing] 에헤헤헤, 순서가 완전히 바뀌었네. 다시 하면 되지.",
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "ee6ee28cfd6b88374e54deccf878f8b2468f818d4a6b5333a9bb9c53b1c2d80e"
+      "cacheKey": "7b5eb6139a91072aadf842f92a75d735bb151e3bd8621403928fd4402092d6d0"
     },
     {
       "id": "fail_report_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
         "text": "[deadpan] [calm] 레시피에 적힌 대로 했는데, 왜 이렇게 됐을까.",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "f263af98d547d2464d6e5a539c93b07b66d2f7eb0ee434f2c9a7d20b0aceaee6"
+      "cacheKey": "543892525ab71c866cc79713c89d0d0d59f9241df062390a21dc0ff9babb25be"
     },
     {
       "id": "reluctant_cook_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
         "text": "[deadpan] [amused] 손이 좀 많이 가네. 꺼낸 김에 끝까지 해봐야지.",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "109adcb26c0eda8b801bf390d8150a3dfcdf2ee20614e1a2395388f4ffb35d53"
+      "cacheKey": "0fa9448d2ca1ce01f8025f0443534f68a4304b8ae9710f1212dd3640fa3b57ed"
     },
     {
       "id": "self_correction_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
         "text": "[thoughtful] 잠깐, 아닌 것 같아. 아니야, 이렇게 하면 되겠다.",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "4eb53c5fb2de5ad55b21181ee60c8ebbd3bb73f3e69a275808c65bb37dd4f478"
+      "cacheKey": "42e28d819f4e10ceeca7d41f9d3f57541b12afa533c5616143a36e4d2bfdc0ab"
     },
     {
       "id": "tool_frustration_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
         "text": "[deadpan] 한 번만 눌렀는데 왜 멈췄어. 다시, 다시 해보자.",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "88fba293036cb915b89d3bec5e845555309c174d0eb648b9ee055f060cd6714e"
+      "cacheKey": "101ce6f6f2fc1dc8baf380165238bc53218d0be6734b46d7ffa535b2ace761b3"
     },
     {
       "id": "visual_doubt_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
         "text": "[playful] 사진에선 색이 좀 이상하네. 네 눈에도 그래요?",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "7b29eb9f8a274f4b8addacc38312af1c33983f7bbbe93172854967aad814388d"
+      "cacheKey": "4afef75f432533139e102a0ed3fdcdd2f6efa943f9be140fd3b6a89269bb0ee6"
     },
     {
       "id": "hold_back_01",
+      "provider": "fish",
       "characterId": "jungkook",
       "version": "jungkook-voice-2",
-      "endpoint": "https://api.elevenlabs.io/v1/text-to-speech/lnL0XrGM8b3KxeSGEm3G?output_format=mp3_44100_128",
+      "model": "s2.1-pro-free",
+      "endpoint": "https://api.fish.audio/v1/tts",
       "body": {
         "text": "[thoughtful] [playful] 하나 더 넣고 싶은데, 참을게. 조금만 더 넣을까?",
-        "model_id": "eleven_v3",
-        "voice_settings": {
-          "stability": 0,
-          "similarity_boost": 0.85
-        }
+        "reference_id": "5fd8fda12193470f96153288210c4f2a",
+        "format": "mp3"
       },
-      "cacheKey": "89c808c6d9ec53955923a0b46598349c0a3b52f3da812e7e90a66a6ef5fb1cd6"
+      "cacheKey": "869d8b5b82f041b6c6f34573888e4d0a7879d19211e1daeb5e6dd64b42d2d168"
     }
   ],
   "preparedSamples": [

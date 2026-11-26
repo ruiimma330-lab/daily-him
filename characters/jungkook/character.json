@@ -74,10 +74,11 @@
     "hold_back": "[thoughtful] [playful]"
   },
   "defaultMood": "cooking_steps",
-  "ttsModel": "eleven_v3",
-  "voiceId": "lnL0XrGM8b3KxeSGEm3G",
+  "ttsModel": "s2.1-pro-free",
+  "voiceId": "5fd8fda12193470f96153288210c4f2a",
   "voiceSettings": {
     "stability": 0,
     "similarity_boost": 0.85
-  }
+  },
+  "ttsProvider": "fish"
 }
