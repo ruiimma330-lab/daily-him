@@ -168,5 +168,81 @@ test('cover and chat clients route returning users to the list, not the picker',
   assert.match(picker, /method:\s*'PUT'/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
   assert.match(manifest, /"start_url": "\/"/);
-  assert.match(sw, /dh-pwa-28/);
+  assert.match(sw, /dh-pwa-29/);
+});
+
+test('first-enter greeting marks greetedAt, picker passes welcome=1, and clearing history stamps greetedAt without phantom profiles', async () => {
+  const created = await request('/api/register', {
+    method: 'POST',
+    body: { username: digitUsername(), password: 'password1', age14: true },
+  });
+  assert.ok(created.status === 200 || created.status === 201);
+  const jar = created.cookie;
+  const uid = created.json.user.id;
+
+  // 1. profile.empty() starts with greetedAt: null; { greeted: true } / PUT /api/profile stamps it.
+  assert.equal(profile.empty().greetedAt, null);
+  const initial = profile.load(uid, 'jungkook');
+  assert.equal(initial.greetedAt, null);
+
+  const marked = await request('/api/profile?characterId=jungkook', {
+    method: 'PUT',
+    cookie: jar,
+    body: { greeted: true },
+  });
+  assert.equal(marked.status, 200);
+  assert.equal(typeof marked.json.profile.greetedAt, 'number');
+  const firstStamp = marked.json.profile.greetedAt;
+
+  const clearedFlag = profile.save(uid, 'jungkook', { greeted: false });
+  assert.equal(clearedFlag.greetedAt, null);
+
+  const restamped = profile.save(uid, 'jungkook', { greeted: true });
+  assert.ok(restamped.greetedAt >= firstStamp);
+
+  // 2. DELETE /api/history stamps greetedAt so cleared history does not re-greet.
+  store.putHistory(uid, 'jimin', [
+    { role: 'user', text: '안녕', time: Date.now() - 1000 },
+    { role: 'assistant', text: '안녕~', time: Date.now(), zh: '你好~' },
+  ]);
+  assert.equal(profile.load(uid, 'jimin').greetedAt, null);
+  const delOne = await request('/api/history?characterId=jimin&summary=1', { method: 'DELETE', cookie: jar });
+  assert.equal(delOne.status, 200);
+  assert.equal(store.getHistory(uid, 'jimin').length, 0);
+  assert.equal(typeof profile.load(uid, 'jimin').greetedAt, 'number');
+
+  // 3. DELETE /api/histories stamps touched characters but never creates phantom profile docs for untouched ones.
+  store.putHistory(uid, 'taehyung', [
+    { role: 'user', text: 'hi', time: Date.now() },
+  ]);
+  assert.equal(store.getDoc('profile', uid, 'dohoon'), null);
+  const delAll = await request('/api/histories', {
+    method: 'DELETE',
+    cookie: jar,
+    body: { confirm: 'CLEAR' },
+  });
+  assert.equal(delAll.status, 200);
+  assert.equal(typeof profile.load(uid, 'taehyung').greetedAt, 'number');
+  assert.equal(store.getDoc('profile', uid, 'dohoon'), null);
+
+  // 4. Client wiring: picker passes welcome=1 for from=chat and named; app welcomeIfNeeded triggers on open=1 when !saved.greetedAt and marks greeted:true; sw skips redirected images.
+  const picker = fs.readFileSync(path.join(__dirname, '..', 'public', 'shell', 'picker.js'), 'utf8');
+  assert.equal((picker.match(/Shell\.go\('\/', \{ c: current\.id, welcome: '1' \}\)/g) || []).length, 2);
+
+  const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+  const welcome = app.slice(app.indexOf('async function welcomeIfNeeded'), app.indexOf('async function ensureAccount'));
+  assert.match(welcome, /wantWelcome/);
+  assert.match(welcome, /wantOpen/);
+  assert.match(welcome, /if \(!wantWelcome && saved\.greetedAt\) return remote;/);
+  assert.match(welcome, /greeted:\s*true/);
+  assert.match(app.slice(app.indexOf('openFriendChat'), app.indexOf('loadFriendsList')), /welcomeIfNeeded\(\[\]\)/);
+
+  const sw = fs.readFileSync(path.join(__dirname, '..', 'public', 'sw.js'), 'utf8');
+  assert.match(sw, /if \(response && response\.ok && !response\.redirected\) cache\.put/);
+
+  // 5. Prompt & memory extraction rules include speaker/target distinction guidance.
+  const common = fs.readFileSync(path.join(__dirname, '..', 'persona', 'common.md'), 'utf8');
+  assert.match(common, /주어를 정확히 구분하고 동문서답에 무조건 맞춰 주지 마/);
+  const memorySrc = fs.readFileSync(path.join(__dirname, '..', 'lib', 'memory.js'), 'utf8');
+  assert.match(memorySrc, /注意分辨说话人与指代对象/);
 });

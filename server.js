@@ -1195,7 +1195,10 @@ function createApp() {
     if (characters.isAvailable(req.characterId) || store.getHistory(req.userId, req.characterId).length) return next();
     return requireAvailable(req, res, next);
   }, async (req, res) => {
+    const hadHistory = store.getHistory(req.userId, req.characterId).length > 0;
+    const hadProfile = Boolean(store.getDoc('profile', req.userId, req.characterId));
     store.deleteHistory(req.userId, req.characterId);
+    if (hadProfile || hadHistory) profile.save(req.userId, req.characterId, { greeted: true });
     if (req.query.summary === '1') await memory.clearSummary(req.userId, req.characterId);
     res.json({ messages: [], summaryCleared: req.query.summary === '1' });
   });
@@ -1210,7 +1213,10 @@ function createApp() {
       ids = characters.list().map((item) => item.id);
     }
     for (const id of ids) {
+      const hadHistory = store.getHistory(req.userId, id).length > 0;
+      const hadProfile = Boolean(store.getDoc('profile', req.userId, id));
       store.deleteHistory(req.userId, id);
+      if (hadProfile || hadHistory) profile.save(req.userId, id, { greeted: true });
       await memory.clearSummary(req.userId, id);
     }
     res.json({ ok: true, cleared: ids });

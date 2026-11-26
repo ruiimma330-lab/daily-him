@@ -44,7 +44,7 @@ test('17 HYBE packs have JPEG art, fixtures, expected voices and age-appropriate
     assert.ok(m.companyIds.includes('hybe'));
     const dir = path.join(chars.CHAR_DIR, id);
     assert.equal(chars.loadMeta(id).avatar, 'avatar.jpg');
-    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-28`);
+    assert.equal(chars.publicInfo(id).portrait, `/characters/${id}/portrait.jpg?v=dh-pwa-29`);
     for (const asset of ['avatar.jpg','portrait.jpg']) {
       const file = path.join(dir, asset);
       assert.ok(fs.existsSync(file), `${id}/${asset}`);

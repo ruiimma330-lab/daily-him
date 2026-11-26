@@ -255,7 +255,7 @@
       }
       // From 好友「添加」: go straight back to the list so the new row is visible.
       if (Shell.qs('from') === 'chat') {
-        Shell.go('/', { c: current.id });
+        Shell.go('/', { c: current.id, welcome: '1' });
         return;
       }
       const named = Boolean(
@@ -263,7 +263,7 @@
         && (profile.callNameStatus === 'done' || profile.callNameStatus === 'pending')
       );
       if (named) {
-        Shell.go('/', { c: current.id });
+        Shell.go('/', { c: current.id, welcome: '1' });
         return;
       }
       Shell.go('/shell/onboard.html', { c: current.id });

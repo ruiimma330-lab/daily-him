@@ -147,7 +147,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-28`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-29`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -1028,10 +1028,29 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     return '대화를 시작해 보세요';
   }
 
-  function openFriendChat(friend) {
+  let welcomingSameChar = false;
+  async function openFriendChat(friend) {
     if (!friend || !friend.id) return;
-    if (friend.id === CHARACTER_ID) openRoom();
-    else location.href = '/?c=' + encodeURIComponent(friend.id) + '&open=1';
+    if (friend.id === CHARACTER_ID) {
+      openRoom();
+      if (historyReady && messages.length === 0 && !welcomingSameChar) {
+        welcomingSameChar = true;
+        try {
+          const seeded = await welcomeIfNeeded([]);
+          if (seeded.length && messages.length === 0 && historyReady) {
+            messages = seeded;
+            settings.seen = messages.length;
+            saveHistory();
+            saveSettings();
+            render();
+          }
+        } finally {
+          welcomingSameChar = false;
+        }
+      }
+    } else {
+      location.href = '/?c=' + encodeURIComponent(friend.id) + '&open=1';
+    }
   }
 
   async function loadFriendsList() {
@@ -2011,7 +2030,9 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   async function welcomeIfNeeded(remote) {
     try {
       const params = new URLSearchParams(location.search);
-      if (params.get('welcome') !== '1' || remote.length) return remote;
+      const wantWelcome = params.get('welcome') === '1';
+      const wantOpen = params.get('open') === '1' || roomOpen;
+      if ((!wantWelcome && !wantOpen) || remote.length) return remote;
       let saved = {};
       try {
         const profileResponse = await fetch(withChar('/api/profile'));
@@ -2020,8 +2041,16 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           saved = (named && named.profile) || {};
         }
       } catch (_) { saved = {}; }
+      if (!wantWelcome && saved.greetedAt) return remote;
       const naming = saved.callNameStatus === 'pending' || saved.callNameStatus === 'confirming';
       const mode = naming ? 'ask' : 'welcome';
+      const markGreeted = () => {
+        fetch(withChar('/api/profile'), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ greeted: true }),
+        }).catch(() => {});
+      };
       let greeting = null;
       try {
         const response = await fetch(withChar(`/api/greeting?mode=${mode}`));
@@ -2031,6 +2060,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         }
       } catch (_) { greeting = null; }
       if (greeting && greeting.ko) {
+        markGreeted();
         return [{
           role: 'assistant',
           text: greeting.ko,
@@ -2048,6 +2078,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         }
       } catch (_) { ch = null; }
       if (naming && ch && ch.askNameKo) {
+        markGreeted();
         return [{
           role: 'assistant',
           text: ch.askNameKo,
@@ -2058,6 +2089,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       }
       const text = ch && typeof ch.welcomeKo === 'string' ? ch.welcomeKo.trim() : '';
       if (!text) return remote;
+      markGreeted();
       return [{
         role: 'assistant',
         text,

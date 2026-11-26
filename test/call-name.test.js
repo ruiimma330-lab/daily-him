@@ -159,3 +159,19 @@ test('a direct answer is confirmed without the model, and a refresh keeps the sa
   const replay = await request('/api/profile?characterId=baekhyun', { cookie: fan.cookie });
   assert.equal(replay.json.profile.callName, '小星');
 });
+
+test('idol-directed address terms, emoji/punctuation, and off-topic chatter are never saved as callName', () => {
+  const pending = { callName: '', callNameStatus: 'pending', callNameAsks: 0 };
+  for (const input of ['哥哥😭', '哥哥', '오빠', '宝宝', '想你了', '今天好累呀', '你好呀!']) {
+    assert.deepEqual(callName.extract(input), { kind: 'none' }, `${input} should extract as none`);
+    const planned = callName.plan(pending, input);
+    assert.equal(planned.mode, 'chat', `${input} should route to chat`);
+  }
+  assert.equal(callName.extract('小星').name, '小星');
+  assert.equal(callName.extract('Ari').name, 'Ari');
+  assert.equal(callName.extract('아리').name, '아리');
+  assert.equal(callName.extract('叫我哥哥').name, '哥哥');
+  assert.equal(callName.extract('叫我小星😭').name, '小星');
+  assert.deepEqual(callName.extract('叫我😭'), { kind: 'none' });
+  assert.match(callName.promptHint(0), /"confidence":"none"/);
+});
