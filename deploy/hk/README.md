@@ -69,6 +69,11 @@ curl -fsSL https://raw.githubusercontent.com/ruiimma330-lab/idol-chat/main/deplo
 - `NODE_ENV`
 - `PORT`
 
+可选环境变量（仅在使用 Fish Audio `provider: "fish"` 角色时需要）：
+
+- `FISH_AUDIO_API_KEY`（Fish Audio API Key；若角色锁使用 `"provider": "fish"`，未配置时该角色语音会关闭）
+- `FISH_AUDIO_API_BASE`（可选，默认 `https://api.fish.audio`）
+
 新服务器的 `PUBLIC_SITE_URL` 使用 `https://dailyhim.cn`，`MOVED_TO_URL` 必须留空。只有旧
 Render 服务需要设置 `MOVED_TO_URL=https://dailyhim.cn`。
 

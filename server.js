@@ -2045,7 +2045,9 @@ function createApp() {
     let ttsPending = false;
     const chatVoicePack = voicePack.load(req.characterId);
     const placeholder = characters.loadMeta(req.characterId).placeholderVoice;
-    const voiceOk = placeholder ? Boolean(chatVoicePack && chatVoicePack.ok && chatVoicePack.enabled) : voiceReady(config.voiceId);
+    const fishLocked = Boolean(chatVoicePack && chatVoicePack.ok && chatVoicePack.provider === 'fish');
+    const useLockedPack = Boolean(placeholder || fishLocked);
+    const voiceOk = useLockedPack ? Boolean(chatVoicePack && chatVoicePack.ok && chatVoicePack.enabled) : voiceReady(config.voiceId);
     if (!voiceOff && !voiceOk) audioError = 'Voice is not configured';
     // One TTS clip per message, in parallel; each with its own mood tag.
     const voiceTasks = items.map(async (item) => {
@@ -2055,7 +2057,7 @@ function createApp() {
       const capped = [...speech].slice(0, starlight.loadConfig().voiceMaxChars).join('');
       const ttsText = `${moodDelivery(config, item.mood).prefix} ${capped}`.trim();
       ttsChars += ttsText.length;
-      const lockedRequest = placeholder && voiceOk ? voicePack.buildRequest(chatVoicePack, capped, item.mood) : null;
+      const lockedRequest = useLockedPack && voiceOk ? voicePack.buildRequest(chatVoicePack, capped, item.mood) : null;
       const hash = lockedRequest ? lockedRequest.cacheKey : audioFileHash(config.voiceId, config.ttsModel, ttsText);
       const job = billVoice({
         userId: req.userId,
