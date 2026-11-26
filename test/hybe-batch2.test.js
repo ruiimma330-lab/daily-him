@@ -50,12 +50,22 @@ test('17 HYBE packs have JPEG art, fixtures, expected voices and age-appropriate
       assert.ok(fs.existsSync(file), `${id}/${asset}`);
       assert.deepEqual(fs.readFileSync(file).subarray(0, 3), Buffer.from([0xff, 0xd8, 0xff]), `${id}/${asset}`);
     }
-    const pack = voice.load(id);
+    const prevFishKey = process.env.FISH_AUDIO_API_KEY;
+    if (m.ttsProvider === 'fish' && !prevFishKey) {
+      process.env.FISH_AUDIO_API_KEY = 'test-fish-key';
+    }
+    let pack;
+    try {
+      pack = voice.load(id);
+    } finally {
+      if (prevFishKey === undefined) delete process.env.FISH_AUDIO_API_KEY;
+      else process.env.FISH_AUDIO_API_KEY = prevFishKey;
+    }
     assert.equal(pack.ok, true, id);
     if (voice2.includes(id)) {
       assert.equal(pack.enabled, true);
       assert.equal(pack.lock.version, `${id}-voice-2`);
-      assert.equal(pack.lock.model, 'eleven_v3');
+      assert.equal(pack.lock.model, pack.provider === 'fish' ? 's2.1-pro-free' : 'eleven_v3');
       assert.equal(Object.hasOwn(pack.lock, 'placeholderVoice'), false);
     } else if (id === 'keonho') {
       assert.equal(pack.enabled, true);

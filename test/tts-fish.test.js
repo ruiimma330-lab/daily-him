@@ -579,3 +579,72 @@ test('E2E /api/chat and /api/tts route Fish character to Fish Audio while baekhy
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test('FISH_AUDIO_MODEL overrides lock model cleanly and jungkook/taehyung locks validate as fish s2.1-pro-free', () => {
+  const prevModel = process.env.FISH_AUDIO_MODEL;
+  const prevKey = process.env.FISH_AUDIO_API_KEY;
+  try {
+    delete process.env.FISH_AUDIO_MODEL;
+    assert.equal(ttsFish.resolveModel('s2.1-pro-free'), 's2.1-pro-free');
+    assert.equal(ttsFish.resolveModel(''), ttsFish.DEFAULT_MODEL);
+
+    process.env.FISH_AUDIO_MODEL = '  s2-pro  ';
+    assert.equal(ttsFish.resolveModel('s2.1-pro-free'), 's2-pro');
+
+    const basePack = {
+      characterId: 'demo',
+      lock: { version: 'demo-v1', model: 's2.1-pro-free', voiceSettings: {} },
+    };
+    const overriddenReq = ttsFish.buildRequest(basePack, '[laughs] 반가워', 'ref-xyz');
+    assert.equal(overriddenReq.model, 's2-pro');
+
+    delete process.env.FISH_AUDIO_MODEL;
+    const defaultReq = ttsFish.buildRequest(basePack, '[laughs] 반가워', 'ref-xyz');
+    assert.equal(defaultReq.model, 's2.1-pro-free');
+    assert.notEqual(overriddenReq.cacheKey, defaultReq.cacheKey);
+
+    process.env.FISH_AUDIO_API_KEY = 'test-fish-secret-key-999';
+    const expected = {
+      jungkook: '5fd8fda12193470f96153288210c4f2a',
+      taehyung: '164f558a941a4d1db4620f90ca6f954f',
+    };
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'idol-fish-bts-'));
+    try {
+      for (const [id, expectedVoiceId] of Object.entries(expected)) {
+        const meta = JSON.parse(fs.readFileSync(path.join(CHAR_DIR, id, 'character.json'), 'utf8'));
+        const lock = JSON.parse(fs.readFileSync(voicePack.lockPath(id), 'utf8'));
+        assert.equal(meta.ttsProvider, 'fish');
+        assert.equal(meta.ttsModel, 's2.1-pro-free');
+        assert.equal(meta.voiceId, expectedVoiceId);
+        assert.equal(lock.provider, 'fish');
+        assert.equal(lock.model, 's2.1-pro-free');
+        assert.equal(lock.voiceId, expectedVoiceId);
+        assert.equal(fishCli.computeLfContentHash(id, lock), lock.contentHash);
+
+        // Load through voicePack.load using LF-normalized prepare.js so it passes on Windows CRLF checkouts too.
+        const tmpVoiceDir = path.join(tmpRoot, id, 'voice');
+        fs.mkdirSync(tmpVoiceDir, { recursive: true });
+        fs.writeFileSync(path.join(tmpVoiceDir, 'voice.lock.json'), `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
+        const lfPrepare = fs.readFileSync(voicePack.preparePath(id), 'utf8').replace(/\r\n/g, '\n');
+        fs.writeFileSync(path.join(tmpVoiceDir, 'prepare.js'), lfPrepare, 'utf8');
+        const pack = voicePack.load(id, tmpRoot);
+        assert.equal(pack.ok, true, pack && pack.error);
+        assert.equal(pack.enabled, true);
+        assert.equal(pack.provider, 'fish');
+        assert.equal(pack.lock.model, 's2.1-pro-free');
+        assert.equal(pack.lock.voiceId, expectedVoiceId);
+        const req = voicePack.buildRequest(pack, lock.samples[0].text, lock.samples[0].mood);
+        assert.equal(req.provider, 'fish');
+        assert.equal(req.model, 's2.1-pro-free');
+        assert.equal(req.body.reference_id, expectedVoiceId);
+      }
+    } finally {
+      fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+  } finally {
+    if (prevModel === undefined) delete process.env.FISH_AUDIO_MODEL;
+    else process.env.FISH_AUDIO_MODEL = prevModel;
+    if (prevKey === undefined) delete process.env.FISH_AUDIO_API_KEY;
+    else process.env.FISH_AUDIO_API_KEY = prevKey;
+  }
+});

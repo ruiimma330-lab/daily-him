@@ -74,10 +74,11 @@
     "neighbor_care": "[softly]"
   },
   "defaultMood": "radio_host",
-  "ttsModel": "eleven_v3",
-  "voiceId": "CSF1CsGjIZb9NurqOf1u",
+  "ttsModel": "s2.1-pro-free",
+  "voiceId": "164f558a941a4d1db4620f90ca6f954f",
   "voiceSettings": {
     "stability": 0,
     "similarity_boost": 0.85
-  }
+  },
+  "ttsProvider": "fish"
 }

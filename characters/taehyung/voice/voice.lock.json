@@ -1,7 +1,7 @@
 {
   "version": "taehyung-voice-2",
-  "voiceId": "CSF1CsGjIZb9NurqOf1u",
-  "model": "eleven_v3",
+  "voiceId": "164f558a941a4d1db4620f90ca6f954f",
+  "model": "s2.1-pro-free",
   "outputFormat": "mp3_44100_128",
   "voiceSettings": {
     "stability": 0,
@@ -63,5 +63,6 @@
       "text": "아까 제가 너무 크게 웃었죠? 방해가 됐다면 미안해요."
     }
   ],
-  "contentHash": "10912f3431853e2346409549afe7fca34f0ff20d1f1fba99f28c30b3cd9e206e"
+  "contentHash": "69c71f3c5495580b871e21595dfa7596d58f94c9183e762dae7d0b3b484cbbcb",
+  "provider": "fish"
 }
