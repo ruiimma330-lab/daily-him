@@ -1,7 +1,7 @@
 /* Daily Him shell. Bump VERSION when the precache list changes.
    Code (html/js/css/json) is network-first and only read from THIS version's cache, so an old
    worker or old cache can never pair a stale script with a newer page (the empty-picker bug). */
-const VERSION = 'dh-pwa-28';
+const VERSION = 'dh-pwa-29';
 const SHELL = `dh-shell-${VERSION}`;
 const MEDIA = `dh-media-${VERSION}`;
 
@@ -113,7 +113,7 @@ async function staleWhileRevalidate(request, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await cache.match(request);
   const fresh = fetch(request).then((response) => {
-    if (response && response.ok) cache.put(request, response.clone());
+    if (response && response.ok && !response.redirected) cache.put(request, response.clone());
     return response;
   }).catch(() => cached);
   return cached || fresh;
