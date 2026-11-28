@@ -1177,8 +1177,7 @@ button, input { -webkit-tap-highlight-color: transparent; }
   position: absolute;
   left: 0; right: 0; bottom: 0;
   z-index: 5;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
   align-items: center;
   background: #fff;
   border-top: 1px solid rgba(28, 28, 28, 0.08);
@@ -1188,6 +1187,7 @@ button, input { -webkit-tap-highlight-color: transparent; }
 }
 .tab-bar[hidden] { display: none; }
 .tab-item {
+  flex: 1;
   position: relative;
   border: 0;
   background: transparent;
@@ -1199,6 +1199,7 @@ button, input { -webkit-tap-highlight-color: transparent; }
   padding: 0;
   color: #b0aaa4;
 }
+.tab-item[hidden] { display: none; }
 .tab-ico {
   width: 28px;
   height: 28px;

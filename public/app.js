@@ -147,7 +147,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     paintRoomTitle();
   }
 
-  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-29`;
+  let characterAvatarUrl = `/characters/${encodeURIComponent(CHARACTER_ID)}/avatar?v=dh-pwa-30`;
   let userAvatarVersion = 0;
 
   function paintCharacterAvatar(node) {
@@ -286,7 +286,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     try {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(historySnapshot()));
     } catch (err) {
-      showToast('이 브라우저에 대화를 저장하지 못했어요');
+      showToast('当前浏览器无法保存对话');
     }
   }
 
@@ -318,7 +318,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       }
       if (!response.ok) throw new Error('sync failed');
     } catch (err) {
-      showToast('대화를 서버에 저장하지 못했어요');
+      showToast('对话同步到服务器失败');
     } finally {
       historySyncing = false;
     }
@@ -530,7 +530,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     button.dataset.icon = want;
     button.replaceChildren(speakerIcon(playing));
     button.setAttribute('aria-pressed', playing ? 'true' : 'false');
-    button.setAttribute('aria-label', playing ? '일시정지' : '음성 재생');
+    button.setAttribute('aria-label', playing ? '暂停播放' : '播放语音');
   }
 
   function setSpeakLoading(button, loading) {
@@ -591,8 +591,13 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     const bar = document.getElementById('star-bar');
     if (!bar) return;
     bar.hidden = false;
-    bar.textContent = '先看文字';
-    bar.onclick = () => { bar.hidden = true; };
+    if (isCap) {
+      bar.textContent = `${base} · 先看文字`;
+      bar.onclick = () => { bar.hidden = true; };
+    } else {
+      bar.textContent = `${base} · 去领取`;
+      bar.onclick = () => { location.href = '/shell/starlight.html#claim'; };
+    }
   }
 
   // One clip per message, one request per clip. The overlap/rewind rules live in
@@ -615,7 +620,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       // A broken cached URL gets one silent retry through the normal TTS path.
       const audio = player.audio;
       if (audio.dataset.retried === '1') {
-        showToast('음성을 재생하지 못했어요');
+        showToast('语音播放失败');
         voiceFailed(message);
         return;
       }
@@ -659,7 +664,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     }
     return playback.toggle(message).then((result) => {
       if (result && result.action === 'blocked' && !message.text) {
-        showToast('음성은 이번엔 못 보냈어요');
+        showToast('这条语音暂时没发出来');
         attachVoiceFallback(message);
       }
       paintPlayer(player);
@@ -699,8 +704,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         }
         if (!response.ok || !url) {
           showToast(data && data.audioError === 'Voice is not configured'
-            ? '음성은 아직 준비되지 않았어요'
-            : '음성은 이번엔 못 보냈어요');
+            ? '语音暂未就绪'
+            : '这条语音暂时没发出来');
           voiceFailed(message);
           return null;
         }
@@ -712,7 +717,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         playback.refresh(message);
         return url;
       } catch (_) {
-        showToast('음성은 이번엔 못 보냈어요');
+        showToast('这条语音暂时没发出来');
         voiceFailed(message);
         return null;
       } finally {
@@ -1006,7 +1011,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
     line.append(bubble, meta);
     const retry = el('button', 'retry-btn');
     retry.type = 'button';
-    retry.textContent = '다시 보내기';
+    retry.textContent = '重新发送';
     retry.addEventListener('click', () => {
       retryLast();
     });
@@ -1022,10 +1027,10 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
   }
 
   function previewText(message) {
-    if (!message) return '대화를 시작해 보세요';
+    if (!message) return '点击开始聊天';
     if (message.text) return message.text;
-    if (message.audioUrl) return '음성';
-    return '대화를 시작해 보세요';
+    if (message.audioUrl) return '语音';
+    return '点击开始聊天';
   }
 
   let welcomingSameChar = false;
@@ -1434,10 +1439,12 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
         for (let i = 0; i < voiceItems.length; i += 1) {
           const item = voiceItems[i];
           if (myGen !== generation) return;
-          typing = true;
-          render();
-          await sleep(i === 0 ? Math.min(900, 320 + item.ko.length * 18) : bubbleDelay(item.ko));
-          if (myGen !== generation) return;
+          if (i > 0) {
+            typing = true;
+            render();
+            await sleep(bubbleDelay(item.ko));
+            if (myGen !== generation) return;
+          }
           typing = false;
           // Text is revealed now. Voice rides along when it is already ready; otherwise
           // the speaker shows a spinner and the single follow-up request below fills it in.
@@ -1449,6 +1456,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
             time: Date.now(),
             audioUrl: safeAudioUrl(item.audioUrl),
             ttsPending: item.ttsPending === true && !safeAudioUrl(item.audioUrl),
+            voiceToken: item.voiceToken || null,
             voice: true,
             fallback: item.fallback === true,
             voiceFallback: item.ttsFailed === true ? pickClientFallback('voice') : null,
@@ -1526,7 +1534,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       return;
     }
     if (busy) {
-      showToast('답장을 기다리는 중이에요');
+      showToast('正在等他回复呢');
       return;
     }
     pendingSceneId = scene.id || null;
@@ -1580,7 +1588,7 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
       return;
     }
     if (busy) {
-      showToast('답장을 기다리는 중이에요');
+      showToast('正在等他回复呢');
       return;
     }
     activeTurnId = newTurnId();
@@ -1797,7 +1805,8 @@ const withChar = (u) => `${u}${u.includes('?') ? '&' : '?'}characterId=${encodeU
           if (typeof ch.avatar === 'string' && ch.avatar.startsWith('/characters/')) characterAvatarUrl = ch.avatar;
           const statusEl = document.getElementById('profile-status');
           if (statusEl) {
-            const statusText = String(ch.status || ch.tagline || ch.bio || [ch.group, ch.company].filter(Boolean).join(' · ') || '').trim();
+            const cleanCompany = String(ch.company || '').replace(/（[^）]*待人工核验[^）]*）/g, '').trim();
+            const statusText = String(ch.status || ch.tagline || ch.bio || [ch.group, cleanCompany].filter(Boolean).join(' · ') || '').trim();
             statusEl.textContent = statusText;
             statusEl.hidden = !statusText;
           }

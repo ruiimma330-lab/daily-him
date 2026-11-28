@@ -209,6 +209,18 @@ test('the chat request no longer hardcodes voice:false and asks for a short voic
   assert.match(app, /voiceToken: message\.voiceToken/);
 });
 
+test('requestReply copies item.voiceToken onto pending messages without persisting it in history', () => {
+  const app = fs.readFileSync(path.join(ROOT, 'public/app.js'), 'utf8');
+  const block = app.slice(app.indexOf('const voiceItems ='), app.indexOf('if (message.ttsPending) waitForVoice(message);'));
+  assert.match(block, /voiceToken:\s*item\.voiceToken\s*\|\|\s*null/);
+  assert.match(block, /if \(i > 0\)/, 'first reply bubble renders immediately without extra sleep');
+  assert.equal(block.includes('320 + item.ko.length * 18'), false);
+  const normalize = app.slice(app.indexOf('function normalizeHistoryList'), app.indexOf('function loadSettings'));
+  assert.equal(normalize.includes('voiceToken'), false, 'voiceToken is ephemeral');
+  const snapshot = app.slice(app.indexOf('function historySnapshot'), app.indexOf('function saveLocalHistory'));
+  assert.equal(snapshot.includes('voiceToken'), false, 'voiceToken is not saved to history');
+});
+
 test('the waiting speaker is a spinner, never a ready play icon', () => {
   const app = fs.readFileSync(path.join(ROOT, 'public/app.js'), 'utf8');
   const painter = app.slice(app.indexOf('function paintPlayer'), app.indexOf('function stopAllAudio'));
@@ -257,7 +269,7 @@ test('the first-enter greeting comes from the pre-stored file, with welcomeKo as
 
 test('the service worker precaches the new script under a bumped cache name', () => {
   const sw = fs.readFileSync(path.join(ROOT, 'public/sw.js'), 'utf8');
-  assert.match(sw, /const VERSION = 'dh-pwa-29';/);
+  assert.match(sw, /const VERSION = 'dh-pwa-30';/);
   assert.match(sw, /'\/playback\.js'/);
   const html = fs.readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
   const scripts = [...html.matchAll(/<script[^>]*src="([^"]+)"/g)].map((match) => match[1]);

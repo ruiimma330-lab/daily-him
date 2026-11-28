@@ -1127,9 +1127,25 @@
     else syncBar();
   }
 
+  function paintLoading() {
+    main.replaceChildren();
+    const top = document.createElement('header');
+    top.className = 'me-top';
+    const title = document.createElement('h1');
+    title.id = 'me-title';
+    title.textContent = '我的';
+    top.append(title);
+    const note = document.createElement('p');
+    note.className = 'me-note';
+    note.style.padding = '16px 22px 0';
+    note.textContent = '加载中…';
+    main.append(top, note);
+  }
+
   function refresh() {
     if (inflightRefresh) return inflightRefresh;
     if (state.me && Date.now() - lastRefreshAt < 1000) return Promise.resolve();
+    if (!state.me) paintLoading();
     inflightRefresh = doRefresh().finally(() => {
       inflightRefresh = null;
       lastRefreshAt = Date.now();

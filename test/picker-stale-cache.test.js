@@ -143,10 +143,17 @@ test('every page with scripts loads sw-heal.js first, and the worker precaches i
 });
 
 test('picker load failure hides the start button instead of showing a dead "开始聊天"', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'public/shell/pick.html'), 'utf8');
+  assert.match(html, /class="picker-page picker-loading"[\s\S]*class="dots"/);
+  assert.match(html, /id="picker-go" disabled>加载中…</);
   const js = fs.readFileSync(path.join(ROOT, 'public/shell/picker.js'), 'utf8');
+  assert.match(js, /待人工核验/);
   const tail = js.slice(js.lastIndexOf('.catch('));
   assert.match(tail, /goBtn\.hidden = true/);
   assert.match(tail, /加载失败/);
+  const me = fs.readFileSync(path.join(ROOT, 'public/me/me.js'), 'utf8');
+  assert.match(me, /function paintLoading\(\)/);
+  assert.match(me, /if \(!state\.me\) paintLoading\(\);/);
 });
 
 function request(app, url) {

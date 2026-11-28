@@ -246,6 +246,11 @@ test('the starlight station is the only recharge UI and keeps redemption folded 
   assert.match(station, /alert\('测试环境，暂未开通'\)/);
   assert.doesNotMatch(station, /class="price">¥/);
   // Back must return to chat list — history.back() fails in PWA / deep links.
+  assert.match(station, /id="balance">…</);
+  assert.match(station, /id="streak">加载中…</);
+  assert.match(station, /Shell\.api\('\/api\/starlight',\s*\{\s*cache:\s*'no-store'\s*\}\)/);
+  assert.match(station, /今日已领取/);
+  assert.match(station, /请输入兑换码/);
   assert.match(station, /Shell\.go\('\/'/);
   assert.doesNotMatch(station, /history\.back\(/);
   // Ghost buttons keep dark text on light fill (contrast).
