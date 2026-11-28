@@ -214,20 +214,46 @@
   });
 
   let reloading = false;
+  let manualReload = false;
+  let reloadTimer = null;
+  function reloadNow() {
+    if (reloadTimer) {
+      clearTimeout(reloadTimer);
+      reloadTimer = null;
+    }
+    location.reload();
+  }
+  function isFieldVisible(field) {
+    if (!field || field.hidden || field.disabled || field.readOnly) return false;
+    if (typeof field.closest === 'function' && field.closest('[hidden]')) return false;
+    return true;
+  }
   function isUserTyping() {
     const active = document.activeElement;
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+    if (active && isFieldVisible(active) && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
       return true;
     }
     if (!document.querySelectorAll) return false;
     const fields = document.querySelectorAll('textarea, input[type="text"], input[type="search"], input:not([type])');
     for (let i = 0; i < fields.length; i += 1) {
-      if (fields[i].value) return true;
+      if (isFieldVisible(fields[i]) && fields[i].value) return true;
     }
     return false;
   }
-  function applyUpdate() {
-    if (!waitingWorker) return;
+  function applyUpdate(manual) {
+    if (manual === true) {
+      manualReload = true;
+      reloading = true;
+      update.hidden = true;
+      if (waitingWorker && waitingWorker.state === 'installed') {
+        waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+        reloadTimer = setTimeout(reloadNow, 600);
+      } else {
+        reloadNow();
+      }
+      return;
+    }
+    if (!waitingWorker || waitingWorker.state !== 'installed') return;
     reloading = true;
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
   }
@@ -248,10 +274,11 @@
       applyUpdate();
     }, 1200);
   }
-  updateBtn.addEventListener('click', applyUpdate);
+  updateBtn.addEventListener('click', () => applyUpdate(true));
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (reloading && !isUserTyping()) location.reload();
+      if (reloading && (manualReload || !isUserTyping())) reloadNow();
+      else if (!reloading) waitingWorker = null;
     });
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').then((reg) => {

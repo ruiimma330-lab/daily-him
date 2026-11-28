@@ -109,7 +109,7 @@ test('chat-entry client module and index wire FriendsList', () => {
   assert.match(app, /open=1/);
   assert.doesNotMatch(app, /location\.replace\('\/shell\/pick\.html\?from=chat'\)/);
   assert.match(sw, /friends-list\.js/);
-  assert.match(sw, /dh-pwa-29/);
+  assert.match(sw, /dh-pwa-30/);
 });
 
 test('5-friend account and corrupt onboardedAt still return all 5 friends with finite lastAt', async () => {
@@ -415,7 +415,7 @@ test('public assets (friends-list.js, playback.js) and /api/health contract', as
   assert.equal(health.json.ok, true);
   assert.equal(typeof health.json.commit, 'string');
   assert.ok(health.json.commit.length > 0);
-  assert.equal(health.json.assetVersion, 'dh-pwa-29');
+  assert.equal(health.json.assetVersion, 'dh-pwa-30');
 });
 
 test('deploy/hk/update.sh contract enforces single instance, commit verification, and /friends-list.js smoke check', () => {

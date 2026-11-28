@@ -11,13 +11,22 @@
   const KEY = 'dh_sw_heal_at';
   let done = false;
 
+  function isFieldVisible(field) {
+    if (!field || field.hidden || field.disabled || field.readOnly) return false;
+    if (typeof field.closest === 'function' && field.closest('[hidden]')) return false;
+    return true;
+  }
+
   function typing() {
     const active = document.activeElement;
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+    if (active && isFieldVisible(active) && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
       return true;
     }
+    if (!document.querySelectorAll) return false;
     const fields = document.querySelectorAll('textarea, input[type="text"], input[type="search"], input:not([type])');
-    for (let i = 0; i < fields.length; i += 1) if (fields[i].value) return true;
+    for (let i = 0; i < fields.length; i += 1) {
+      if (isFieldVisible(fields[i]) && fields[i].value) return true;
+    }
     return false;
   }
 

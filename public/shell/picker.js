@@ -41,6 +41,10 @@
     });
   }
 
+  function cleanCompanyLabel(value) {
+    return String(value || '').replace(/（[^）]*待人工核验[^）]*）/g, '').trim();
+  }
+
   function paintMeta(list) {
     const current = list[state.index];
     metaEl.innerHTML = '';
@@ -58,7 +62,7 @@
     const zh = current.nameZh ? `  ${current.nameZh}` : '';
     name.textContent = `${ko}${zh}`;
     const sub = document.createElement('span');
-    sub.textContent = current.group || current.company || '';
+    sub.textContent = current.group || cleanCompanyLabel(current.company) || '';
     metaEl.append(name, sub);
     const notice = document.createElement('p');
     notice.textContent = current.disclaimer + (current.voiceAvailable ? '' : ' 语音暂不可用');

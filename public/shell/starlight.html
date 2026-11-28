@@ -16,11 +16,11 @@
     <p class="availability-note">充值尚未开通，星光可每日领取或使用兑换码。</p>
     <div class="balance">
       <div class="l">星光 · 별빛</div>
-      <div class="n"><img src="/icons/starlight.svg" width="24" height="24" alt="" /> <span id="balance">0</span></div>
+      <div class="n"><img src="/icons/starlight.svg" width="24" height="24" alt="" /> <span id="balance">…</span></div>
     </div>
     <p class="lead" id="prices">对话 3 星光 · 语音 15 星光</p>
     <button type="button" class="btn" id="claim" style="margin-top:16px">领取今日星光</button>
-    <p class="lead" id="streak">连续领取</p>
+    <p class="lead" id="streak">加载中…</p>
     <section id="recharge" aria-label="充值">
       <h2 class="section-title">充值（即将开通）</h2>
       <div class="pkg-list" id="packages"></div>
@@ -77,6 +77,10 @@
       const prices = data.prices || {};
       document.getElementById('prices').textContent =
         `对话 ${prices.text ?? 3} 星光 · 语音 ${prices.voice ?? 15} 星光`;
+      const claimBtn = document.getElementById('claim');
+      const claimed = Boolean(!data.unlimited && data.claimedToday);
+      claimBtn.disabled = claimed;
+      claimBtn.textContent = claimed ? '今日已领取' : '领取今日星光';
       streakEl.textContent = data.unlimited
         ? '管理员 · 星光无限'
         : data.claimedToday
@@ -119,7 +123,7 @@
     }
 
     async function load() {
-      const data = await Shell.api('/api/starlight');
+      const data = await Shell.api('/api/starlight', { cache: 'no-store' });
       paint(data);
       try {
         await Shell.api('/api/admin/starlight/status');
@@ -129,13 +133,22 @@
       }
     }
 
-    document.getElementById('claim').onclick = async () => {
+    const claimBtn = document.getElementById('claim');
+    claimBtn.onclick = async () => {
+      if (claimBtn.disabled) return;
+      claimBtn.disabled = true;
       try {
-        await Shell.api('/api/starlight/claim', { method: 'POST', body: '{}' });
+        const res = await Shell.api('/api/starlight/claim', { method: 'POST', body: '{}' });
+        if (res && res.balance != null) balanceEl.textContent = String(res.balance);
+        Shell.toast(res && res.amount ? `已领取 +${res.amount} 星光` : '已领取今日星光');
       } catch (err) {
-        if (err.status !== 409) Shell.toast('今天先领过了');
+        Shell.toast(err && err.status === 409 ? '今天已经领过了' : '领取失败，请重试');
       }
-      load();
+      try {
+        await load();
+      } catch (_) {
+        claimBtn.disabled = false;
+      }
     };
     document.getElementById('redeem-toggle').onclick = () => {
       const panel = document.getElementById('redeem-panel');
@@ -144,15 +157,28 @@
       document.getElementById('redeem-toggle').setAttribute('aria-expanded', open ? 'true' : 'false');
       if (open) document.getElementById('code').focus();
     };
-    document.getElementById('redeem').onclick = async () => {
+    const redeemBtn = document.getElementById('redeem');
+    redeemBtn.onclick = async () => {
+      const codeInput = document.getElementById('code');
+      const code = codeInput.value.trim();
+      if (!code) {
+        Shell.toast('请输入兑换码');
+        return;
+      }
+      redeemBtn.disabled = true;
       try {
-        await Shell.api('/api/starlight/redeem', {
+        const res = await Shell.api('/api/starlight/redeem', {
           method: 'POST',
-          body: JSON.stringify({ code: document.getElementById('code').value.trim() }),
+          body: JSON.stringify({ code }),
         });
-        document.getElementById('code').value = '';
-      } catch (_) { Shell.toast('兑换码不能用'); }
-      load();
+        codeInput.value = '';
+        Shell.toast(res && res.amount ? `已兑换 +${res.amount} 星光` : '兑换成功');
+      } catch (_) {
+        Shell.toast('兑换码不能用');
+      } finally {
+        redeemBtn.disabled = false;
+      }
+      await load().catch(() => {});
     };
     document.getElementById('grant').onclick = async () => {
       try {

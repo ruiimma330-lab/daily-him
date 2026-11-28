@@ -168,7 +168,7 @@ test('cover and chat clients route returning users to the list, not the picker',
   assert.match(picker, /method:\s*'PUT'/);
   assert.match(picker, /qs\('from'\) === 'chat'/);
   assert.match(manifest, /"start_url": "\/"/);
-  assert.match(sw, /dh-pwa-29/);
+  assert.match(sw, /dh-pwa-30/);
 });
 
 test('first-enter greeting marks greetedAt, picker passes welcome=1, and clearing history stamps greetedAt without phantom profiles', async () => {
